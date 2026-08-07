@@ -6,6 +6,7 @@ import {
   ANALYSIS_TIMEOUT_MS,
   CONFIDENCE_LEVELS,
   DEFAULT_MODEL,
+  FALLBACK_MODELS,
   RISK_LEVELS,
 } from "@/lib/constants";
 import { delay } from "@/lib/utils";
@@ -278,6 +279,12 @@ export function toReadableError(error: unknown, depth = 0): string {
   return "";
 }
 
+/** True when the error indicates the requested model is unavailable/unknown. */
+export function isModelRelatedError(error: unknown): boolean {
+  const lower = toReadableError(error).toLowerCase();
+  return /model|does not exist|unknown model|invalid model/i.test(lower);
+}
+
 export function describePuterError(error: unknown): string {
   const message = toReadableError(error).trim();
   const lower = message.toLowerCase();
@@ -293,8 +300,11 @@ export function describePuterError(error: unknown): string {
   if (/quota|credit|balance|insufficient|usage|billing|payment/i.test(lower)) {
     return "Puter could not complete the request — this may be a usage or credit limit on the Puter account. Please try again later.";
   }
-  if (/model|not found|unavailable|rate/i.test(lower)) {
-    return "The AI model is temporarily unavailable. Please try again in a moment.";
+  if (/(?:^|\D)429(?:\D|$)|rate limit|too many requests|throttl/i.test(lower)) {
+    return "Puter is temporarily rate-limiting requests. Please wait a moment, then try again.";
+  }
+  if (isModelRelatedError(error)) {
+    return "The AI model is temporarily unavailable or could not be found. Please try again in a moment.";
   }
   if (message.length > 0) {
     return `The AI service returned an error: ${message}`;
@@ -340,21 +350,36 @@ export async function runDiagnosis(
       );
     }, ANALYSIS_TIMEOUT_HINT_MS);
 
-    const response = await withTimeout(
-      // The API rejects a per-message `images` field (400: Unknown parameter
-      // 'input[0].images'), so messages are built without it; the cast
-      // satisfies the SDK's `ChatMessage` type without sending the field.
-      puter.ai.chat(messages as ChatMessage[], {
-        model: DEFAULT_MODEL,
-        temperature: AI_TEMPERATURE,
-        max_tokens: AI_MAX_TOKENS,
-      }),
-      ANALYSIS_TIMEOUT_MS,
-      ANALYSIS_TIMEOUT_MESSAGE
-    );
-
-    const text = extractResponseText(response);
-    return { result: parseDiagnosticJson(text), source: "puter" };
+    // Try the preferred model first, then fall back to alternatives when
+    // Puter reports the model as unavailable/not found (some gateways require
+    // provider-prefixed ids, or the model may be down). Non-model errors
+    // (auth, quota, network, rate limit, timeout) surface immediately.
+    const attempts = [DEFAULT_MODEL, ...FALLBACK_MODELS];
+    let lastError: unknown = new Error("No AI model could be used.");
+    for (const model of attempts) {
+      try {
+        const response = await withTimeout(
+          // The API rejects a per-message `images` field (400: Unknown
+          // parameter 'input[0].images'), so messages are built without it;
+          // the cast satisfies the SDK's `ChatMessage` type without sending it.
+          puter.ai.chat(messages as ChatMessage[], {
+            model,
+            temperature: AI_TEMPERATURE,
+            max_tokens: AI_MAX_TOKENS,
+          }),
+          ANALYSIS_TIMEOUT_MS,
+          ANALYSIS_TIMEOUT_MESSAGE
+        );
+        const text = extractResponseText(response);
+        return { result: parseDiagnosticJson(text), source: "puter" };
+      } catch (error) {
+        lastError = error;
+        if (!isModelRelatedError(error)) throw error;
+        console.error(`Garage Ghost: model "${model}" unavailable, trying next:`, error);
+        onStatus?.(`Model ${model} is unavailable — trying a fallback…`);
+      }
+    }
+    throw lastError;
   } finally {
     if (hintTimer !== undefined) clearTimeout(hintTimer);
   }

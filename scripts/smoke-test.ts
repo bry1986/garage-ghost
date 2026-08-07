@@ -29,6 +29,7 @@ import {
   buildSystemPrompt,
   buildUserPrompt,
   describePuterError,
+  isModelRelatedError,
   parseDiagnosticJson,
   runDiagnosis,
   toReadableError,
@@ -203,6 +204,24 @@ async function main() {
   }
   assert.strictEqual(chatMessages[1].content, buildUserPrompt(DEMO_INPUT));
   console.log("ok: chat messages omit the rejected images field");
+
+  // 17. Rate-limit errors get a clear message
+  assert.ok(
+    describePuterError({ message: "429 Too Many Requests - rate limit exceeded" }).includes(
+      "rate-limiting"
+    )
+  );
+  console.log("ok: rate-limit errors are explained clearly");
+
+  // 18. Model-not-found errors are recognized as model-related
+  assert.ok(isModelRelatedError("Model not found: gpt-5.6-luna"));
+  assert.ok(isModelRelatedError({ error: { message: "unknown model" } }));
+  assert.ok(!isModelRelatedError("Insufficient quota"));
+  assert.ok(!isModelRelatedError("User cancelled the authentication"));
+  assert.ok(
+    describePuterError("Model not found: gpt-5.6-luna").includes("temporarily unavailable")
+  );
+  console.log("ok: model-not-found errors are detected and explained");
 
   console.log("\nAll smoke tests passed ✅");
 }

@@ -27,6 +27,14 @@ export const SYMPTOM_CHIPS = [
 
 /** Default Puter.ai model for analysis. */
 export const DEFAULT_MODEL = "gpt-5.6-luna";
+
+/**
+ * Models tried after the default when Puter reports the model as unavailable
+ * or not found. Includes a provider-prefixed variant some gateways require
+ * and the model used in Puter's own tutorial.
+ */
+export const FALLBACK_MODELS = ["openai/gpt-5.6-luna", "gpt-5.4-nano", "gpt-5.4"] as const;
+
 export const AI_TEMPERATURE = 0.2;
 export const AI_MAX_TOKENS = 1200;
 
