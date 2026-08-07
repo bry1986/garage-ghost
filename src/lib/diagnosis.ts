@@ -1,4 +1,4 @@
-import type { ChatMessage, ChatResponse } from "@heyputer/puter.js";
+import type { ChatMessage, ChatOptions, ChatResponse } from "@heyputer/puter.js";
 import {
   AI_MAX_TOKENS,
   AI_TEMPERATURE,
@@ -38,6 +38,8 @@ export interface DiagnosisInput {
   symptoms: string;
   symptomChips: string[];
   language: ResponseLanguage;
+  /** Optional dashboard warning-light photo (sent to Puter for analysis). */
+  image?: File;
 }
 
 export interface DiagnosisOutput {
@@ -87,9 +89,10 @@ export function buildUserPrompt(input: DiagnosisInput): string {
 }
 
 /**
- * Messages sent to Puter. Deliberately built without the `images` field:
- * the model endpoint rejects it (400: Unknown parameter 'input[0].images')
- * and this app sends text-only prompts.
+ * Messages sent to Puter for text-only prompts. Deliberately built without
+ * the `images` field: the model endpoint rejects it (400: Unknown parameter
+ * 'input[0].images'). Image analysis uses the documented `media` parameter
+ * instead (see buildVisionPrompt + runDiagnosis).
  */
 export function buildChatMessages(
   input: DiagnosisInput
@@ -98,6 +101,18 @@ export function buildChatMessages(
     { role: "system", content: buildSystemPrompt(input.language) },
     { role: "user", content: buildUserPrompt(input) },
   ];
+}
+
+/**
+ * Single-string prompt for image analysis. Puter's documented image path is
+ * `puter.ai.chat(prompt, media, options)` (media accepts a `File`), which
+ * takes a plain prompt string rather than a messages array — so the system
+ * instructions are prepended to the vehicle context.
+ */
+export function buildVisionPrompt(input: DiagnosisInput): string {
+  return [buildSystemPrompt(input.language), "", "Vehicle context:", buildUserPrompt(input)].join(
+    "\n"
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -335,6 +350,12 @@ export function isModelRelatedError(error: unknown): boolean {
   return /model|does not exist|unknown model|invalid model/i.test(lower);
 }
 
+/** True when the error looks specific to image/media input (not auth/quota/network). */
+export function isImageRelatedError(error: unknown): boolean {
+  const lower = toReadableError(error).toLowerCase();
+  return /image|vision|media|file|input\[0\]/i.test(lower);
+}
+
 export function describePuterError(error: unknown): string {
   const message = toReadableError(error).trim();
   const lower = message.toLowerCase();
@@ -366,6 +387,48 @@ export function isDemoMode(): boolean {
   return process.env.NEXT_PUBLIC_DEMO_MODE === "true";
 }
 
+/**
+ * Run `request(model)` against the preferred model, then fall back to
+ * alternatives when Puter reports the model as unavailable/not found (some
+ * gateways require provider-prefixed ids, or the model may be down).
+ * Non-model errors (auth, quota, network, rate limit, timeout) surface
+ * immediately. Returns the extracted response text.
+ */
+async function chatWithFallback(
+  request: (model: string) => Promise<ChatResponse>,
+  onStatus?: (status: string) => void
+): Promise<string> {
+  const attempts = [DEFAULT_MODEL, ...FALLBACK_MODELS];
+  let lastError: unknown = new Error("No AI model could be used.");
+  for (const model of attempts) {
+    try {
+      const response = await withTimeout(
+        request(model),
+        ANALYSIS_TIMEOUT_MS,
+        ANALYSIS_TIMEOUT_MESSAGE
+      );
+      return extractResponseText(response);
+    } catch (error) {
+      lastError = error;
+      if (!isModelRelatedError(error)) throw error;
+      console.error(`Garage Ghost: model "${model}" unavailable, trying next:`, error);
+      onStatus?.(`Model ${model} is unavailable — trying a fallback…`);
+    }
+  }
+  throw lastError;
+}
+
+/** Warn via onStatus once a request has run long enough to look stuck. */
+function scheduleStuckHint(onStatus?: (status: string) => void): () => void {
+  if (!onStatus) return () => undefined;
+  const timer = setTimeout(() => {
+    onStatus(
+      "Taking longer than expected — if a Puter sign-in window is open, complete it, or close it and try again."
+    );
+  }, ANALYSIS_TIMEOUT_HINT_MS);
+  return () => clearTimeout(timer);
+}
+
 export async function runDiagnosis(
   input: DiagnosisInput,
   onStatus?: (status: string) => void
@@ -387,51 +450,149 @@ export async function runDiagnosis(
   const { puter } = await import("@heyputer/puter.js");
 
   onStatus?.("Analyzing your symptoms…");
-  const messages = buildChatMessages(input);
-
-  // Guard against a Puter call that never settles (e.g. the sign-in popup is
-  // closed without completing). Warn first, then fail with a clear message so
-  // the button re-enables and the visitor can retry.
-  let hintTimer: ReturnType<typeof setTimeout> | undefined;
+  const clearHint = scheduleStuckHint(onStatus);
   try {
-    hintTimer = setTimeout(() => {
-      onStatus?.(
-        "Taking longer than expected — if a Puter sign-in window is open, complete it, or close it and try again."
-      );
-    }, ANALYSIS_TIMEOUT_HINT_MS);
-
-    // Try the preferred model first, then fall back to alternatives when
-    // Puter reports the model as unavailable/not found (some gateways require
-    // provider-prefixed ids, or the model may be down). Non-model errors
-    // (auth, quota, network, rate limit, timeout) surface immediately.
-    const attempts = [DEFAULT_MODEL, ...FALLBACK_MODELS];
-    let lastError: unknown = new Error("No AI model could be used.");
-    for (const model of attempts) {
-      try {
-        const response = await withTimeout(
-          // The API rejects a per-message `images` field (400: Unknown
-          // parameter 'input[0].images'), so messages are built without it;
-          // the cast satisfies the SDK's `ChatMessage` type without sending it.
-          puter.ai.chat(messages as ChatMessage[], {
-            model,
-            temperature: AI_TEMPERATURE,
-            max_tokens: AI_MAX_TOKENS,
-          }),
-          ANALYSIS_TIMEOUT_MS,
-          ANALYSIS_TIMEOUT_MESSAGE
+    let text: string;
+    try {
+      text = await chatWithFallback((model) => {
+        const options: ChatOptions = {
+          model,
+          temperature: AI_TEMPERATURE,
+          max_tokens: AI_MAX_TOKENS,
+        };
+        if (input.image) {
+          // Documented image path: puter.ai.chat(prompt, media, options) — media
+          // accepts a File object directly. The per-message `images` field is
+          // rejected by the API, so the media parameter is the supported way.
+          return puter.ai.chat(buildVisionPrompt(input), input.image, options);
+        }
+        // The API rejects a per-message `images` field (400: Unknown parameter
+        // 'input[0].images'), so messages are built without it; the cast
+        // satisfies the SDK's `ChatMessage` type without sending it.
+        return puter.ai.chat(buildChatMessages(input) as ChatMessage[], options);
+      }, onStatus);
+    } catch (error) {
+      // If the photo itself is rejected (e.g. the endpoint does not accept the
+      // image), fall back to the text-only analysis so a photo quirk never
+      // blocks a user who wrote a full symptom description. Auth, quota,
+      // network and model errors are not image-specific and surface as-is.
+      if (input.image && isImageRelatedError(error) && !isModelRelatedError(error)) {
+        console.error("Garage Ghost: image analysis failed, retrying without the photo:", error);
+        onStatus?.("The photo could not be analyzed — retrying with your written description…");
+        text = await chatWithFallback(
+          (model) =>
+            puter.ai.chat(buildChatMessages(input) as ChatMessage[], {
+              model,
+              temperature: AI_TEMPERATURE,
+              max_tokens: AI_MAX_TOKENS,
+            }),
+          onStatus
         );
-        const text = extractResponseText(response);
-        return { result: parseDiagnosticJson(text), source: "puter" };
-      } catch (error) {
-        lastError = error;
-        if (!isModelRelatedError(error)) throw error;
-        console.error(`Garage Ghost: model "${model}" unavailable, trying next:`, error);
-        onStatus?.(`Model ${model} is unavailable — trying a fallback…`);
+      } else {
+        throw error;
       }
     }
-    throw lastError;
+    return { result: parseDiagnosticJson(text), source: "puter" };
   } finally {
-    if (hintTimer !== undefined) clearTimeout(hintTimer);
+    clearHint();
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Follow-up questions
+// ---------------------------------------------------------------------------
+
+export interface FollowUpInput {
+  vehicle: {
+    brand: string;
+    model: string;
+    year: string;
+    fuelType?: string;
+    mileage?: string;
+  };
+  symptoms: string;
+  language: ResponseLanguage;
+  previousSummary: string;
+  question: string;
+}
+
+export function buildFollowUpSystemPrompt(language: ResponseLanguage): string {
+  return `You are "Garage Ghost", a multilingual safety-first automotive triage assistant.
+
+Rules:
+- Answer the user's follow-up question about their vehicle issue in plain text.
+- Be concise, educational, and safety-first — general information only, never a certain diagnosis.
+- Never tell the user to bypass safety systems.
+- If the follow-up suggests a dangerous situation (red warning light, smoke, fuel smell, overheating, loss of braking or steering, electrical burning smell), say clearly that they should stop safely and contact roadside assistance or a qualified workshop.
+- ${LANGUAGE_INSTRUCTIONS[language]}
+- Respond with plain text only. Do not output JSON. No Markdown headings.`;
+}
+
+export function buildFollowUpUserPrompt(input: FollowUpInput): string {
+  const lines = [
+    `Vehicle: ${input.vehicle.brand} ${input.vehicle.model} (${input.vehicle.year})`,
+  ];
+  if (input.vehicle.fuelType) lines.push(`Fuel/power type: ${input.vehicle.fuelType}`);
+  if (input.vehicle.mileage) lines.push(`Mileage: ${input.vehicle.mileage}`);
+  lines.push(`Original symptoms: ${input.symptoms}`);
+  lines.push(`Previous analysis summary: ${input.previousSummary}`);
+  lines.push("");
+  lines.push(`Follow-up question: ${input.question}`);
+  return lines.join("\n");
+}
+
+function buildDemoFollowUp(input: FollowUpInput): string {
+  const language = input.language;
+  const note =
+    language === "German"
+      ? "[Demo-Antwort — keine KI-Analyse]"
+      : language === "French"
+        ? "[Réponse de démonstration — pas une analyse IA]"
+        : language === "Arabic"
+          ? "[رد تجريبي — ليس تحليلًا بالذكاء الاصطناعي]"
+          : "[Demo answer — not an AI analysis]";
+  return `${note}\n\nThe question "${input.question}" would be answered by an AI analysis in this app. For now (demo mode), the advice is: keep the same safety precautions from the report above, and share this follow-up with your mechanic during the inspection.`;
+}
+
+/**
+ * Ask a follow-up question about an existing diagnosis. Returns plain text.
+ * Handles demo mode and the same model fallback + timeout guards as
+ * runDiagnosis.
+ */
+export async function askFollowUp(
+  input: FollowUpInput,
+  onStatus?: (status: string) => void
+): Promise<string> {
+  if (typeof window === "undefined") {
+    throw new Error("Follow-up can only run in the browser.");
+  }
+
+  if (isDemoMode()) {
+    await delay(500);
+    return buildDemoFollowUp(input);
+  }
+
+  onStatus?.("Answering your question…");
+  const { puter } = await import("@heyputer/puter.js");
+  const clearHint = scheduleStuckHint(onStatus);
+  try {
+    return await chatWithFallback(
+      (model) =>
+        puter.ai.chat(
+          [
+            { role: "system", content: buildFollowUpSystemPrompt(input.language) },
+            { role: "user", content: buildFollowUpUserPrompt(input) },
+          ] as ChatMessage[],
+          {
+            model,
+            temperature: AI_TEMPERATURE,
+            max_tokens: 600,
+          }
+        ),
+      onStatus
+    );
+  } finally {
+    clearHint();
   }
 }
 

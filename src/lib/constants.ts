@@ -49,6 +49,9 @@ export const ANALYSIS_TIMEOUT_HINT_MS = 70_000;
 export const HISTORY_STORAGE_KEY = "garage-ghost:history:v1";
 export const MAX_HISTORY_ENTRIES = 50;
 
+export const PROFILES_STORAGE_KEY = "garage-ghost:profiles:v1";
+export const MAX_PROFILES = 10;
+
 export const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 export const MAX_IMAGE_BYTES = 10 * 1024 * 1024; // 10 MB
 

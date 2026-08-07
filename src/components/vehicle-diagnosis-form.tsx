@@ -1,8 +1,19 @@
 "use client";
 
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
-import { Camera, Info, Loader2, ShieldCheck } from "lucide-react";
-import { DiagnosisResult } from "@/components/diagnosis-result";
+import {
+  ArrowRight,
+  BookMarked,
+  Camera,
+  Car,
+  Info,
+  Loader2,
+  ScanLine,
+  Search,
+  ShieldCheck,
+  Trash2,
+} from "lucide-react";
+import { DiagnosisResult, PrintFallback } from "@/components/diagnosis-result";
 import {
   ACCEPTED_IMAGE_TYPES,
   FUEL_TYPES,
@@ -10,12 +21,14 @@ import {
   MAX_IMAGE_BYTES,
   PRIMARY_BUTTON_CLASSES,
   PUTER_DEVELOPER_URL,
+  SECONDARY_BUTTON_CLASSES,
   SYMPTOM_CHIPS,
 } from "@/lib/constants";
 import { describePuterError, runDiagnosis, type DiagnosisOutput } from "@/lib/diagnosis";
-import { saveDiagnosis } from "@/lib/storage";
+import { lookupDtc, type DtcEntry } from "@/lib/dtc";
+import { deleteProfile, getProfiles, saveDiagnosis, saveProfile } from "@/lib/storage";
 import { cn, generateId } from "@/lib/utils";
-import type { ResponseLanguage } from "@/types/diagnostic";
+import type { ResponseLanguage, SavedVehicle, VehicleProfile } from "@/types/diagnostic";
 
 const inputClasses =
   "w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 transition-colors hover:border-zinc-600 focus:border-amber-500 focus:outline-none";
@@ -47,8 +60,27 @@ export function VehicleDiagnosisForm() {
   const [loadingStatus, setLoadingStatus] = useState("");
   const [output, setOutput] = useState<DiagnosisOutput | null>(null);
   const [imageNote, setImageNote] = useState(false);
+  const [lastVehicle, setLastVehicle] = useState<SavedVehicle | null>(null);
+
+  // DTC lookup
+  const [dtcInput, setDtcInput] = useState("");
+  const [dtcResult, setDtcResult] = useState<DtcEntry | null>(null);
+  const [dtcError, setDtcError] = useState<string | null>(null);
+  const [dtcSearched, setDtcSearched] = useState(false);
+  const [dtcNote, setDtcNote] = useState<string | null>(null);
+
+  // Saved vehicle profiles
+  const [profiles, setProfiles] = useState<VehicleProfile[]>([]);
+  const [selectedProfileId, setSelectedProfileId] = useState("");
+  const [profileNote, setProfileNote] = useState<string | null>(null);
 
   const resultRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // Reading the external localStorage store once after mount (client only).
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- external-store read on mount is intentional here
+    setProfiles(getProfiles());
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -60,6 +92,79 @@ export function VehicleDiagnosisForm() {
     setSelectedChips((prev) =>
       prev.includes(chip) ? prev.filter((item) => item !== chip) : [...prev, chip]
     );
+  };
+
+  const handleDtcLookup = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const raw = dtcInput.trim();
+    if (raw.length === 0) {
+      setDtcError("Enter an OBD-II code, e.g. P0300.");
+      setDtcResult(null);
+      setDtcSearched(false);
+      return;
+    }
+    setDtcError(null);
+    setDtcResult(lookupDtc(raw));
+    setDtcSearched(true);
+  };
+
+  const applyDtcToSymptoms = (entry: DtcEntry) => {
+    setSymptoms((prev) => {
+      const text = prev.trim();
+      if (text.length === 0) {
+        return `Diagnostic trouble code ${entry.code} — describe what you notice.`;
+      }
+      return text.toUpperCase().includes(entry.code) ? text : `${text} (DTC ${entry.code})`;
+    });
+    setDtcInput("");
+    setDtcResult(null);
+    setDtcSearched(false);
+    setDtcError(null);
+    setDtcNote(`Added ${entry.code} to your symptom description below.`);
+  };
+
+  const canSaveProfile =
+    brand.trim().length > 0 && model.trim().length > 0 && /^\d{4}$/.test(year.trim());
+
+  const handleSaveProfile = () => {
+    if (!canSaveProfile) return;
+    const profile: VehicleProfile = {
+      id: generateId(),
+      label: [brand.trim(), model.trim(), year.trim()].join(" "),
+      vehicle: {
+        brand: brand.trim(),
+        model: model.trim(),
+        year: year.trim(),
+        fuelType: fuelType.trim() || undefined,
+        mileage: mileage.trim() || undefined,
+      },
+      createdAt: Date.now(),
+    };
+    saveProfile(profile);
+    setProfiles(getProfiles());
+    setSelectedProfileId(profile.id);
+    setProfileNote(`Saved \u201c${profile.label}\u201d for quick reuse.`);
+  };
+
+  const handleProfileSelect = (id: string) => {
+    setSelectedProfileId(id);
+    const profile = profiles.find((item) => item.id === id);
+    if (!profile) return;
+    setBrand(profile.vehicle.brand);
+    setModel(profile.vehicle.model);
+    setYear(profile.vehicle.year);
+    setFuelType(profile.vehicle.fuelType ?? "");
+    setMileage(profile.vehicle.mileage ?? "");
+    setProfileNote(`Loaded \u201c${profile.label}\u201d.`);
+  };
+
+  const handleDeleteProfile = () => {
+    if (!selectedProfileId) return;
+    const profile = profiles.find((item) => item.id === selectedProfileId);
+    deleteProfile(selectedProfileId);
+    setProfiles(getProfiles());
+    setSelectedProfileId("");
+    setProfileNote(`Removed saved vehicle${profile ? ` \u201c${profile.label}\u201d` : ""}.`);
   };
 
   const clearImage = () => {
@@ -134,10 +239,12 @@ export function VehicleDiagnosisForm() {
           symptoms: symptoms.trim(),
           symptomChips: selectedChips,
           language,
+          image: image ?? undefined,
         },
         setLoadingStatus
       );
       setOutput(diagnosis);
+      setLastVehicle(vehicle);
       saveDiagnosis({
         id: generateId(),
         createdAt: Date.now(),
@@ -162,6 +269,178 @@ export function VehicleDiagnosisForm() {
 
   return (
     <div className="space-y-8">
+      {/* OBD-II code lookup — instant, no AI needed */}
+      <section
+        aria-labelledby="dtc-heading"
+        className="rounded-lg border border-zinc-800 bg-zinc-900 p-4"
+      >
+        <h2
+          id="dtc-heading"
+          className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-zinc-200"
+        >
+          <ScanLine className="h-4 w-4 text-amber-400" aria-hidden />
+          OBD-II code lookup
+        </h2>
+        <p className="mt-1 text-xs leading-relaxed text-zinc-500">
+          Have a code from an OBD-II scanner (e.g. <code className="text-zinc-400">P0300</code>)?
+          Get an instant plain-English explanation — free and no AI call needed.
+        </p>
+        <form onSubmit={handleDtcLookup} className="mt-3 flex flex-col gap-2 sm:flex-row">
+          <label htmlFor="dtc-code" className="sr-only">
+            OBD-II code
+          </label>
+          <input
+            id="dtc-code"
+            name="dtc-code"
+            type="text"
+            autoComplete="off"
+            spellCheck={false}
+            value={dtcInput}
+            onChange={(event) => setDtcInput(event.target.value)}
+            placeholder="e.g. P0300"
+            className={cn(inputClasses, "uppercase sm:max-w-44")}
+          />
+          <button type="submit" className={cn(SECONDARY_BUTTON_CLASSES, "shrink-0")}>
+            <Search className="h-4 w-4" aria-hidden />
+            Look up
+          </button>
+        </form>
+        {dtcError && (
+          <p role="alert" className="mt-2 text-xs text-red-400">
+            {dtcError}
+          </p>
+        )}
+        {dtcResult && (
+          <div
+            role="status"
+            className="mt-3 rounded-md border border-zinc-700 bg-zinc-950/60 p-3"
+          >
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded bg-amber-500/15 px-2 py-0.5 font-mono text-xs font-bold text-amber-300">
+                {dtcResult.code}
+              </span>
+              <span className="text-xs font-medium text-zinc-400">{dtcResult.system}</span>
+              <span
+                className={cn(
+                  "ml-auto rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+                  dtcResult.urgency === "high"
+                    ? "bg-red-500/15 text-red-300"
+                    : dtcResult.urgency === "medium"
+                      ? "bg-amber-500/15 text-amber-300"
+                      : "bg-sky-500/15 text-sky-300"
+                )}
+              >
+                {dtcResult.urgency === "high"
+                  ? "Act promptly"
+                  : dtcResult.urgency === "medium"
+                    ? "Book service"
+                    : "Low urgency"}
+              </span>
+            </div>
+            <p className="mt-2 text-sm font-medium text-zinc-200">{dtcResult.description}</p>
+            <ul className="mt-2 space-y-1">
+              {dtcResult.possibleCauses.map((cause, index) => (
+                <li key={index} className="flex items-start gap-2 text-xs text-zinc-400">
+                  <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-zinc-500" aria-hidden />
+                  <span>{cause}</span>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-2 text-xs leading-relaxed text-zinc-400">{dtcResult.advice}</p>
+            <button
+              type="button"
+              onClick={() => applyDtcToSymptoms(dtcResult)}
+              className="mt-3 inline-flex items-center gap-1.5 rounded-md border border-zinc-700 px-3 py-1.5 text-xs font-medium text-zinc-200 transition-colors hover:border-amber-500/60 hover:text-amber-300"
+            >
+              Use this code in the analysis
+              <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+            </button>
+          </div>
+        )}
+        {dtcSearched && !dtcResult && !dtcError && (
+          <p role="status" className="mt-2 text-xs text-zinc-500">
+            No entry for that code in our reference yet. You can still describe the symptoms below
+            and analyze them with AI.
+          </p>
+        )}
+        {dtcNote && (
+          <p role="status" aria-live="polite" className="mt-2 text-xs text-amber-300">
+            {dtcNote}
+          </p>
+        )}
+        <p className="mt-2 text-xs text-zinc-600">
+          A stored code points at the system a fault was recorded in — it is not a diagnosis.
+          Always confirm with a qualified workshop scan when in doubt.
+        </p>
+      </section>
+
+      {/* Saved vehicles */}
+      <section
+        aria-labelledby="profiles-heading"
+        className="rounded-lg border border-zinc-800 bg-zinc-900 p-4"
+      >
+        <h2
+          id="profiles-heading"
+          className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-zinc-200"
+        >
+          <Car className="h-4 w-4 text-amber-400" aria-hidden />
+          Saved vehicles
+        </h2>
+        <p className="mt-1 text-xs text-zinc-500">
+          Save a vehicle once, then load it with one click for the next diagnosis. Stored only in
+          this browser.
+        </p>
+        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+          <label htmlFor="profile-select" className="sr-only">
+            Saved vehicles
+          </label>
+          <select
+            id="profile-select"
+            value={selectedProfileId}
+            onChange={(event) => handleProfileSelect(event.target.value)}
+            className={cn(inputClasses, "appearance-none sm:max-w-xs")}
+          >
+            <option value="">Select a saved vehicle…</option>
+            {profiles.map((profile) => (
+              <option key={profile.id} value={profile.id}>
+                {profile.label}
+              </option>
+            ))}
+          </select>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={handleSaveProfile}
+              disabled={!canSaveProfile}
+              className={cn(
+                SECONDARY_BUTTON_CLASSES,
+                "shrink-0",
+                !canSaveProfile && "cursor-not-allowed opacity-50"
+              )}
+              title="Fill in brand, model and year above, then save"
+            >
+              <BookMarked className="h-4 w-4" aria-hidden />
+              Save current vehicle
+            </button>
+            {selectedProfileId && (
+              <button
+                type="button"
+                onClick={handleDeleteProfile}
+                className="inline-flex shrink-0 items-center gap-2 rounded-md border border-zinc-700 px-4 py-2.5 text-sm font-semibold text-zinc-300 transition-colors hover:border-red-500/60 hover:text-red-300"
+              >
+                <Trash2 className="h-4 w-4" aria-hidden />
+                Delete saved
+              </button>
+            )}
+          </div>
+        </div>
+        {profileNote && (
+          <p aria-live="polite" className="mt-2 text-xs text-amber-300">
+            {profileNote}
+          </p>
+        )}
+      </section>
+
       <form onSubmit={handleSubmit} noValidate className="space-y-8">
         <div className="grid gap-8 lg:grid-cols-2">
           {/* Vehicle details */}
@@ -362,8 +641,8 @@ export function VehicleDiagnosisForm() {
                 </p>
               ) : (
                 <p className="mt-1.5 text-xs text-zinc-500">
-                  Images are optional and do not guarantee correct identification. In this build,
-                  analysis uses your written description — the photo is not sent for analysis.
+                  Images are optional and do not guarantee correct identification. When attached,
+                  your photo is sent together with your written description to help the analysis.
                 </p>
               )}
             </div>
@@ -432,15 +711,20 @@ export function VehicleDiagnosisForm() {
         </p>
       </div>
 
-      {output && (
+      {output ? (
         <div ref={resultRef} className="scroll-mt-24">
           <DiagnosisResult
             result={output.result}
             source={output.source}
             vehicleLabel={vehicleLabel}
             imageNote={imageNote}
+            vehicle={lastVehicle ?? undefined}
+            symptoms={symptoms.trim()}
+            language={language}
           />
         </div>
+      ) : (
+        <PrintFallback />
       )}
     </div>
   );

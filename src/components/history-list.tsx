@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, History as HistoryIcon, ShieldCheck, Trash2 } from "lucide-react";
-import { DiagnosisResult } from "@/components/diagnosis-result";
+import { DiagnosisResult, PrintFallback } from "@/components/diagnosis-result";
 import { RISK_META, safeRiskLevel } from "@/lib/constants";
 import { clearHistory, deleteDiagnosis, getHistory } from "@/lib/storage";
 import { cn, formatDate } from "@/lib/utils";
@@ -54,6 +54,7 @@ export function HistoryList() {
 
   return (
     <div className="space-y-5">
+      {!openId && <PrintFallback />}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-zinc-400">
           {items.length === 0

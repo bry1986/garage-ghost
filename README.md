@@ -11,12 +11,22 @@ as general education, not a professional diagnosis.
 
 - `/` — Landing page with emergency warning and explanation of what the app is / isn't.
 - `/diagnose` — Diagnosis workflow: vehicle fields, symptom quick chips, optional photo
-  upload (preview + validation), and an "Analyze safely" flow that calls Puter.
+  upload (now sent for real image analysis), an "Analyze safely" flow that calls Puter,
+  plus two zero-AI helpers:
+  - **OBD-II code lookup** — paste a scanner code like `P0300` for an instant
+    plain-English explanation from a built-in reference (no AI call, works offline).
+  - **Saved vehicles** — save a vehicle once, reload it with one click (localStorage).
 - `/history` — Reports saved to browser localStorage, with per-item delete, clear-all, and a
   privacy note.
 
+After a diagnosis you can **ask follow-up questions** (plain-text AI answers in the selected
+language) and **export a printable mechanic report** via *Print / Save as PDF* (print
+styles included; works with Arabic and other scripts).
+
 AI analysis runs entirely in the browser via `puter.ai.chat()` (default model
-`gpt-5.6-luna`, `temperature: 0.2`, `max_tokens: 1200`). No API key, `.env`, database, or
+`gpt-5.6-luna`, `temperature: 0.2`, `max_tokens: 2000`), with automatic fallback models when
+Puter reports the default unavailable. Photos are sent through Puter's documented `media`
+parameter (`puter.ai.chat(prompt, imageFile, options)`). No API key, `.env`, database, or
 custom backend is required.
 
 ## Prerequisites
@@ -88,8 +98,9 @@ model's answer), with safe checks and a mechanic-ready report.
   `prefers-reduced-motion` users).
 - If a Puter sign-in window is closed without signing in, the request would otherwise hang:
   a 90s guard shows a hint, then cancels with a clear message and re-enables the button.
-- Image upload supports JPG/PNG/WebP up to 10 MB. In this build, analysis is **text-based**;
-  an attached photo is previewed but not sent, and a non-breaking notice explains this.
+- Image upload supports JPG/PNG/WebP up to 10 MB. Attached photos are sent with the written
+  description using Puter's documented image path; visual identification is still not
+  guaranteed and is treated as a hint, not a certain diagnosis.
 - Diagnosis requires the browser to reach Puter's servers; offline use is not supported.
 
 ## Install as an app (PWA)

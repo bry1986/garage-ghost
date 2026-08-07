@@ -52,3 +52,10 @@ export interface SavedDiagnosis {
   symptoms: string;
   result: DiagnosticResult;
 }
+
+export interface VehicleProfile {
+  id: string;
+  label: string;
+  vehicle: SavedVehicle;
+  createdAt: number;
+}

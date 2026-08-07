@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import {
   AlertTriangle,
   CalendarClock,
@@ -8,18 +8,24 @@ import {
   Clipboard,
   HelpCircle,
   Info,
+  MessageCircle,
   OctagonAlert,
+  Printer,
+  Send,
   ShieldAlert,
   Wrench,
   XCircle,
 } from "lucide-react";
-import { CONFIDENCE_LABEL, DISCLAIMER, RISK_META, safeRiskLevel } from "@/lib/constants";
+import { CONFIDENCE_LABEL, DISCLAIMER, PRIMARY_BUTTON_CLASSES, RISK_META, safeRiskLevel } from "@/lib/constants";
+import { askFollowUp, describePuterError } from "@/lib/diagnosis";
 import { cn } from "@/lib/utils";
 import type {
   Confidence,
   DiagnosticResult,
   DiagnosisSource,
+  ResponseLanguage,
   RiskLevel,
+  SavedVehicle,
 } from "@/types/diagnostic";
 
 interface DiagnosisResultProps {
@@ -27,6 +33,15 @@ interface DiagnosisResultProps {
   source: DiagnosisSource;
   vehicleLabel: string;
   imageNote: boolean;
+  /** When provided, enables the follow-up question box. */
+  vehicle?: SavedVehicle;
+  symptoms?: string;
+  language?: ResponseLanguage;
+}
+
+interface FollowUpItem {
+  question: string;
+  answer: string;
 }
 
 const RISK_ICONS: Record<RiskLevel, typeof OctagonAlert> = {
@@ -71,10 +86,42 @@ function buildReportText(result: DiagnosticResult, vehicleLabel: string): string
   return lines.join("\n");
 }
 
-export function DiagnosisResult({ result, source, vehicleLabel, imageNote }: DiagnosisResultProps) {
+/**
+ * Print-only fallback: shown in the print/PDF output only when there is no
+ * report in the DOM (prevents a blank page when the visitor prints the
+ * diagnose or history page before running a diagnosis). Hidden on screen.
+ */
+export function PrintFallback() {
+  return (
+    <div className="print-report" aria-hidden>
+      <h1>Garage Ghost</h1>
+      <p className="print-muted">
+        No report to print yet. Run a diagnosis on the Diagnose page first, then print or save
+        this page as a PDF.
+      </p>
+      <p className="print-muted">{DISCLAIMER}</p>
+    </div>
+  );
+}
+
+export function DiagnosisResult({
+  result,
+  source,
+  vehicleLabel,
+  imageNote,
+  vehicle,
+  symptoms,
+  language = "English",
+}: DiagnosisResultProps) {
   const [copied, setCopied] = useState(false);
   const [copyError, setCopyError] = useState<string | null>(null);
   const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const [followUps, setFollowUps] = useState<FollowUpItem[]>([]);
+  const [followUpInput, setFollowUpInput] = useState("");
+  const [followUpLoading, setFollowUpLoading] = useState(false);
+  const [followUpStatus, setFollowUpStatus] = useState("");
+  const [followUpError, setFollowUpError] = useState<string | null>(null);
 
   useEffect(() => {
     return () => {
@@ -96,8 +143,37 @@ export function DiagnosisResult({ result, source, vehicleLabel, imageNote }: Dia
     }
   };
 
+  const handleFollowUp = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const question = followUpInput.trim();
+    if (question.length === 0 || followUpLoading || !vehicle) return;
+    setFollowUpLoading(true);
+    setFollowUpError(null);
+    setFollowUpStatus("Answering your question…");
+    try {
+      const answer = await askFollowUp(
+        {
+          vehicle,
+          symptoms: symptoms ?? "",
+          language,
+          previousSummary: result.summary,
+          question,
+        },
+        setFollowUpStatus
+      );
+      setFollowUps((prev) => [...prev, { question, answer }]);
+      setFollowUpInput("");
+    } catch (cause) {
+      console.error("Garage Ghost follow-up failed:", cause);
+      setFollowUpError(describePuterError(cause));
+    } finally {
+      setFollowUpLoading(false);
+    }
+  };
+
   const riskLevel = safeRiskLevel(result.riskLevel);
   const RiskIcon = RISK_ICONS[riskLevel];
+  const followUpEnabled = Boolean(vehicle);
 
   return (
     <>
@@ -127,8 +203,8 @@ export function DiagnosisResult({ result, source, vehicleLabel, imageNote }: Dia
           <div className="flex items-start gap-2 rounded-md border border-zinc-700 bg-zinc-800/50 p-3 text-sm text-zinc-300">
             <Info className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" aria-hidden />
             <p>
-              A photo was attached, but image analysis is not enabled in this build. Your written
-              description was used for this analysis; the photo was not sent.
+              A photo was attached and was included alongside your written description. Visual
+              identification is not guaranteed — treat it as a hint, not a certain diagnosis.
             </p>
           </div>
         )}
@@ -141,7 +217,7 @@ export function DiagnosisResult({ result, source, vehicleLabel, imageNote }: Dia
             )}
           >
             <RiskIcon className="h-3.5 w-3.5" aria-hidden />
-            {RISK_META[result.riskLevel].label}
+            {RISK_META[riskLevel].label}
           </span>
           <p className="text-xs text-zinc-400">
             {result.detectedWarning} · {CONFIDENCE_LABEL[result.confidence]}
@@ -253,14 +329,161 @@ export function DiagnosisResult({ result, source, vehicleLabel, imageNote }: Dia
               )}
               {copied ? "Copied" : "Copy report"}
             </button>
+            <button
+              type="button"
+              onClick={() => window.print()}
+              className="inline-flex items-center gap-2 rounded-md border border-zinc-700 px-3 py-1.5 text-xs font-medium text-zinc-200 transition-colors hover:border-amber-500/60 hover:text-amber-300"
+            >
+              <Printer className="h-3.5 w-3.5" aria-hidden />
+              Print / Save as PDF
+            </button>
             {copyError && (
               <p role="alert" className="text-xs text-red-400">
                 {copyError}
               </p>
             )}
           </div>
+          <p className="mt-2 text-xs text-zinc-500">
+            Tip: choose &quot;Save as PDF&quot; in the print dialog to keep a copy of this report.
+          </p>
         </div>
+
+        {followUpEnabled && (
+          <div className="border-t border-zinc-800 pt-5">
+            <h3 className="flex items-center gap-2 text-sm font-semibold text-zinc-200">
+              <MessageCircle className="h-4 w-4 text-amber-400" aria-hidden />
+              Ask a follow-up question
+            </h3>
+            <p className="mt-1 text-xs text-zinc-500">
+              Not sure about a detail? Ask a follow-up about this vehicle and symptom — the answer
+              uses your Puter account like the main analysis.
+            </p>
+            <div className="mt-3 space-y-3">
+              {followUps.map((item, index) => (
+                <div
+                  key={index}
+                  className="rounded-md border border-zinc-800 bg-zinc-950/60 p-3"
+                >
+                  <p className="text-sm font-medium text-zinc-200">Q: {item.question}</p>
+                  <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-zinc-300">
+                    {item.answer}
+                  </p>
+                </div>
+              ))}
+              <form onSubmit={handleFollowUp} className="flex flex-col gap-2 sm:flex-row">
+                <label htmlFor="follow-up-question" className="sr-only">
+                  Follow-up question
+                </label>
+                <input
+                  id="follow-up-question"
+                  type="text"
+                  value={followUpInput}
+                  onChange={(event) => setFollowUpInput(event.target.value)}
+                  disabled={followUpLoading}
+                  placeholder="e.g. It vibrates more when cold — does that change anything?"
+                  className="w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 transition-colors focus:border-amber-500 focus:outline-none"
+                />
+                <button
+                  type="submit"
+                  disabled={followUpLoading || followUpInput.trim().length === 0}
+                  className={cn(
+                    PRIMARY_BUTTON_CLASSES,
+                    "shrink-0",
+                    (followUpLoading || followUpInput.trim().length === 0) &&
+                      "cursor-not-allowed opacity-60"
+                  )}
+                >
+                  {followUpLoading ? (
+                    <span className="text-xs">Answering…</span>
+                  ) : (
+                    <>
+                      <Send className="h-3.5 w-3.5" aria-hidden />
+                      Ask
+                    </>
+                  )}
+                </button>
+              </form>
+              <p aria-live="polite" role="status" className="min-h-4 text-xs text-amber-300">
+                {followUpLoading ? followUpStatus : ""}
+              </p>
+              {followUpError && (
+                <p role="alert" className="text-xs text-red-400">
+                  {followUpError}
+                </p>
+              )}
+            </div>
+          </div>
+        )}
       </section>
+
+      {/* Print-only report (rendered only when printing / saving as PDF) */}
+      <div className="print-report" aria-hidden>
+        <h1>Garage Ghost — Mechanic-ready report</h1>
+        <p className="print-muted">
+          Vehicle: {vehicleLabel} · Generated {new Date().toLocaleString()} ·{" "}
+          {source === "demo" ? "Demo result (not an AI analysis)" : "AI analysis via Puter"}
+        </p>
+
+        <h2>Detected warning</h2>
+        <p>
+          {result.detectedWarning} — Risk level: <strong>{result.riskLevel}</strong> (Confidence:{" "}
+          {result.confidence})
+        </p>
+
+        <h2>Summary</h2>
+        <p>{result.summary}</p>
+
+        {result.possibleCauses.length > 0 && (
+          <>
+            <h2>Possible causes</h2>
+            <ul>
+              {result.possibleCauses.map((item, index) => (
+                <li key={index}>
+                  {item.cause} ({item.likelihood})
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+
+        {result.safeChecks.length > 0 && (
+          <>
+            <h2>Safe checks</h2>
+            <ul>
+              {result.safeChecks.map((item, index) => (
+                <li key={index}>{item}</li>
+              ))}
+            </ul>
+          </>
+        )}
+
+        {result.doNotDo.length > 0 && (
+          <>
+            <h2>Do not do</h2>
+            <ul>
+              {result.doNotDo.map((item, index) => (
+                <li key={index}>{item}</li>
+              ))}
+            </ul>
+          </>
+        )}
+
+        {result.questions.length > 0 && (
+          <>
+            <h2>Questions for the mechanic</h2>
+            <ul>
+              {result.questions.map((item, index) => (
+                <li key={index}>{item}</li>
+              ))}
+            </ul>
+          </>
+        )}
+
+        <h2>Mechanic report</h2>
+        <pre>{result.mechanicReport}</pre>
+
+        <p className="print-muted">{DISCLAIMER}</p>
+      </div>
 
       {/* Fixed emergency disclaimer — always visible with a result */}
       <div

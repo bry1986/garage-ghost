@@ -25,21 +25,30 @@ process.env.NEXT_PUBLIC_DEMO_MODE = "true";
 
 import {
   DiagnosisTimeoutError,
+  askFollowUp,
   buildChatMessages,
+  buildFollowUpSystemPrompt,
+  buildFollowUpUserPrompt,
   buildSystemPrompt,
   buildUserPrompt,
+  buildVisionPrompt,
   describePuterError,
+  isImageRelatedError,
   isModelRelatedError,
   parseDiagnosticJson,
   runDiagnosis,
   toReadableError,
   withTimeout,
 } from "../src/lib/diagnosis";
+import { listDtcCodes, lookupDtc, normalizeDtcCode } from "../src/lib/dtc";
 import {
   clearHistory,
   deleteDiagnosis,
+  deleteProfile,
   getHistory,
+  getProfiles,
   saveDiagnosis,
+  saveProfile,
 } from "../src/lib/storage";
 
 const DEMO_INPUT = {
@@ -285,6 +294,80 @@ async function main() {
     /missing required fields/
   );
   console.log("ok: wrong-shape JSON reports the precise error, not a parse error");
+
+  // 23. DTC lookup: exact match, normalization, unknown/empty handling
+  const misfire = lookupDtc("P0300");
+  assert.ok(misfire, "P0300 must exist");
+  assert.strictEqual(misfire.code, "P0300");
+  assert.ok(misfire.description.length > 0);
+  assert.ok(misfire.possibleCauses.length > 0);
+  assert.strictEqual(lookupDtc("p 0 300")?.code, "P0300", "case/space/dash-insensitive");
+  assert.strictEqual(lookupDtc("P0-300")?.code, "P0300");
+  assert.strictEqual(lookupDtc("ZZZ999"), null, "unknown code returns null");
+  assert.strictEqual(lookupDtc("   "), null, "empty input returns null");
+  assert.strictEqual(normalizeDtcCode("p0 300"), "P0300");
+  assert.ok(listDtcCodes().length >= 40, "the reference should cover common codes");
+  assert.strictEqual(new Set(listDtcCodes()).size, listDtcCodes().length, "codes must be unique");
+  console.log("ok: DTC lookup matches, normalizes, and handles unknown codes");
+
+  // 24. Vision prompt (image path) embeds the safety system prompt + vehicle data
+  const vision = buildVisionPrompt(DEMO_INPUT);
+  assert.ok(vision.includes("Garage Ghost"));
+  assert.ok(vision.includes("Return JSON only"));
+  assert.ok(vision.includes("Audi A3 (2017)"));
+  assert.ok(vision.includes("loss of power above 2500 RPM"));
+  console.log("ok: vision prompt embeds system rules and vehicle context");
+
+  // 25. Vehicle profile storage round-trip + malformed-data safety
+  getProfiles()
+    .map((p) => p.id)
+    .forEach((id) => deleteProfile(id));
+  assert.strictEqual(getProfiles().length, 0);
+  saveProfile({
+    id: "profile-1",
+    label: "Audi A3 2017",
+    vehicle: { brand: "Audi", model: "A3", year: "2017", fuelType: "Diesel" },
+    createdAt: Date.now(),
+  });
+  assert.strictEqual(getProfiles().length, 1);
+  assert.strictEqual(getProfiles()[0].vehicle.brand, "Audi");
+  store.set(
+    "garage-ghost:profiles:v1",
+    JSON.stringify([{ id: "bad", label: "x", vehicle: { brand: "Audi" } }])
+  );
+  assert.strictEqual(getProfiles().length, 0, "profiles missing model/year are filtered");
+  store.set("garage-ghost:profiles:v1", "{broken json");
+  assert.strictEqual(getProfiles().length, 0, "malformed profile storage handled safely");
+  deleteProfile("profile-1");
+  console.log("ok: vehicle profiles save, validate, and delete safely");
+
+  // 26. Follow-up prompts carry context and the question
+  const followUpInput = {
+    vehicle: { brand: "Audi", model: "A3", year: "2017", fuelType: "Diesel" },
+    symptoms: "Orange engine light and loss of power above 2500 RPM",
+    language: "English" as const,
+    previousSummary: "Possible engine management concern.",
+    question: "It vibrates more when cold — does that change anything?",
+  };
+  assert.ok(buildFollowUpSystemPrompt("English").includes("plain text"));
+  assert.ok(buildFollowUpSystemPrompt("English").includes("Do not output JSON"));
+  const followUpUser = buildFollowUpUserPrompt(followUpInput);
+  assert.ok(followUpUser.includes("Audi A3 (2017)"));
+  assert.ok(followUpUser.includes("It vibrates more when cold"));
+  assert.ok(followUpUser.includes("Possible engine management concern"));
+  const followUpAnswer = await askFollowUp(followUpInput);
+  assert.ok(followUpAnswer.includes("[Demo"), "demo follow-up is clearly labeled");
+  assert.ok(followUpAnswer.includes("It vibrates more when cold"));
+  console.log("ok: follow-up prompts and demo-mode answer work");
+
+  // 27. Image-specific errors are recognized so the app can retry text-only
+  assert.ok(isImageRelatedError("400 Unknown parameter: 'input[0].images'"));
+  assert.ok(isImageRelatedError({ message: "The image format is not supported" }));
+  assert.ok(isImageRelatedError("vision model requires an image URL"));
+  assert.ok(!isImageRelatedError("Insufficient quota"));
+  assert.ok(!isImageRelatedError("Network error"));
+  assert.ok(!isImageRelatedError("Model not found"));
+  console.log("ok: image-related errors are detected for the text-only retry");
 
   console.log("\nAll smoke tests passed ✅");
 }

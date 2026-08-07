@@ -53,3 +53,76 @@ body {
     animation: none;
   }
 }
+
+/* Print-only mechanic report: hidden on screen, shown when printing/PDF */
+.print-report {
+  display: none;
+}
+
+@media print {
+  @page {
+    margin: 1.4cm;
+  }
+
+  body {
+    background: #fff !important;
+  }
+
+  /* Hide the app UI; only the print-report block is visible on paper */
+  body * {
+    visibility: hidden;
+  }
+
+  .print-report,
+  .print-report * {
+    visibility: visible;
+  }
+
+  .print-report {
+    display: block !important;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    background: #fff !important;
+    color: #111 !important;
+    font-size: 11pt;
+    line-height: 1.45;
+  }
+
+  .print-report * {
+    background: transparent !important;
+    color: #111 !important;
+  }
+
+  .print-report h1 {
+    font-size: 17pt;
+    margin: 0 0 2pt;
+  }
+
+  .print-report h2 {
+    font-size: 12pt;
+    margin: 12pt 0 3pt;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 2pt;
+  }
+
+  .print-report p {
+    margin: 4pt 0;
+  }
+
+  .print-report ul {
+    margin: 4pt 0 4pt 16pt;
+    padding: 0;
+  }
+
+  .print-report pre {
+    white-space: pre-wrap;
+    font-family: inherit;
+    margin: 4pt 0;
+  }
+
+  .print-report .print-muted {
+    color: #444 !important;
+  }
+}
