@@ -30,6 +30,14 @@ export const DEFAULT_MODEL = "gpt-5.6-luna";
 export const AI_TEMPERATURE = 0.2;
 export const AI_MAX_TOKENS = 1200;
 
+/**
+ * Max time to wait for a Puter analysis before treating the request as stuck
+ * (e.g. the Puter sign-in popup was closed without completing).
+ */
+export const ANALYSIS_TIMEOUT_MS = 90_000;
+/** Show a hint status this long before the timeout fires. */
+export const ANALYSIS_TIMEOUT_HINT_MS = 70_000;
+
 export const HISTORY_STORAGE_KEY = "garage-ghost:history:v1";
 export const MAX_HISTORY_ENTRIES = 50;
 

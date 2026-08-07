@@ -84,6 +84,8 @@ model's answer), with safe checks and a mechanic-ready report.
 ## Notes
 
 - Reports are stored in **browser localStorage only** for this MVP.
+- If a Puter sign-in window is closed without signing in, the request would otherwise hang:
+  a 90s guard shows a hint, then cancels with a clear message and re-enables the button.
 - Image upload supports JPG/PNG/WebP up to 10 MB. In this build, analysis is **text-based**;
   an attached photo is previewed but not sent, and a non-breaking notice explains this.
 - Diagnosis requires the browser to reach Puter's servers; offline use is not supported.

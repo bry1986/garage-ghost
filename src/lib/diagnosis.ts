@@ -2,6 +2,8 @@ import type { ChatMessage, ChatResponse } from "@heyputer/puter.js";
 import {
   AI_MAX_TOKENS,
   AI_TEMPERATURE,
+  ANALYSIS_TIMEOUT_HINT_MS,
+  ANALYSIS_TIMEOUT_MS,
   CONFIDENCE_LEVELS,
   DEFAULT_MODEL,
   RISK_LEVELS,
@@ -195,9 +197,43 @@ function extractResponseText(response: ChatResponse): string {
   throw new Error("Unexpected response format from the AI service.");
 }
 
+export class DiagnosisTimeoutError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "DiagnosisTimeoutError";
+  }
+}
+
+export const ANALYSIS_TIMEOUT_MESSAGE =
+  "The AI request took too long and was cancelled. It may still be waiting for a Puter sign-in that never completed, or the service may be slow. Close any leftover window and click \u201cAnalyze safely\u201d to try again.";
+
+/**
+ * Rejects with a `DiagnosisTimeoutError` if `promise` does not settle within
+ * `ms`. Used to surface a clear error when the Puter call never settles (e.g.
+ * the sign-in popup was closed without completing) instead of hanging forever.
+ */
+export async function withTimeout<T>(
+  promise: Promise<T>,
+  ms: number,
+  message: string
+): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new DiagnosisTimeoutError(message)), ms);
+  });
+  try {
+    return await Promise.race([promise, timeout]);
+  } finally {
+    if (timer !== undefined) clearTimeout(timer);
+  }
+}
+
 export function describePuterError(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error);
   const lower = message.toLowerCase();
+  if (error instanceof DiagnosisTimeoutError || /timed out|took too long/i.test(lower)) {
+    return ANALYSIS_TIMEOUT_MESSAGE;
+  }
   if (/sign\s?in|auth/i.test(lower)) {
     return "Puter sign-in was cancelled or is required. Please try again and complete the Puter sign-in dialog.";
   }
@@ -245,14 +281,32 @@ export async function runDiagnosis(
     { role: "user", content: buildUserPrompt(input), images: [] },
   ];
 
-  const response = await puter.ai.chat(messages, {
-    model: DEFAULT_MODEL,
-    temperature: AI_TEMPERATURE,
-    max_tokens: AI_MAX_TOKENS,
-  });
+  // Guard against a Puter call that never settles (e.g. the sign-in popup is
+  // closed without completing). Warn first, then fail with a clear message so
+  // the button re-enables and the visitor can retry.
+  let hintTimer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    hintTimer = setTimeout(() => {
+      onStatus?.(
+        "Taking longer than expected — if a Puter sign-in window is open, complete it, or close it and try again."
+      );
+    }, ANALYSIS_TIMEOUT_HINT_MS);
 
-  const text = extractResponseText(response);
-  return { result: parseDiagnosticJson(text), source: "puter" };
+    const response = await withTimeout(
+      puter.ai.chat(messages, {
+        model: DEFAULT_MODEL,
+        temperature: AI_TEMPERATURE,
+        max_tokens: AI_MAX_TOKENS,
+      }),
+      ANALYSIS_TIMEOUT_MS,
+      ANALYSIS_TIMEOUT_MESSAGE
+    );
+
+    const text = extractResponseText(response);
+    return { result: parseDiagnosticJson(text), source: "puter" };
+  } finally {
+    if (hintTimer !== undefined) clearTimeout(hintTimer);
+  }
 }
 
 // ---------------------------------------------------------------------------

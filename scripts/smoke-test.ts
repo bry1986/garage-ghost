@@ -24,10 +24,13 @@ const store = new Map<string, string>();
 process.env.NEXT_PUBLIC_DEMO_MODE = "true";
 
 import {
+  DiagnosisTimeoutError,
   buildSystemPrompt,
   buildUserPrompt,
+  describePuterError,
   parseDiagnosticJson,
   runDiagnosis,
+  withTimeout,
 } from "../src/lib/diagnosis";
 import {
   clearHistory,
@@ -146,6 +149,26 @@ async function main() {
   );
   assert.strictEqual(getHistory().length, 0, "entries with invalid riskLevel must be filtered");
   console.log("ok: malformed localStorage data handled safely");
+
+  // 10. Timeout guard: settles when the promise wins
+  const fast = await withTimeout(Promise.resolve("done"), 500, "never");
+  assert.strictEqual(fast, "done");
+  console.log("ok: withTimeout resolves when the promise settles in time");
+
+  // 11. Timeout guard: rejects with a clear error when the deadline passes
+  await assert.rejects(
+    withTimeout(
+      new Promise((resolve) => setTimeout(() => resolve("late"), 500)),
+      30,
+      "took too long"
+    ),
+    DiagnosisTimeoutError
+  );
+  console.log("ok: withTimeout rejects with DiagnosisTimeoutError on deadline");
+
+  // 12. describePuterError explains timeouts clearly
+  assert.ok(describePuterError(new DiagnosisTimeoutError("took too long")).includes("took too long"));
+  console.log("ok: describePuterError explains the timeout in plain language");
 
   console.log("\nAll smoke tests passed ✅");
 }
