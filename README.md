@@ -90,17 +90,31 @@ model's answer), with safe checks and a mechanic-ready report.
 
 ## Deployment (Vercel)
 
-No environment variables or API keys are required. Framework preset: Next.js.
+**Live: https://garage-ghost.vercel.app** — no environment variables or API keys are required.
+Framework preset: Next.js (auto-detected).
 
-### Option A — Vercel CLI (fastest, no GitHub needed)
+### Auto-deploys from GitHub (current setup)
+
+The project lives at https://github.com/bry1986/garage-ghost and is connected to the Vercel
+project `garage-ghost`, so **every push to `main` deploys automatically**:
+
+```bash
+git push origin main   # Vercel builds and deploys production automatically
+```
+
+Connecting was done once with:
+
+```bash
+gh repo create garage-ghost --public --source=. --push --remote=origin  # create repo + push
+vercel git connect https://github.com/bry1986/garage-ghost.git           # enable git deploys
+```
+
+### Alternative — Vercel CLI (no GitHub)
 
 ```bash
 cd garage-ghost
-git add -A
-git commit -m "Garage Ghost MVP"
 vercel login        # opens a browser; sign in once
-vercel              # creates the project, deploys a preview URL
-vercel --prod       # deploy to production
+vercel --prod       # deploy to production from the current folder
 ```
 
 Optional: if you want demo mode on the deployment (not recommended for production):
@@ -108,25 +122,7 @@ Optional: if you want demo mode on the deployment (not recommended for productio
 ```bash
 vercel env add NEXT_PUBLIC_DEMO_MODE
 # paste: true
-vercel --prod
 ```
-
-### Option B — Git push + dashboard import
-
-1. Push this folder's Git repo to GitHub (this directory is its own repo):
-
-   ```bash
-   cd garage-ghost
-   git add -A
-   git commit -m "Garage Ghost MVP"
-   git branch -M main
-   git remote add origin git@github.com:<you>/garage-ghost.git
-   git push -u origin main
-   ```
-
-2. In the Vercel dashboard: **Add New → Project → import the repo**. Because
-   `garage-ghost/` is the repo root, no Root Directory setting is needed.
-3. Framework preset is detected as Next.js automatically. Deploy.
 
 ### After deploying
 
