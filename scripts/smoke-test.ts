@@ -223,6 +223,69 @@ async function main() {
   );
   console.log("ok: model-not-found errors are detected and explained");
 
+  // 19. Non-English responses: French prose around a fenced JSON block
+  const frenchWrapped =
+    "Voici le résultat :\n```json\n" +
+    JSON.stringify({
+      detectedWarning: "Témoin moteur",
+      confidence: "medium",
+      riskLevel: "BOOK_SERVICE",
+      summary: "Résumé en français.",
+      possibleCauses: [{ cause: "Capteur défectueux", likelihood: "high" }],
+      safeChecks: ["Vérifiez le bouchon de carburant"],
+      doNotDo: ["Ne roulez pas avec un témoin rouge"],
+      questions: ["Depuis quand ?"],
+      mechanicReport: "Véhicule: Audi A3\nÉtape suivante: atelier.",
+      disclaimer: "Pas un diagnostic.",
+    }) +
+    "\n```\nJ'espère que cela vous aide !";
+  const frenchParsed = parseDiagnosticJson(frenchWrapped);
+  assert.strictEqual(frenchParsed.summary, "Résumé en français.");
+  console.log("ok: French prose around fenced JSON parses");
+
+  // 20. Arabic text inside JSON values (RTL script)
+  const arabicParsed = parseDiagnosticJson(
+    JSON.stringify({
+      detectedWarning: "مشكلة محتملة",
+      confidence: "low",
+      riskLevel: "DRIVE_CAREFULLY",
+      summary: "قد يحدث بسبب مشكلة في الحساسات",
+      possibleCauses: [],
+      safeChecks: [],
+      doNotDo: [],
+      questions: [],
+      mechanicReport: "المركبة: أودي A3",
+      disclaimer: "ليس تشخيصًا",
+    })
+  );
+  assert.strictEqual(arabicParsed.detectedWarning, "مشكلة محتملة");
+  console.log("ok: Arabic text inside JSON parses");
+
+  // 21. Truncation repair: valid JSON followed by prose with a stray brace
+  const truncated =
+    JSON.stringify({
+      detectedWarning: "Possible concern",
+      confidence: "medium",
+      riskLevel: "STOP_NOW",
+      summary: "Educational summary.",
+      possibleCauses: [],
+      safeChecks: [],
+      doNotDo: [],
+      questions: [],
+      mechanicReport: "Vehicle: Audi A3",
+      disclaimer: "Not a diagnosis.",
+    }) + "\n(avec une parenthèse { qui n'est pas du JSON";
+  const repaired = parseDiagnosticJson(truncated);
+  assert.strictEqual(repaired.riskLevel, "STOP_NOW");
+  console.log("ok: truncated responses with stray braces are repaired");
+
+  // 22. Valid JSON with the wrong shape keeps its precise error
+  assert.throws(
+    () => parseDiagnosticJson('{"riskLevel":"BOOK_SERVICE","summary":"x"}'),
+    /missing required fields/
+  );
+  console.log("ok: wrong-shape JSON reports the precise error, not a parse error");
+
   console.log("\nAll smoke tests passed ✅");
 }
 

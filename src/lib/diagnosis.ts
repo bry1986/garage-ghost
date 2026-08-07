@@ -171,23 +171,73 @@ function normalizeDiagnostic(value: unknown): DiagnosticResult {
   };
 }
 
+/**
+ * Extract JSON-object candidate substrings from a model response, most
+ * likely first. Handles prose before/after the JSON, code fences, and — for
+ * non-English languages where the model is more verbose and output can get
+ * truncated or followed by stray braces — balanced-brace prefixes.
+ */
+export function extractJsonCandidates(raw: string): string[] {
+  const out: string[] = [];
+  const trimmed = raw.trim();
+  if (trimmed.length > 0) out.push(trimmed);
+
+  const withoutFences = trimmed.replace(/```(?:json|xml)?/gi, "").replace(/```/g, "").trim();
+  if (withoutFences.length > 0 && withoutFences !== trimmed) out.push(withoutFences);
+
+  const start = withoutFences.indexOf("{");
+  const end = withoutFences.lastIndexOf("}");
+  if (start !== -1 && end > start) out.push(withoutFences.slice(start, end + 1));
+
+  // Balanced-brace prefixes: every position where the object closes at depth 0.
+  // Recovers valid JSON when trailing prose contains stray braces or the
+  // response was cut off mid-string after a complete object.
+  if (start !== -1) {
+    let depth = 0;
+    let inString = false;
+    let escaped = false;
+    for (let i = start; i < withoutFences.length; i++) {
+      const ch = withoutFences[i];
+      if (inString) {
+        if (escaped) escaped = false;
+        else if (ch === "\\") escaped = true;
+        else if (ch === '"') inString = false;
+        continue;
+      }
+      if (ch === '"') inString = true;
+      else if (ch === "{") depth++;
+      else if (ch === "}") {
+        depth--;
+        if (depth === 0) out.push(withoutFences.slice(start, i + 1));
+      }
+    }
+  }
+  return [...new Set(out)];
+}
+
 export function parseDiagnosticJson(raw: string): DiagnosticResult {
   if (!raw || raw.trim().length === 0) {
     throw new Error("The AI returned an empty response.");
   }
-  const withoutFences = raw.replace(/```json/gi, "").replace(/```/g, "").trim();
-  const start = withoutFences.indexOf("{");
-  const end = withoutFences.lastIndexOf("}");
-  if (start === -1 || end === -1 || end <= start) {
-    throw new Error("No JSON object found in the AI response.");
+  for (const candidate of extractJsonCandidates(raw)) {
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(candidate);
+    } catch {
+      continue; // try the next extraction strategy
+    }
+    // Valid JSON but the wrong shape: surface that precise error, do not
+    // fall through to the next candidate (it would be the same content).
+    return normalizeDiagnostic(parsed);
   }
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(withoutFences.slice(start, end + 1));
-  } catch {
-    throw new Error("The AI response was not valid JSON.");
-  }
-  return normalizeDiagnostic(parsed);
+  // Include a short preview of the raw response so non-JSON model output in
+  // other languages stays diagnosable instead of failing silently.
+  const preview = raw.trim().replace(/\s+/g, " ").slice(0, 180);
+  throw new Error(
+    preview.length > 0
+      ? `The AI response was not valid JSON. The model returned: "${preview}"`
+      : "The AI response was not valid JSON."
+  );
 }
 
 // ---------------------------------------------------------------------------

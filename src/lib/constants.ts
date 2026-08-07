@@ -36,7 +36,7 @@ export const DEFAULT_MODEL = "gpt-5.6-luna";
 export const FALLBACK_MODELS = ["openai/gpt-5.6-luna", "gpt-5.4-nano", "gpt-5.4"] as const;
 
 export const AI_TEMPERATURE = 0.2;
-export const AI_MAX_TOKENS = 1200;
+export const AI_MAX_TOKENS = 2000;
 
 /**
  * Max time to wait for a Puter analysis before treating the request as stuck
