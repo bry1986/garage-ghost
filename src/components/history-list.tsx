@@ -158,6 +158,7 @@ export function HistoryList() {
                       source={item.source}
                       vehicleLabel={vehicleLabel}
                       imageNote={false}
+                      consumeQuota={false}
                     />
                   </div>
                 )}

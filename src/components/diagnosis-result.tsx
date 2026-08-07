@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   CircleDollarSign,
   Clipboard,
+  Crown,
   HelpCircle,
   Info,
   MessageCircle,
@@ -25,6 +26,8 @@ import {
   type RepairCostEstimateResult,
 } from "@/lib/costs";
 import { askFollowUp, describePuterError } from "@/lib/diagnosis";
+import { usePro } from "@/components/pro-provider";
+import { consumeEstimate, FREE_ESTIMATES_PER_DAY, getRemainingEstimateCount } from "@/lib/pro";
 import { cn } from "@/lib/utils";
 import type {
   Confidence,
@@ -44,6 +47,12 @@ interface DiagnosisResultProps {
   vehicle?: SavedVehicle;
   symptoms?: string;
   language?: ResponseLanguage;
+  /**
+   * False when viewing a report that was already generated (e.g. from history):
+   * the report is always shown in full and does not count toward the free
+   * 3-estimates-per-day allowance. Only freshly generated results consume quota.
+   */
+  consumeQuota?: boolean;
 }
 
 interface FollowUpItem {
@@ -66,11 +75,14 @@ const LIKELIHOOD_CLASSES: Record<Confidence, string> = {
 function buildReportText(
   result: DiagnosticResult,
   vehicleLabel: string,
-  costs: RepairCostEstimateResult
+  costs: RepairCostEstimateResult,
+  estimatesLocked: boolean
 ): string {
   const costLines = costs.isEmergency
     ? ["- Not estimated — emergency situation. Stop safely and request a written quote from a workshop."]
-    : costs.estimates.map((item) => `- ${item.label}: ${formatCostRange(item)}`);
+    : estimatesLocked
+      ? ["- Repair cost estimates are a Pro feature — upgrade to see them here."]
+      : costs.estimates.map((item) => `- ${item.label}: ${formatCostRange(item)}`);
 
   const lines: string[] = [
     "Garage Ghost — Mechanic-ready report",
@@ -130,6 +142,7 @@ export function DiagnosisResult({
   vehicle,
   symptoms,
   language = "English",
+  consumeQuota = true,
 }: DiagnosisResultProps) {
   const [copied, setCopied] = useState(false);
   const [copyError, setCopyError] = useState<string | null>(null);
@@ -154,6 +167,24 @@ export function DiagnosisResult({
     [result, symptoms]
   );
 
+  const { isPro, openModal } = usePro();
+
+  // Free tier: each freshly generated result that shows cost estimates counts
+  // toward the 3/day allowance. Pro users, emergency results, and re-opened
+  // reports (consumeQuota=false) are never counted or locked.
+  const quotaBumped = useRef(false);
+  useEffect(() => {
+    if (!consumeQuota || quotaBumped.current || isPro || costs.isEmergency) return;
+    quotaBumped.current = true;
+    consumeEstimate();
+  }, [consumeQuota, isPro, costs.isEmergency]);
+
+  // Free users see numbers on their first 3 generated results each day, then a
+  // locked state with an upgrade prompt. Emergencies always show the safety
+  // message, and already-generated reports are always shown in full.
+  const estimatesLocked =
+    consumeQuota && !isPro && !costs.isEmergency && getRemainingEstimateCount() <= 0;
+
   useEffect(() => {
     return () => {
       if (copyTimer.current) clearTimeout(copyTimer.current);
@@ -161,7 +192,7 @@ export function DiagnosisResult({
   }, []);
 
   const handleCopy = async () => {
-    const text = buildReportText(result, vehicleLabel, costs);
+    const text = buildReportText(result, vehicleLabel, costs, estimatesLocked);
     try {
       await navigator.clipboard.writeText(text);
       setCopyError(null);
@@ -304,6 +335,26 @@ export function DiagnosisResult({
                 </span>
               </p>
             </div>
+          ) : estimatesLocked ? (
+            <div className="mt-3 rounded-md border border-amber-500/30 bg-amber-500/10 p-3">
+              <p className="flex items-start gap-2 text-sm text-amber-200">
+                <Crown className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+                <span>
+                  <span className="font-semibold">
+                    You&apos;ve used your free estimates for today.
+                  </span>{" "}
+                  Upgrade to Pro for unlimited repair cost estimates.
+                </span>
+              </p>
+              <button
+                type="button"
+                onClick={openModal}
+                className="mt-3 inline-flex items-center gap-2 rounded-md bg-amber-500 px-3 py-1.5 text-xs font-semibold text-zinc-950 transition-colors hover:bg-amber-400"
+              >
+                <Crown className="h-3.5 w-3.5" aria-hidden />
+                Go Pro
+              </button>
+            </div>
           ) : (
             <>
               <ul className="mt-3 space-y-2">
@@ -325,6 +376,18 @@ export function DiagnosisResult({
                 </p>
               )}
               <p className="mt-2 text-xs text-zinc-500">{COST_DISCLAIMER}</p>
+              {!isPro && consumeQuota && (
+                <p className="mt-1 text-xs text-zinc-500">
+                  Free plan: {FREE_ESTIMATES_PER_DAY} estimates per day ·{" "}
+                  <button
+                    type="button"
+                    onClick={openModal}
+                    className="font-medium text-amber-400 underline-offset-2 hover:underline"
+                  >
+                    Go Pro for unlimited
+                  </button>
+                </p>
+              )}
             </>
           )}
         </div>
@@ -403,7 +466,13 @@ export function DiagnosisResult({
             </button>
             <button
               type="button"
-              onClick={() => window.print()}
+              onClick={() => {
+                if (!isPro) {
+                  openModal();
+                  return;
+                }
+                window.print();
+              }}
               className="inline-flex items-center gap-2 rounded-md border border-zinc-700 px-3 py-1.5 text-xs font-medium text-zinc-200 transition-colors hover:border-amber-500/60 hover:text-amber-300"
             >
               <Printer className="h-3.5 w-3.5" aria-hidden />
@@ -416,7 +485,9 @@ export function DiagnosisResult({
             )}
           </div>
           <p className="mt-2 text-xs text-zinc-500">
-            Tip: choose &quot;Save as PDF&quot; in the print dialog to keep a copy of this report.
+            {isPro
+              ? "Tip: choose \"Save as PDF\" in the print dialog to keep a copy of this report."
+              : "Print / Save as PDF is a Pro feature. Upgrade to export a copy of this report."}
           </p>
         </div>
 
@@ -521,6 +592,8 @@ export function DiagnosisResult({
         <h2>Estimated repair cost (ballpark, USD)</h2>
         {costs.isEmergency ? (
           <p>Not estimated — emergency situation. Stop safely and request a written quote.</p>
+        ) : estimatesLocked ? (
+          <p>Repair cost estimates are a Pro feature.</p>
         ) : costs.estimates.length > 0 ? (
           <ul>
             {costs.estimates.map((item, index) => (

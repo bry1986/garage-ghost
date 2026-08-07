@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import type { ReactNode } from "react";
 import "./globals.css";
 import { Header } from "@/components/header";
+import { ProProvider } from "@/components/pro-provider";
 import { PwaRegister } from "@/components/pwa-register";
 import { APP_NAME, APP_TAGLINE, PUTER_DEVELOPER_URL } from "@/lib/constants";
 
@@ -48,9 +49,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col bg-zinc-950 text-zinc-100">
         <PwaRegister />
-        <Header />
-        <main className="mx-auto w-full max-w-5xl flex-1 px-4 pb-32 pt-8">{children}</main>
-        <footer className="border-t border-zinc-800">
+        <ProProvider>
+          <Header />
+          <main className="mx-auto w-full max-w-5xl flex-1 px-4 pb-32 pt-8">{children}</main>
+          <footer className="border-t border-zinc-800">
           <div className="mx-auto flex w-full max-w-5xl flex-col items-center justify-between gap-2 px-4 py-4 text-xs text-zinc-500 sm:flex-row">
             <p>
               © {new Date().getFullYear()} {APP_NAME}. Educational guidance only — not a diagnosis.
@@ -65,6 +67,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             </a>
           </div>
         </footer>
+        </ProProvider>
       </body>
     </html>
   );

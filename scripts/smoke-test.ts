@@ -43,6 +43,21 @@ import {
 import { COST_DISCLAIMER, estimateRepairCosts, formatCostRange } from "../src/lib/costs";
 import { listDtcCodes, lookupDtc, normalizeDtcCode } from "../src/lib/dtc";
 import {
+  activateLicense,
+  clearProState,
+  consumeEstimate,
+  deactivateLicense,
+  getBillingPortalUrl,
+  getDeviceId,
+  getProState,
+  getRemainingEstimateCount,
+  isCheckoutConfigured,
+  isEstimateLocked,
+  saveProState,
+  todayKey,
+  validateLicense,
+} from "../src/lib/pro";
+import {
   clearHistory,
   deleteDiagnosis,
   deleteProfile,
@@ -436,6 +451,128 @@ async function main() {
   assert.strictEqual(formatCostRange({ label: "x", min: 1000, max: 2500 }), "$1,000–$2,500");
   assert.ok(COST_DISCLAIMER.includes("written quote"));
   console.log("ok: cost ranges format as USD and carry a disclaimer");
+
+  // 33. Pro: local date key is YYYY-MM-DD in local time
+  assert.strictEqual(todayKey(new Date(2026, 7, 7)), "2026-08-07");
+  assert.strictEqual(todayKey(new Date(2026, 0, 3)), "2026-01-03");
+  console.log("ok: todayKey formats local dates as YYYY-MM-DD");
+
+  // 34. Pro: license state persists and malformed data is ignored
+  clearProState();
+  assert.strictEqual(getProState(), null, "no stored license initially");
+  saveProState({ licenseKey: "abc-123", instanceId: "inst-1", activatedAt: 1 });
+  assert.strictEqual(getProState()?.licenseKey, "abc-123");
+  store.set("garage-ghost:pro:v1", "{broken json");
+  assert.strictEqual(getProState(), null, "malformed license storage is ignored");
+  store.set("garage-ghost:pro:v1", JSON.stringify({ licenseKey: "" }));
+  assert.strictEqual(getProState(), null, "empty license key is not a valid state");
+  clearProState();
+  console.log("ok: license state persists, validates shape, and clears");
+
+  // 35. Pro: device id is stable per device
+  const deviceA = getDeviceId();
+  const deviceB = getDeviceId();
+  assert.strictEqual(deviceA, deviceB, "device id must be stable across calls");
+  assert.ok(deviceA.length > 0);
+  console.log("ok: device id is stable and persisted");
+
+  // 36. Pro: activation calls the License API and persists state
+  const fetchLog: Array<{ url: string; body: unknown }> = [];
+  const stubFetch = (url: string, init?: RequestInit): Promise<Response> => {
+    const body = JSON.parse(String(init?.body ?? "{}")) as Record<string, string>;
+    fetchLog.push({ url, body });
+    const respond = (data: Record<string, unknown>, status = 200) =>
+      Promise.resolve(
+        new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json" } })
+      );
+    if (url.endsWith("/licenses/activate")) {
+      return respond({ activated: true, instance: { id: "inst-9", name: body.instance_name } });
+    }
+    if (url.endsWith("/licenses/validate")) {
+      return respond({ valid: true, license_key: { status: "active" } });
+    }
+    if (url.endsWith("/licenses/deactivate")) {
+      return respond({ deactivated: true });
+    }
+    return respond({ error: "not found" }, 404);
+  };
+  (globalThis as Record<string, unknown>).fetch = stubFetch as unknown as typeof fetch;
+
+  const activated = await activateLicense("key-1234");
+  assert.strictEqual(activated.licenseKey, "key-1234");
+  assert.strictEqual(activated.instanceId, "inst-9");
+  assert.strictEqual(fetchLog[0].url, "https://api.lemonsqueezy.com/v1/licenses/activate");
+  assert.strictEqual((fetchLog[0].body as Record<string, string>).license_key, "key-1234");
+  assert.strictEqual(getProState()?.licenseKey, "key-1234", "activation persists Pro state");
+  console.log("ok: license activation calls the API and persists state");
+
+  // 37. Pro: empty or invalid keys are rejected with a readable error
+  await assert.rejects(() => activateLicense("   "), /Enter your license key/);
+  (globalThis as Record<string, unknown>).fetch = (async () =>
+    new Response(JSON.stringify({ error: "The license key is expired." }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" },
+    })) as unknown as typeof fetch;
+  await assert.rejects(() => activateLicense("expired-key"), /expired/);
+  console.log("ok: invalid license keys are rejected with the API error message");
+
+  // 38. Pro: validation keeps Pro for active licenses, clears for expired ones
+  (globalThis as Record<string, unknown>).fetch = stubFetch as unknown as typeof fetch;
+  const active = await validateLicense({ licenseKey: "key-1234", instanceId: "inst-9", activatedAt: 1 });
+  assert.strictEqual(active, true);
+  assert.strictEqual(getProState()?.licenseKey, "key-1234", "active license keeps stored state");
+
+  (globalThis as Record<string, unknown>).fetch = (async () =>
+    new Response(JSON.stringify({ valid: true, license_key: { status: "expired" } }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    })) as unknown as typeof fetch;
+  const expired = await validateLicense({ licenseKey: "key-1234", instanceId: "inst-9", activatedAt: 1 });
+  assert.strictEqual(expired, false, "expired subscription loses Pro");
+  assert.strictEqual(getProState(), null, "expired license clears stored state");
+
+  // Transient network failure must NOT yank Pro
+  (globalThis as Record<string, unknown>).fetch = (async () => {
+    throw new Error("network down");
+  }) as unknown as typeof fetch;
+  saveProState({ licenseKey: "key-1234", instanceId: "inst-9", activatedAt: 1 });
+  const transient = await validateLicense({ licenseKey: "key-1234", instanceId: "inst-9", activatedAt: 1 });
+  assert.strictEqual(transient, true, "transient errors keep stored Pro");
+  assert.ok(getProState(), "stored state survives a transient validation failure");
+  clearProState();
+  console.log("ok: validation keeps Pro for active licenses and clears expired ones");
+
+  // 39. Pro: deactivation calls the API and clears local state
+  (globalThis as Record<string, unknown>).fetch = stubFetch as unknown as typeof fetch;
+  saveProState({ licenseKey: "key-1234", instanceId: "inst-9", activatedAt: 1 });
+  await deactivateLicense();
+  assert.strictEqual(getProState(), null, "deactivation clears local state");
+  console.log("ok: license deactivation clears local Pro state");
+
+  // 40. Pro: free-tier estimate quota caps at 3 per day and resets daily
+  store.delete("garage-ghost:quota:v1");
+  assert.strictEqual(getRemainingEstimateCount(), 3);
+  const first = consumeEstimate();
+  assert.strictEqual(first.remaining, 2);
+  consumeEstimate();
+  consumeEstimate();
+  assert.strictEqual(getRemainingEstimateCount(), 0, "quota is exhausted after 3 uses");
+  assert.strictEqual(isEstimateLocked(), true);
+  const afterLocked = consumeEstimate();
+  assert.strictEqual(afterLocked.remaining, 0, "locked state never goes negative");
+  store.set(
+    "garage-ghost:quota:v1",
+    JSON.stringify({ date: todayKey(new Date(2026, 7, 6)), count: 3 })
+  );
+  assert.strictEqual(getRemainingEstimateCount(), 3, "a new day resets the allowance");
+  store.set("garage-ghost:quota:v1", "{broken json");
+  assert.strictEqual(getRemainingEstimateCount(), 3, "malformed quota storage resets safely");
+  console.log("ok: estimate quota caps at 3/day, resets daily, and survives malformed storage");
+
+  // 41. Pro: checkout env defaults are safe when unset
+  assert.strictEqual(isCheckoutConfigured(), false, "no checkout URLs configured in tests");
+  assert.strictEqual(getBillingPortalUrl(), "", "no billing URL without a store slug");
+  console.log("ok: unset checkout env vars degrade gracefully");
 
   console.log("\nAll smoke tests passed ✅");
 }

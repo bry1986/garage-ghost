@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, History, Wrench } from "lucide-react";
 import { EmergencyAlert } from "@/components/emergency-alert";
+import { ProPricingSection } from "@/components/pro-pricing";
 import { SpiralAnimation } from "@/components/ui/spiral-animation";
 import {
   APP_NAME,
@@ -121,6 +122,8 @@ export default function HomePage() {
           Available in {LANGUAGES.join(", ")}.
         </p>
       </section>
+
+      <ProPricingSection />
 
       <section className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-6 text-center">
         <h2 className="text-lg font-semibold text-zinc-50">A warning light on? Start here.</h2>

@@ -60,6 +60,62 @@ Puter uses a **user-pays model**. When you run a diagnosis, Puter may show a sig
 usage on your Puter account covers the request. Garage Ghost never uses or stores an API key.
 A small info element on the diagnose page explains this.
 
+## Pro tier (Lemon Squeezy)
+
+Garage Ghost has an optional **Pro subscription** that gates premium features:
+
+| | Free | Pro ($5.99/mo or $49.99/yr) |
+|---|---|---|
+| Diagnoses, follow-ups, DTC lookup | Unlimited | Unlimited |
+| Repair cost estimates | 3 per day | Unlimited |
+| Print / Save-as-PDF reports | — | ✅ |
+
+Pro works **without any backend**: it uses Lemon Squeezy's License API, which is designed
+for client-side verification. After checkout the customer receives a license key by email;
+they paste it into the upgrade dialog (or any gated button opens it), the app activates it
+against `api.lemonsqueezy.com` from the browser, and stores the Pro state in localStorage.
+The stored key is re-validated on each app load, so expired/cancelled subscriptions lose
+access. Lemon Squeezy is a merchant of record — it collects and remits sales tax / EU VAT
+for you.
+
+### One-time setup (about 20 minutes)
+
+1. Create a free account at https://lemonsqueezy.com.
+2. **Products → New product** — name it *Garage Ghost Pro*, add a one-time setup fee of $0
+   (needed for the yearly variant model), and create two variants:
+   - *Monthly* — `$5.99`, subscription, monthly billing.
+   - *Yearly* — `$49.99`, subscription, yearly billing.
+3. For **each variant**, enable **License keys** (Product settings → License keys) and set the
+   activation limit to **2–3** (so one key works across a couple of browsers/devices).
+4. Copy each variant's **Checkout URL** (Products → the variant → checkout URL) and your
+   **store slug** (the part before `.lemonsqueezy.com` in that URL).
+5. Set the public env vars (safe to expose — no secrets):
+
+```bash
+cd garage-ghost
+cp .env.example .env.local
+# fill in NEXT_PUBLIC_LEMONSQUEEZY_CHECKOUT_URL (monthly)
+#       NEXT_PUBLIC_LEMONSQUEEZY_CHECKOUT_URL_ANNUAL (yearly)
+#       NEXT_PUBLIC_LEMONSQUEEZY_STORE (store slug)
+```
+
+6. Add the same three variables to Vercel (Project → Settings → Environment Variables) so
+   production checkout links work.
+
+### Honest limitations
+
+- License verification happens in the browser, so a determined user could share a key or tamper
+  with localStorage; activation limits reduce sharing. This is standard for client-license MVPs
+  and acceptable until a full auth/backend exists.
+- The **free** cost-estimate allowance (3/day) is tracked per browser via localStorage and
+  counts **freshly generated** results only — reopening a report you already generated in
+  History always shows it in full and costs nothing.
+- The DTC lookup card's "Est. typical cost" line is **always free** (it is static reference
+  data for the ~44 built-in codes, not an AI-driven estimate). The Pro gate applies to the
+  per-diagnosis cost estimates.
+- Payment collection is handled entirely by Lemon Squeezy's hosted checkout and customer
+  portal (for cancellations). You never touch card data.
+
 ### Demo mode (no Puter account needed)
 
 To try the UI without any Puter account, run with:
@@ -120,8 +176,9 @@ caches static assets so the app shell loads quickly and pages fall back to cache
 
 ## Deployment (Vercel)
 
-**Live: https://garage-ghost.vercel.app** — no environment variables or API keys are required.
-Framework preset: Next.js (auto-detected).
+**Live: https://garage-ghost.vercel.app** — the base app needs no environment variables or API
+keys. The three optional `NEXT_PUBLIC_LEMONSQUEEZY_*` variables above enable the Pro checkout
+links. Framework preset: Next.js (auto-detected).
 
 ### Auto-deploys from GitHub (current setup)
 
