@@ -25,6 +25,7 @@ process.env.NEXT_PUBLIC_DEMO_MODE = "true";
 
 import {
   DiagnosisTimeoutError,
+  buildChatMessages,
   buildSystemPrompt,
   buildUserPrompt,
   describePuterError,
@@ -192,6 +193,16 @@ async function main() {
   assert.ok(!generic.includes("[object Object]"), "UI must never show [object Object]");
   assert.ok(generic.includes("Something went wrong"));
   console.log("ok: unreadable rejections get a friendly fallback message");
+
+  // 16. Chat messages must NOT carry an `images` field (the API rejects it:
+  // 400 Unknown parameter 'input[0].images')
+  const chatMessages = buildChatMessages(DEMO_INPUT);
+  assert.strictEqual(chatMessages.length, 2);
+  for (const message of chatMessages) {
+    assert.ok(!("images" in message), "message must not contain an images field");
+  }
+  assert.strictEqual(chatMessages[1].content, buildUserPrompt(DEMO_INPUT));
+  console.log("ok: chat messages omit the rejected images field");
 
   console.log("\nAll smoke tests passed ✅");
 }

@@ -85,6 +85,20 @@ export function buildUserPrompt(input: DiagnosisInput): string {
   return lines.join("\n");
 }
 
+/**
+ * Messages sent to Puter. Deliberately built without the `images` field:
+ * the model endpoint rejects it (400: Unknown parameter 'input[0].images')
+ * and this app sends text-only prompts.
+ */
+export function buildChatMessages(
+  input: DiagnosisInput
+): Omit<ChatMessage, "images">[] {
+  return [
+    { role: "system", content: buildSystemPrompt(input.language) },
+    { role: "user", content: buildUserPrompt(input) },
+  ];
+}
+
 // ---------------------------------------------------------------------------
 // Resilient JSON parsing
 // ---------------------------------------------------------------------------
@@ -313,10 +327,7 @@ export async function runDiagnosis(
   const { puter } = await import("@heyputer/puter.js");
 
   onStatus?.("Analyzing your symptoms…");
-  const messages: ChatMessage[] = [
-    { role: "system", content: buildSystemPrompt(input.language), images: [] },
-    { role: "user", content: buildUserPrompt(input), images: [] },
-  ];
+  const messages = buildChatMessages(input);
 
   // Guard against a Puter call that never settles (e.g. the sign-in popup is
   // closed without completing). Warn first, then fail with a clear message so
@@ -330,7 +341,10 @@ export async function runDiagnosis(
     }, ANALYSIS_TIMEOUT_HINT_MS);
 
     const response = await withTimeout(
-      puter.ai.chat(messages, {
+      // The API rejects a per-message `images` field (400: Unknown parameter
+      // 'input[0].images'), so messages are built without it; the cast
+      // satisfies the SDK's `ChatMessage` type without sending the field.
+      puter.ai.chat(messages as ChatMessage[], {
         model: DEFAULT_MODEL,
         temperature: AI_TEMPERATURE,
         max_tokens: AI_MAX_TOKENS,
