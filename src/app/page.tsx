@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, History, Wrench } from "lucide-react";
 import { EmergencyAlert } from "@/components/emergency-alert";
+import { SpiralAnimation } from "@/components/ui/spiral-animation";
 import {
   APP_NAME,
   APP_TAGLINE,
@@ -26,28 +27,56 @@ const STEPS = [
 
 export default function HomePage() {
   return (
-    <div className="space-y-14">
-      <section className="pb-4 pt-10 text-center sm:pt-16">
-        <div className="mx-auto mb-6 inline-flex h-14 w-14 items-center justify-center rounded-xl border border-amber-500/40 bg-amber-500/10">
-          <Wrench className="h-7 w-7 text-amber-400" aria-hidden />
+    <div className="space-y-14 overflow-x-clip">
+      <section className="relative left-1/2 w-screen -translate-x-1/2 overflow-hidden bg-black">
+        {/* Animated spiral backdrop */}
+        <div className="absolute inset-0" aria-hidden="true">
+          <SpiralAnimation />
         </div>
-        <h1 className="text-3xl font-bold tracking-tight text-zinc-50 sm:text-5xl">
-          {APP_NAME}
-        </h1>
-        <p className="mt-3 text-base font-medium text-amber-400 sm:text-lg">{APP_TAGLINE}</p>
-        <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-zinc-400 sm:text-base">
-          Describe what your vehicle is telling you and get clear, educational guidance on warning
-          lights, unusual sounds, smells and behaviour — plus safe checks, questions for your
-          mechanic, and a mechanic-ready report.
-        </p>
-        <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <Link href="/diagnose" className={PRIMARY_BUTTON_CLASSES}>
-            Diagnose my warning <ArrowRight className="h-4 w-4" aria-hidden />
-          </Link>
-          <Link href="/history" className={SECONDARY_BUTTON_CLASSES}>
-            <History className="h-4 w-4" aria-hidden />
-            My saved reports
-          </Link>
+        {/* Scrim so the content stays readable and blends into the page */}
+        <div
+          className="pointer-events-none absolute inset-0 bg-gradient-to-b from-zinc-950 via-zinc-950/35 to-zinc-950"
+          aria-hidden="true"
+        />
+        <div className="relative z-10 mx-auto flex min-h-[80vh] w-full max-w-5xl flex-col items-center justify-center px-4 py-24 text-center sm:py-32">
+          <div
+            className="hero-rise mx-auto mb-6 inline-flex h-14 w-14 items-center justify-center rounded-xl border border-amber-500/40 bg-amber-500/10"
+            style={{ animationDelay: "0.05s" }}
+          >
+            <Wrench className="h-7 w-7 text-amber-400" aria-hidden />
+          </div>
+          <h1
+            className="hero-rise text-3xl font-bold tracking-tight text-zinc-50 sm:text-5xl"
+            style={{ animationDelay: "0.12s" }}
+          >
+            {APP_NAME}
+          </h1>
+          <p
+            className="hero-rise mt-3 text-base font-medium text-amber-400 sm:text-lg"
+            style={{ animationDelay: "0.18s" }}
+          >
+            {APP_TAGLINE}
+          </p>
+          <p
+            className="hero-rise mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-zinc-300 sm:text-base"
+            style={{ animationDelay: "0.24s" }}
+          >
+            Describe what your vehicle is telling you and get clear, educational guidance on warning
+            lights, unusual sounds, smells and behaviour — plus safe checks, questions for your
+            mechanic, and a mechanic-ready report.
+          </p>
+          <div
+            className="hero-rise mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row"
+            style={{ animationDelay: "0.3s" }}
+          >
+            <Link href="/diagnose" className={PRIMARY_BUTTON_CLASSES}>
+              Diagnose my warning <ArrowRight className="h-4 w-4" aria-hidden />
+            </Link>
+            <Link href="/history" className={SECONDARY_BUTTON_CLASSES}>
+              <History className="h-4 w-4" aria-hidden />
+              My saved reports
+            </Link>
+          </div>
         </div>
       </section>
 
