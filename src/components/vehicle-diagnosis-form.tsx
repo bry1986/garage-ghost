@@ -25,6 +25,7 @@ import {
   SYMPTOM_CHIPS,
 } from "@/lib/constants";
 import { describePuterError, runDiagnosis, type DiagnosisOutput } from "@/lib/diagnosis";
+import { estimateRepairCosts, formatCostRange } from "@/lib/costs";
 import { lookupDtc, type DtcEntry } from "@/lib/dtc";
 import { deleteProfile, getProfiles, saveDiagnosis, saveProfile } from "@/lib/storage";
 import { cn, generateId } from "@/lib/utils";
@@ -267,6 +268,20 @@ export function VehicleDiagnosisForm() {
 
   const vehicleLabel = [brand.trim(), model.trim(), year.trim()].filter(Boolean).join(" ");
 
+  // FIXD-style ballpark cost for the DTC card (derived during render, not a hook).
+  const dtcCostLine = dtcResult
+    ? (() => {
+        const costs = estimateRepairCosts({
+          detectedWarning: dtcResult.description,
+          summary: dtcResult.advice,
+          possibleCauses: dtcResult.possibleCauses.map((cause) => ({ cause })),
+          riskLevel: dtcResult.urgency === "high" ? "DRIVE_CAREFULLY" : "BOOK_SERVICE",
+        });
+        const top = costs.estimates[0];
+        return top ? `${top.label}: ${formatCostRange(top)}` : null;
+      })()
+    : null;
+
   return (
     <div className="space-y-8">
       {/* OBD-II code lookup — instant, no AI needed */}
@@ -347,6 +362,12 @@ export function VehicleDiagnosisForm() {
               ))}
             </ul>
             <p className="mt-2 text-xs leading-relaxed text-zinc-400">{dtcResult.advice}</p>
+            {dtcCostLine && (
+              <p className="mt-2 text-xs text-zinc-400">
+                <span className="font-medium text-zinc-300">Est. typical cost:</span> {dtcCostLine}{" "}
+                — rough ballpark, varies by vehicle, region and workshop.
+              </p>
+            )}
             <button
               type="button"
               onClick={() => applyDtcToSymptoms(dtcResult)}

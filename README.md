@@ -20,8 +20,10 @@ as general education, not a professional diagnosis.
   privacy note.
 
 After a diagnosis you can **ask follow-up questions** (plain-text AI answers in the selected
-language) and **export a printable mechanic report** via *Print / Save as PDF* (print
-styles included; works with Arabic and other scripts).
+language), see **FIXD-style repair cost ballparks** (typical USD parts-and-labor ranges matched
+from the detected issue / DTC code — deterministic, no AI call; suppressed for emergencies)
+and **export a printable mechanic report** via *Print / Save as PDF* (print styles included;
+works with Arabic and other scripts).
 
 AI analysis runs entirely in the browser via `puter.ai.chat()` (default model
 `gpt-5.6-luna`, `temperature: 0.2`, `max_tokens: 2000`), with automatic fallback models when
@@ -98,6 +100,9 @@ model's answer), with safe checks and a mechanic-ready report.
   `prefers-reduced-motion` users).
 - If a Puter sign-in window is closed without signing in, the request would otherwise hang:
   a 90s guard shows a hint, then cancels with a clear message and re-enables the button.
+- Repair cost estimates are English keyword/DTC-code matched ballparks in USD. Because the AI
+  returns causes in the selected language, German/French/Arabic results without a DTC code
+  generally show the broad generic range rather than a job-specific one.
 - Image upload supports JPG/PNG/WebP up to 10 MB. Attached photos are sent with the written
   description using Puter's documented image path; visual identification is still not
   guaranteed and is treated as a hint, not a certain diagnosis.

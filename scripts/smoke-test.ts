@@ -40,6 +40,7 @@ import {
   toReadableError,
   withTimeout,
 } from "../src/lib/diagnosis";
+import { COST_DISCLAIMER, estimateRepairCosts, formatCostRange } from "../src/lib/costs";
 import { listDtcCodes, lookupDtc, normalizeDtcCode } from "../src/lib/dtc";
 import {
   clearHistory,
@@ -368,6 +369,73 @@ async function main() {
   assert.ok(!isImageRelatedError("Network error"));
   assert.ok(!isImageRelatedError("Model not found"));
   console.log("ok: image-related errors are detected for the text-only retry");
+
+  // 28. Repair cost estimates match typical causes (keyword → range)
+  const costs = estimateRepairCosts({
+    detectedWarning: "Check engine light",
+    summary: "Possible misfire",
+    possibleCauses: [{ cause: "Worn spark plugs or ignition coils" }],
+    riskLevel: "BOOK_SERVICE",
+  });
+  assert.ok(costs.estimates.length > 0, "known causes must produce estimates");
+  const spark = costs.estimates.find((e) => e.label.toLowerCase().includes("spark"));
+  assert.ok(spark, "spark/coil causes map to the ignition estimate");
+  assert.ok(spark.min > 0 && spark.min < spark.max, "ranges are ordered low→high");
+  assert.ok(!costs.isFallback && !costs.isEmergency);
+  assert.strictEqual(costs.currency, "USD");
+  console.log("ok: repair cost estimates match known causes");
+
+  // 29. DTC codes inside symptoms drive the estimate (P0300 → ignition)
+  const dtcCosts = estimateRepairCosts({
+    detectedWarning: "Possible concern",
+    summary: "",
+    possibleCauses: [],
+    riskLevel: "BOOK_SERVICE",
+    symptoms: "Orange engine light and loss of power (DTC P0300)",
+  });
+  assert.ok(
+    dtcCosts.estimates.some((e) => e.label.toLowerCase().includes("spark")),
+    "P0300 in the symptoms maps to the ignition estimate"
+  );
+  assert.ok(
+    estimateRepairCosts({
+      detectedWarning: "ABS light on",
+      summary: "",
+      possibleCauses: [{ cause: "Wheel speed sensor circuit malfunction" }],
+      riskLevel: "DRIVE_CAREFULLY",
+    }).estimates.some((e) => e.label.toLowerCase().includes("abs")),
+    "ABS/wheel-speed causes map to the ABS estimate"
+  );
+  console.log("ok: DTC codes and ABS causes drive cost estimates");
+
+  // 30. STOP_NOW suppresses numeric estimates (safety first)
+  const emergency = estimateRepairCosts({
+    detectedWarning: "Smoke from the bonnet",
+    summary: "",
+    possibleCauses: [{ cause: "Possible coolant leak" }],
+    riskLevel: "STOP_NOW",
+  });
+  assert.strictEqual(emergency.isEmergency, true);
+  assert.strictEqual(emergency.estimates.length, 0, "no numeric estimate in an emergency");
+  console.log("ok: emergency results show no cost estimate");
+
+  // 31. Unknown issues fall back to a broad generic range
+  const fallback = estimateRepairCosts({
+    detectedWarning: "Unusual clicking sound",
+    summary: "",
+    possibleCauses: [{ cause: "Something odd" }],
+    riskLevel: "DRIVE_CAREFULLY",
+  });
+  assert.strictEqual(fallback.isFallback, true);
+  assert.strictEqual(fallback.estimates.length, 1);
+  assert.ok(fallback.estimates[0].min > 0);
+  console.log("ok: unmatched issues get a broad generic estimate");
+
+  // 32. Range formatter + disclaimer
+  assert.strictEqual(formatCostRange({ label: "x", min: 150, max: 600 }), "$150–$600");
+  assert.strictEqual(formatCostRange({ label: "x", min: 1000, max: 2500 }), "$1,000–$2,500");
+  assert.ok(COST_DISCLAIMER.includes("written quote"));
+  console.log("ok: cost ranges format as USD and carry a disclaimer");
 
   console.log("\nAll smoke tests passed ✅");
 }

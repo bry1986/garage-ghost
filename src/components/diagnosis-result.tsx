@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import {
   AlertTriangle,
   CalendarClock,
   CheckCircle2,
+  CircleDollarSign,
   Clipboard,
   HelpCircle,
   Info,
@@ -17,6 +18,12 @@ import {
   XCircle,
 } from "lucide-react";
 import { CONFIDENCE_LABEL, DISCLAIMER, PRIMARY_BUTTON_CLASSES, RISK_META, safeRiskLevel } from "@/lib/constants";
+import {
+  COST_DISCLAIMER,
+  estimateRepairCosts,
+  formatCostRange,
+  type RepairCostEstimateResult,
+} from "@/lib/costs";
 import { askFollowUp, describePuterError } from "@/lib/diagnosis";
 import { cn } from "@/lib/utils";
 import type {
@@ -56,7 +63,15 @@ const LIKELIHOOD_CLASSES: Record<Confidence, string> = {
   high: "bg-red-500/15 text-red-300",
 };
 
-function buildReportText(result: DiagnosticResult, vehicleLabel: string): string {
+function buildReportText(
+  result: DiagnosticResult,
+  vehicleLabel: string,
+  costs: RepairCostEstimateResult
+): string {
+  const costLines = costs.isEmergency
+    ? ["- Not estimated — emergency situation. Stop safely and request a written quote from a workshop."]
+    : costs.estimates.map((item) => `- ${item.label}: ${formatCostRange(item)}`);
+
   const lines: string[] = [
     "Garage Ghost — Mechanic-ready report",
     `Vehicle: ${vehicleLabel}`,
@@ -70,6 +85,9 @@ function buildReportText(result: DiagnosticResult, vehicleLabel: string): string
     ...(result.possibleCauses.length > 0
       ? result.possibleCauses.map((item) => `- ${item.cause} (${item.likelihood})`)
       : ["- (none listed)"]),
+    "",
+    "Estimated repair cost (ballpark, USD):",
+    ...costLines,
     "",
     "Safe checks:",
     ...(result.safeChecks.length > 0 ? result.safeChecks.map((item) => `- ${item}`) : ["- (none listed)"]),
@@ -123,6 +141,19 @@ export function DiagnosisResult({
   const [followUpStatus, setFollowUpStatus] = useState("");
   const [followUpError, setFollowUpError] = useState<string | null>(null);
 
+  // FIXD-style repair cost ballparks — deterministic, no AI call.
+  const costs = useMemo(
+    () =>
+      estimateRepairCosts({
+        detectedWarning: result.detectedWarning,
+        summary: result.summary,
+        possibleCauses: result.possibleCauses,
+        riskLevel: result.riskLevel,
+        symptoms,
+      }),
+    [result, symptoms]
+  );
+
   useEffect(() => {
     return () => {
       if (copyTimer.current) clearTimeout(copyTimer.current);
@@ -130,7 +161,7 @@ export function DiagnosisResult({
   }, []);
 
   const handleCopy = async () => {
-    const text = buildReportText(result, vehicleLabel);
+    const text = buildReportText(result, vehicleLabel, costs);
     try {
       await navigator.clipboard.writeText(text);
       setCopyError(null);
@@ -256,6 +287,47 @@ export function DiagnosisResult({
             </ul>
           </div>
         )}
+
+        {/* Estimated repair cost — FIXD-style ballpark ranges */}
+        <div>
+          <h3 className="flex items-center gap-2 text-sm font-semibold text-zinc-200">
+            <CircleDollarSign className="h-4 w-4 text-emerald-400" aria-hidden />
+            Estimated repair cost
+          </h3>
+          {costs.isEmergency ? (
+            <div className="mt-3 rounded-md border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">
+              <p className="flex items-start gap-2">
+                <OctagonAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+                <span>
+                  This is an emergency — stop safely first. Cost estimates are not helpful here:
+                  get the vehicle to a workshop and ask for a written quote.
+                </span>
+              </p>
+            </div>
+          ) : (
+            <>
+              <ul className="mt-3 space-y-2">
+                {costs.estimates.map((item, index) => (
+                  <li
+                    key={index}
+                    className="flex items-center justify-between gap-3 rounded-md border border-zinc-800 bg-zinc-950/60 px-3 py-2 text-sm text-zinc-300"
+                  >
+                    <span>{item.label}</span>
+                    <span className="shrink-0 font-semibold text-amber-300">
+                      {formatCostRange(item)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              {costs.isFallback && (
+                <p className="mt-2 text-xs text-zinc-500">
+                  No specific repair matched your issue yet — this is a broad estimate.
+                </p>
+              )}
+              <p className="mt-2 text-xs text-zinc-500">{COST_DISCLAIMER}</p>
+            </>
+          )}
+        </div>
 
         {result.safeChecks.length > 0 && (
           <div>
@@ -445,6 +517,19 @@ export function DiagnosisResult({
             </ul>
           </>
         )}
+
+        <h2>Estimated repair cost (ballpark, USD)</h2>
+        {costs.isEmergency ? (
+          <p>Not estimated — emergency situation. Stop safely and request a written quote.</p>
+        ) : costs.estimates.length > 0 ? (
+          <ul>
+            {costs.estimates.map((item, index) => (
+              <li key={index}>
+                {item.label}: {formatCostRange(item)}
+              </li>
+            ))}
+          </ul>
+        ) : null}
 
         {result.safeChecks.length > 0 && (
           <>
