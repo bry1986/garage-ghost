@@ -2,6 +2,9 @@
   "name": "garage-ghost",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=20.9.0"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -9,9 +12,13 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@heyputer/puter.js": "^2.6.0",
+    "clsx": "^2.1.1",
+    "lucide-react": "^1.30.0",
     "next": "16.3.0",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "tailwind-merge": "^3.6.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

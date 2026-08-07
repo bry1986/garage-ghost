@@ -1,0 +1,303 @@
+import type { ChatMessage, ChatResponse } from "@heyputer/puter.js";
+import {
+  AI_MAX_TOKENS,
+  AI_TEMPERATURE,
+  CONFIDENCE_LEVELS,
+  DEFAULT_MODEL,
+  RISK_LEVELS,
+} from "@/lib/constants";
+import { delay } from "@/lib/utils";
+import type {
+  Confidence,
+  DiagnosticResult,
+  PossibleCause,
+  ResponseLanguage,
+  RiskLevel,
+} from "@/types/diagnostic";
+
+const LANGUAGE_INSTRUCTIONS: Record<ResponseLanguage, string> = {
+  English: "Write every answer in English.",
+  German: "Write every answer in German.",
+  French: "Write every answer in French.",
+  Arabic: "Write every answer in Arabic (Arabic script).",
+};
+
+export type DiagnosisSource = "puter" | "demo";
+
+export interface DiagnosisInput {
+  vehicle: {
+    brand: string;
+    model: string;
+    year: string;
+    fuelType?: string;
+    mileage?: string;
+  };
+  symptoms: string;
+  symptomChips: string[];
+  language: ResponseLanguage;
+}
+
+export interface DiagnosisOutput {
+  result: DiagnosticResult;
+  source: DiagnosisSource;
+}
+
+export function buildSystemPrompt(language: ResponseLanguage): string {
+  return `You are "Garage Ghost", a multilingual safety-first automotive triage assistant.
+
+Rules:
+- Provide general educational information only, never a certain diagnosis.
+- Never tell the user to bypass safety systems.
+- Never advise work on airbags, brakes, steering, fuel systems, high-voltage EV components, or on a vehicle that is not supported safely.
+- Do not diagnose from an image with certainty.
+- Always advise qualified professional help when relevant.
+- Treat these as STOP_NOW: red oil-pressure warning, red brake warning, overheating, loss of steering, airbag safety concern, smoke, fuel leak or fuel smell, electrical burning smell, visible fire, or a high-voltage EV warning.
+- ${LANGUAGE_INSTRUCTIONS[language]}
+- Return JSON only. No Markdown, no code fences, no commentary outside the JSON.
+
+Respond with exactly this JSON shape:
+{
+  "detectedWarning": "string",
+  "confidence": "low | medium | high",
+  "riskLevel": "STOP_NOW | DRIVE_CAREFULLY | BOOK_SERVICE",
+  "summary": "string",
+  "possibleCauses": [ { "cause": "string", "likelihood": "low | medium | high" } ],
+  "safeChecks": ["string"],
+  "doNotDo": ["string"],
+  "questions": ["string"],
+  "mechanicReport": "string",
+  "disclaimer": "string"
+}`;
+}
+
+export function buildUserPrompt(input: DiagnosisInput): string {
+  const lines = [
+    `Vehicle: ${input.vehicle.brand} ${input.vehicle.model} (${input.vehicle.year})`,
+  ];
+  if (input.vehicle.fuelType) lines.push(`Fuel/power type: ${input.vehicle.fuelType}`);
+  if (input.vehicle.mileage) lines.push(`Mileage: ${input.vehicle.mileage}`);
+  if (input.symptomChips.length > 0) {
+    lines.push(`Selected symptoms: ${input.symptomChips.join(", ")}`);
+  }
+  lines.push(`User description of symptoms: ${input.symptoms}`);
+  return lines.join("\n");
+}
+
+// ---------------------------------------------------------------------------
+// Resilient JSON parsing
+// ---------------------------------------------------------------------------
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function asString(value: unknown): string {
+  return typeof value === "string" ? value : "";
+}
+
+function asStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((item): item is string => typeof item === "string");
+}
+
+function normalizeDiagnostic(value: unknown): DiagnosticResult {
+  if (!isRecord(value)) {
+    throw new Error("The AI response is not a JSON object.");
+  }
+
+  const rawRiskLevel = value.riskLevel;
+  if (
+    typeof rawRiskLevel !== "string" ||
+    !RISK_LEVELS.includes(rawRiskLevel as RiskLevel)
+  ) {
+    throw new Error(`Unsupported risk level: ${String(rawRiskLevel)}`);
+  }
+
+  const rawConfidence = value.confidence;
+  const confidence: Confidence =
+    typeof rawConfidence === "string" &&
+    CONFIDENCE_LEVELS.includes(rawConfidence as Confidence)
+      ? (rawConfidence as Confidence)
+      : "medium";
+
+  const possibleCauses: PossibleCause[] = Array.isArray(value.possibleCauses)
+    ? value.possibleCauses
+        .filter(isRecord)
+        .map((item) => ({
+          cause: asString(item.cause),
+          likelihood:
+            typeof item.likelihood === "string" &&
+            CONFIDENCE_LEVELS.includes(item.likelihood as Confidence)
+              ? (item.likelihood as Confidence)
+              : "medium",
+        }))
+        .filter((item) => item.cause.length > 0)
+    : [];
+
+  const summary = asString(value.summary);
+  const mechanicReport = asString(value.mechanicReport);
+  if (summary.length === 0 || mechanicReport.length === 0) {
+    throw new Error('The AI response is missing required fields ("summary", "mechanicReport").');
+  }
+
+  return {
+    detectedWarning: asString(value.detectedWarning) || "Possible concern",
+    confidence,
+    riskLevel: rawRiskLevel as RiskLevel,
+    summary,
+    possibleCauses,
+    safeChecks: asStringArray(value.safeChecks),
+    doNotDo: asStringArray(value.doNotDo),
+    questions: asStringArray(value.questions),
+    mechanicReport,
+    disclaimer: asString(value.disclaimer),
+  };
+}
+
+export function parseDiagnosticJson(raw: string): DiagnosticResult {
+  if (!raw || raw.trim().length === 0) {
+    throw new Error("The AI returned an empty response.");
+  }
+  const withoutFences = raw.replace(/```json/gi, "").replace(/```/g, "").trim();
+  const start = withoutFences.indexOf("{");
+  const end = withoutFences.lastIndexOf("}");
+  if (start === -1 || end === -1 || end <= start) {
+    throw new Error("No JSON object found in the AI response.");
+  }
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(withoutFences.slice(start, end + 1));
+  } catch {
+    throw new Error("The AI response was not valid JSON.");
+  }
+  return normalizeDiagnostic(parsed);
+}
+
+// ---------------------------------------------------------------------------
+// Puter.ai integration
+// ---------------------------------------------------------------------------
+
+function extractTextFromPart(part: unknown): string {
+  if (typeof part === "string") return part;
+  if (typeof part === "object" && part !== null) {
+    const candidate = (part as Record<string, unknown>).text;
+    return typeof candidate === "string" ? candidate : "";
+  }
+  return "";
+}
+
+function extractResponseText(response: ChatResponse): string {
+  const content = response?.message?.content;
+  if (typeof content === "string") return content;
+  if (Array.isArray(content)) {
+    return content.map((part) => extractTextFromPart(part)).join("");
+  }
+  throw new Error("Unexpected response format from the AI service.");
+}
+
+export function describePuterError(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error);
+  const lower = message.toLowerCase();
+  if (/sign\s?in|auth/i.test(lower)) {
+    return "Puter sign-in was cancelled or is required. Please try again and complete the Puter sign-in dialog.";
+  }
+  if (/network|fetch|offline|connection|failed to fetch/i.test(lower)) {
+    return "A network error occurred while contacting Puter. Check your internet connection and try again.";
+  }
+  if (/quota|credit|balance|insufficient|usage/i.test(lower)) {
+    return "Puter could not complete the request — this may be a usage or credit limit on the Puter account. Please try again later.";
+  }
+  if (/model|not found|unavailable/i.test(lower)) {
+    return "The AI model is temporarily unavailable. Please try again in a moment.";
+  }
+  return message.length > 0
+    ? `The AI service returned an error: ${message}`
+    : "Something went wrong while contacting the AI service. Please try again.";
+}
+
+export function isDemoMode(): boolean {
+  return process.env.NEXT_PUBLIC_DEMO_MODE === "true";
+}
+
+export async function runDiagnosis(
+  input: DiagnosisInput,
+  onStatus?: (status: string) => void
+): Promise<DiagnosisOutput> {
+  if (typeof window === "undefined") {
+    throw new Error("Diagnosis can only run in the browser.");
+  }
+
+  if (isDemoMode()) {
+    await delay(900);
+    return { result: buildDemoResult(input), source: "demo" };
+  }
+
+  onStatus?.("Preparing your vehicle report…");
+  await delay(120); // Let the loading state paint before awaiting the network.
+  onStatus?.("Connecting to Puter — you may be asked to sign in…");
+
+  // Only ever loaded in the browser, never during SSR.
+  const { puter } = await import("@heyputer/puter.js");
+
+  onStatus?.("Analyzing your symptoms…");
+  const messages: ChatMessage[] = [
+    { role: "system", content: buildSystemPrompt(input.language), images: [] },
+    { role: "user", content: buildUserPrompt(input), images: [] },
+  ];
+
+  const response = await puter.ai.chat(messages, {
+    model: DEFAULT_MODEL,
+    temperature: AI_TEMPERATURE,
+    max_tokens: AI_MAX_TOKENS,
+  });
+
+  const text = extractResponseText(response);
+  return { result: parseDiagnosticJson(text), source: "puter" };
+}
+
+// ---------------------------------------------------------------------------
+// Demo mode fallback (NEXT_PUBLIC_DEMO_MODE=true only)
+// ---------------------------------------------------------------------------
+
+function buildDemoResult(input: DiagnosisInput): DiagnosticResult {
+  const stopNow = input.symptomChips.some((chip) =>
+    ["Smoke", "Fuel smell", "Overheating", "Steering issue", "Strange electrical smell"].includes(
+      chip
+    )
+  );
+  const riskLevel: RiskLevel = stopNow ? "STOP_NOW" : "BOOK_SERVICE";
+  const vehicleLabel = [input.vehicle.brand, input.vehicle.model, input.vehicle.year]
+    .filter(Boolean)
+    .join(" ");
+  const chipsNote =
+    input.symptomChips.length > 0 ? ` (selected: ${input.symptomChips.join(", ")})` : "";
+
+  return {
+    detectedWarning: "Possible engine management concern",
+    confidence: "low",
+    riskLevel,
+    summary: `Demo result for ${vehicleLabel}: the reported symptoms ("${input.symptoms}") would normally be reviewed against a diagnostic trouble code (DTC) scan and a workshop inspection. This text was generated locally for testing and is not an AI analysis.`,
+    possibleCauses: [
+      { cause: "Faulty sensor or actuator reported by the engine control unit", likelihood: "medium" },
+      { cause: "Age- and mileage-related component wear", likelihood: "low" },
+    ],
+    safeChecks: [
+      "Note when the symptom first appeared and whether it changes with engine temperature or load.",
+      "Make sure the vehicle is parked on level ground before doing any visual check.",
+      "Take a photo of any warning light to show the workshop.",
+    ],
+    doNotDo: [
+      "Do not open the coolant or oil system while the engine is hot.",
+      "Do not keep driving if the warning is red, flashing, or accompanied by smoke or loss of power.",
+    ],
+    questions: [
+      "Does the warning light stay on, or does it flash?",
+      "Does the symptom appear only above a certain engine speed or load?",
+    ],
+    mechanicReport: `[Demo mode — not an AI analysis]
+Vehicle: ${vehicleLabel}
+Symptoms: ${input.symptoms}${chipsNote}
+Suggested next step: have the vehicle inspected by a qualified workshop and read the fault codes.`,
+    disclaimer: "This demo result was generated locally for testing and is not an AI analysis.",
+  };
+}
