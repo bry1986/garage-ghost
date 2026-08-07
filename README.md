@@ -92,6 +92,16 @@ model's answer), with safe checks and a mechanic-ready report.
   an attached photo is previewed but not sent, and a non-breaking notice explains this.
 - Diagnosis requires the browser to reach Puter's servers; offline use is not supported.
 
+## Install as an app (PWA)
+
+Garage Ghost is a Progressive Web App — on a phone, open the site in the browser and:
+
+- **Android (Chrome):** menu → *Add to Home screen* / *Install app*.
+- **iOS (Safari):** Share → *Add to Home Screen*.
+
+It then opens full-screen like a native app, with the Garage Ghost icon. A service worker
+caches static assets so the app shell loads quickly and pages fall back to cache offline.
+
 ## Deployment (Vercel)
 
 **Live: https://garage-ghost.vercel.app** — no environment variables or API keys are required.

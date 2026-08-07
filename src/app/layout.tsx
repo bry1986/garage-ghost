@@ -1,8 +1,9 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import type { ReactNode } from "react";
 import "./globals.css";
 import { Header } from "@/components/header";
+import { PwaRegister } from "@/components/pwa-register";
 import { APP_NAME, APP_TAGLINE, PUTER_DEVELOPER_URL } from "@/lib/constants";
 
 const geistSans = Geist({
@@ -22,12 +23,31 @@ export const metadata: Metadata = {
   },
   description:
     "Safety-first educational AI triage for vehicle warning lights and symptoms. Understand the warning. Choose the safe next step.",
+  applicationName: APP_NAME,
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: APP_NAME,
+  },
+  formatDetection: { telephone: false },
+  icons: {
+    icon: "/icons/icon-512.png",
+    apple: "/icons/apple-touch-icon.png",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#09090b",
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col bg-zinc-950 text-zinc-100">
+        <PwaRegister />
         <Header />
         <main className="mx-auto w-full max-w-5xl flex-1 px-4 pb-32 pt-8">{children}</main>
         <footer className="border-t border-zinc-800">
