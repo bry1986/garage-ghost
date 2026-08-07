@@ -228,27 +228,64 @@ export async function withTimeout<T>(
   }
 }
 
+/**
+ * Extract a human-readable message from an unknown rejection value.
+ *
+ * Puter can reject with `Error` instances, plain objects carrying
+ * `message`/`error`/`code`/`errorCode`, or nested shapes. This never lets a
+ * bare "[object Object]" reach the UI.
+ */
+export function toReadableError(error: unknown, depth = 0): string {
+  if (depth > 3) return ""; // guard against circular error shapes
+  if (error instanceof Error) return error.message;
+  if (typeof error === "string") return error;
+  if (typeof error === "object" && error !== null) {
+    const obj = error as Record<string, unknown>;
+    const keys = ["message", "errorMessage", "msg", "detail", "reason", "error"] as const;
+    // Direct string values
+    for (const key of keys) {
+      const value = obj[key];
+      if (typeof value === "string" && value.trim().length > 0) return value;
+    }
+    // Nested shapes, e.g. { error: { message: "..." } }
+    for (const key of keys) {
+      const value = obj[key];
+      if (value && typeof value === "object") {
+        const nested = toReadableError(value, depth + 1);
+        if (nested.length > 0) return nested;
+      }
+    }
+    // Last resort: surface a stable error code instead of an object dump.
+    const code = obj.code ?? obj.errorCode;
+    if (typeof code === "string" && code.length > 0) {
+      return `Puter error (code: ${code})`;
+    }
+  }
+  return "";
+}
+
 export function describePuterError(error: unknown): string {
-  const message = error instanceof Error ? error.message : String(error);
+  const message = toReadableError(error).trim();
   const lower = message.toLowerCase();
   if (error instanceof DiagnosisTimeoutError || /timed out|took too long/i.test(lower)) {
     return ANALYSIS_TIMEOUT_MESSAGE;
   }
-  if (/sign\s?in|auth/i.test(lower)) {
+  if (/sign\s?in|auth|login|token|cancell?ed/i.test(lower)) {
     return "Puter sign-in was cancelled or is required. Please try again and complete the Puter sign-in dialog.";
   }
-  if (/network|fetch|offline|connection|failed to fetch/i.test(lower)) {
+  if (/network|fetch|offline|connection|failed to fetch|timed? out/i.test(lower)) {
     return "A network error occurred while contacting Puter. Check your internet connection and try again.";
   }
-  if (/quota|credit|balance|insufficient|usage/i.test(lower)) {
+  if (/quota|credit|balance|insufficient|usage|billing|payment/i.test(lower)) {
     return "Puter could not complete the request — this may be a usage or credit limit on the Puter account. Please try again later.";
   }
-  if (/model|not found|unavailable/i.test(lower)) {
+  if (/model|not found|unavailable|rate/i.test(lower)) {
     return "The AI model is temporarily unavailable. Please try again in a moment.";
   }
-  return message.length > 0
-    ? `The AI service returned an error: ${message}`
-    : "Something went wrong while contacting the AI service. Please try again.";
+  if (message.length > 0) {
+    return `The AI service returned an error: ${message}`;
+  }
+  return "Something went wrong while contacting the AI service. Please try again.";
 }
 
 export function isDemoMode(): boolean {

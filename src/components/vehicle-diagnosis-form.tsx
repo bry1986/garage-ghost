@@ -151,6 +151,7 @@ export function VehicleDiagnosisForm() {
         resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       });
     } catch (cause) {
+      console.error("Garage Ghost analysis failed:", cause);
       setError(describePuterError(cause));
     } finally {
       setLoading(false);

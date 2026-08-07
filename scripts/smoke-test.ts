@@ -30,6 +30,7 @@ import {
   describePuterError,
   parseDiagnosticJson,
   runDiagnosis,
+  toReadableError,
   withTimeout,
 } from "../src/lib/diagnosis";
 import {
@@ -169,6 +170,28 @@ async function main() {
   // 12. describePuterError explains timeouts clearly
   assert.ok(describePuterError(new DiagnosisTimeoutError("took too long")).includes("took too long"));
   console.log("ok: describePuterError explains the timeout in plain language");
+
+  // 13. Plain-object errors (Puter shape) must not become "[object Object]"
+  assert.strictEqual(toReadableError({ message: "Insufficient quota" }), "Insufficient quota");
+  assert.ok(
+    describePuterError({ message: "Insufficient quota" }).includes("usage or credit limit"),
+    "object errors with a message are mapped to the friendly quota message"
+  );
+  console.log("ok: plain-object errors are read via their message property");
+
+  // 14. Nested error shapes and error codes
+  assert.strictEqual(
+    toReadableError({ error: { message: "Model not found" } }),
+    "Model not found"
+  );
+  assert.ok(describePuterError({ code: "auth_token_missing" }).includes("sign-in"));
+  console.log("ok: nested errors and errorCode-only errors are handled");
+
+  // 15. Unreadable rejections fall back to a friendly message, never "[object Object]"
+  const generic = describePuterError({});
+  assert.ok(!generic.includes("[object Object]"), "UI must never show [object Object]");
+  assert.ok(generic.includes("Something went wrong"));
+  console.log("ok: unreadable rejections get a friendly fallback message");
 
   console.log("\nAll smoke tests passed ✅");
 }
