@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import {
+  AlertTriangle,
   CheckCircle2,
   Crown,
   ExternalLink,
@@ -20,11 +21,13 @@ import {
   getBillingPortalUrl,
   getMonthlyCheckoutUrl,
   isCheckoutConfigured,
+  type LicenseStatus,
 } from "@/lib/pro";
 
 interface ProModalProps {
   open: boolean;
   isPro: boolean;
+  licenseStatus: LicenseStatus;
   onClose: () => void;
   onActivate: (licenseKey: string) => Promise<{ ok: boolean; error?: string }>;
   onDeactivate: () => Promise<void>;
@@ -43,12 +46,22 @@ const PRO_FEATURES = [
   },
 ];
 
-export function ProModal({ open, isPro, onClose, onActivate, onDeactivate }: ProModalProps) {
+export function ProModal({
+  open,
+  isPro,
+  licenseStatus,
+  onClose,
+  onActivate,
+  onDeactivate,
+}: ProModalProps) {
   const [licenseKey, setLicenseKey] = useState("");
   const [activating, setActivating] = useState(false);
   const [activationError, setActivationError] = useState<string | null>(null);
-  const [activationOk, setActivationOk] = useState<string | null>(null);
+  // True right after a successful activation → shows the "Thanks for going Pro"
+  // confirmation screen. Reset whenever the dialog closes.
+  const [justActivated, setJustActivated] = useState(false);
   const closeRef = useRef<HTMLButtonElement>(null);
+  const thanksRef = useRef<HTMLButtonElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
 
@@ -57,15 +70,21 @@ export function ProModal({ open, isPro, onClose, onActivate, onDeactivate }: Pro
   const billingUrl = getBillingPortalUrl();
   const checkoutConfigured = isCheckoutConfigured();
 
+  const handleClose = useCallback(() => {
+    setJustActivated(false);
+    onClose();
+  }, [onClose]);
+
   // Focus + escape handling + scroll lock + a minimal focus trap while open.
   useEffect(() => {
     if (!open) return;
-    closeRef.current?.focus();
+    // Prefer the close button; on the thank-you screen focus the CTA instead.
+    (closeRef.current ?? thanksRef.current)?.focus();
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     const handleKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        onClose();
+        handleClose();
         return;
       }
       if (event.key !== "Tab") return;
@@ -94,15 +113,23 @@ export function ProModal({ open, isPro, onClose, onActivate, onDeactivate }: Pro
       document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", handleKey);
     };
-  }, [open, onClose]);
+  }, [open, handleClose]);
 
   // Move focus to the license input when the activation form becomes visible.
   useEffect(() => {
-    if (open && !isPro) {
+    if (open && !isPro && !justActivated) {
       const timer = setTimeout(() => inputRef.current?.focus(), 250);
       return () => clearTimeout(timer);
     }
-  }, [open, isPro]);
+  }, [open, isPro, justActivated]);
+
+  // When the view swaps to the thank-you screen after a successful activation,
+  // move focus to its CTA so keyboard/screen-reader users stay oriented.
+  useEffect(() => {
+    if (open && justActivated) {
+      thanksRef.current?.focus();
+    }
+  }, [open, justActivated]);
 
   if (!open) return null;
 
@@ -112,11 +139,10 @@ export function ProModal({ open, isPro, onClose, onActivate, onDeactivate }: Pro
     if (!key || activating) return;
     setActivating(true);
     setActivationError(null);
-    setActivationOk(null);
     const result = await onActivate(key);
     setActivating(false);
     if (result.ok) {
-      setActivationOk("License activated — Pro features are now unlocked.");
+      setJustActivated(true);
       setLicenseKey("");
     } else {
       setActivationError(
@@ -124,6 +150,66 @@ export function ProModal({ open, isPro, onClose, onActivate, onDeactivate }: Pro
       );
     }
   };
+
+  // --- "Thanks for going Pro" confirmation screen ---------------------------
+  if (justActivated) {
+    return (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center p-4"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="pro-thanks-title"
+      >
+        <button
+          type="button"
+          aria-label="Close"
+          tabIndex={-1}
+          onClick={handleClose}
+          className="absolute inset-0 cursor-default bg-black/70 backdrop-blur-sm"
+        />
+        <div
+          ref={panelRef}
+          className="relative z-10 w-full max-w-md rounded-lg border border-zinc-700 bg-zinc-900 shadow-2xl"
+        >
+          <div className="flex flex-col items-center gap-4 px-6 py-10 text-center">
+            <div
+              className="pro-pop flex h-16 w-16 items-center justify-center rounded-full border border-emerald-500/40 bg-emerald-500/10"
+              aria-hidden
+            >
+              <CheckCircle2 className="h-8 w-8 text-emerald-400" />
+            </div>
+            <div>
+              <h2 id="pro-thanks-title" className="text-lg font-bold text-zinc-50">
+                Thanks for going Pro!
+              </h2>
+              <p className="mt-1 text-sm text-zinc-400">
+                Your license is active on this browser. Enjoy the unlocked features.
+              </p>
+            </div>
+            <ul className="w-full space-y-3 rounded-md border border-zinc-800 bg-zinc-950/60 p-4 text-left">
+              {PRO_FEATURES.map((feature) => (
+                <li key={feature.title} className="flex items-start gap-2 text-sm text-zinc-300">
+                  <feature.icon className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" aria-hidden />
+                  <span>
+                    <span className="font-medium text-zinc-100">{feature.title}.</span>{" "}
+                    {feature.text}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <button
+              ref={thanksRef}
+              type="button"
+              onClick={handleClose}
+              className="w-full rounded-md bg-amber-500 px-4 py-2.5 text-sm font-semibold text-zinc-950 transition-colors hover:bg-amber-400"
+            >
+              Start diagnosing
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -137,7 +223,7 @@ export function ProModal({ open, isPro, onClose, onActivate, onDeactivate }: Pro
         type="button"
         aria-label="Close upgrade dialog"
         tabIndex={-1}
-        onClick={onClose}
+        onClick={handleClose}
         className="absolute inset-0 cursor-default bg-black/70 backdrop-blur-sm"
       />
 
@@ -153,7 +239,7 @@ export function ProModal({ open, isPro, onClose, onActivate, onDeactivate }: Pro
           <button
             ref={closeRef}
             type="button"
-            onClick={onClose}
+            onClick={handleClose}
             aria-label="Close"
             className="rounded-md p-1 text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
           >
@@ -185,7 +271,7 @@ export function ProModal({ open, isPro, onClose, onActivate, onDeactivate }: Pro
               type="button"
               onClick={async () => {
                 await onDeactivate();
-                onClose();
+                handleClose();
               }}
               className="text-xs text-zinc-400 underline-offset-2 transition-colors hover:text-red-300 hover:underline"
             >
@@ -194,6 +280,18 @@ export function ProModal({ open, isPro, onClose, onActivate, onDeactivate }: Pro
           </div>
         ) : (
           <div className="space-y-4 px-5 py-5">
+            {licenseStatus === "expired" && (
+              <p
+                role="status"
+                className="flex items-start gap-2 rounded-md border border-red-500/30 bg-red-500/10 p-3 text-xs leading-relaxed text-red-200"
+              >
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+                <span>
+                  Your Pro license is no longer active. Renew your subscription to keep unlimited
+                  cost estimates and PDF report export, or enter a new license key below.
+                </span>
+              </p>
+            )}
             <p className="text-sm leading-relaxed text-zinc-300">
               Unlock the features drivers pay for most: unlimited repair cost estimates and
               printable mechanic reports.
@@ -304,11 +402,6 @@ export function ProModal({ open, isPro, onClose, onActivate, onDeactivate }: Pro
                   )}
                 </button>
               </form>
-              {activationOk && (
-                <p role="status" aria-live="polite" className="mt-2 text-xs text-emerald-300">
-                  {activationOk}
-                </p>
-              )}
               {activationError && (
                 <p role="alert" className="mt-2 text-xs text-red-400">
                   {activationError}

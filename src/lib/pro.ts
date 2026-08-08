@@ -31,6 +31,25 @@ export interface ProLicenseState {
   activatedAt: number;
 }
 
+/**
+ * UI-facing license status:
+ * - `null` — no license has ever been stored in this browser (regular free user)
+ * - `"active"` — a stored license validated successfully
+ * - `"expired"` — a stored license was rejected on validation (expired,
+ *   cancelled, disabled, or at its activation limit)
+ */
+export type LicenseStatus = "active" | "expired" | null;
+
+/**
+ * Derives the license status from whether a license was stored and whether the
+ * last validation pass considered it valid. Kept as a pure helper so the
+ * provider logic stays testable.
+ */
+export function deriveLicenseStatus(hadStoredLicense: boolean, valid: boolean): LicenseStatus {
+  if (!hadStoredLicense) return null;
+  return valid ? "active" : "expired";
+}
+
 export interface EstimateQuota {
   date: string; // local YYYY-MM-DD
   count: number;

@@ -47,6 +47,7 @@ import {
   clearProState,
   consumeEstimate,
   deactivateLicense,
+  deriveLicenseStatus,
   getBillingPortalUrl,
   getDeviceId,
   getProState,
@@ -573,6 +574,13 @@ async function main() {
   assert.strictEqual(isCheckoutConfigured(), false, "no checkout URLs configured in tests");
   assert.strictEqual(getBillingPortalUrl(), "", "no billing URL without a store slug");
   console.log("ok: unset checkout env vars degrade gracefully");
+
+  // 42. Pro: license status derivation for the header badge
+  assert.strictEqual(deriveLicenseStatus(false, true), null, "no stored license → no status");
+  assert.strictEqual(deriveLicenseStatus(false, false), null, "no stored license → no status");
+  assert.strictEqual(deriveLicenseStatus(true, true), "active");
+  assert.strictEqual(deriveLicenseStatus(true, false), "expired");
+  console.log("ok: license status derives as active/expired/null");
 
   console.log("\nAll smoke tests passed ✅");
 }

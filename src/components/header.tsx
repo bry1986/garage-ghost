@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CheckCircle2, Crown, Wrench } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Crown, Wrench } from "lucide-react";
 import { usePro } from "@/components/pro-provider";
 import { APP_NAME } from "@/lib/constants";
 import { cn } from "@/lib/utils";
@@ -15,7 +15,8 @@ const NAV_ITEMS = [
 
 export function Header() {
   const pathname = usePathname();
-  const { isPro, validating, openModal } = usePro();
+  const { isPro, licenseStatus, validating, openModal } = usePro();
+  const licenseExpired = !isPro && licenseStatus === "expired";
 
   return (
     <header className="sticky top-0 z-40 border-b border-zinc-800 bg-zinc-950/90 backdrop-blur">
@@ -56,20 +57,45 @@ export function Header() {
           <button
             type="button"
             onClick={openModal}
+            title={
+              validating
+                ? "Checking license…"
+                : isPro
+                  ? "Pro license active"
+                  : licenseExpired
+                    ? "Your Pro license has expired — click to renew"
+                    : "Upgrade to Pro"
+            }
             className={cn(
               "inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium transition-colors",
               isPro
                 ? "text-emerald-400 hover:bg-zinc-800/60"
-                : "border border-amber-500/40 bg-amber-500/5 text-amber-300 hover:border-amber-400/60 hover:bg-amber-500/10"
+                : licenseExpired
+                  ? "border border-red-500/40 bg-red-500/5 text-red-300 hover:border-red-400/60 hover:bg-red-500/10"
+                  : "border border-amber-500/40 bg-amber-500/5 text-amber-300 hover:border-amber-400/60 hover:bg-amber-500/10"
             )}
-            aria-label={isPro ? "Open Pro settings" : "Upgrade to Pro"}
+            aria-label={
+              isPro
+                ? "Open Pro settings — license active"
+                : licenseExpired
+                  ? "Renew Pro — license expired"
+                  : "Upgrade to Pro"
+            }
           >
             {isPro ? (
               <CheckCircle2 className="h-4 w-4" aria-hidden />
+            ) : licenseExpired ? (
+              <AlertTriangle className="h-4 w-4" aria-hidden />
             ) : (
               <Crown className="h-4 w-4" aria-hidden />
             )}
-            {validating ? "Pro…" : isPro ? "Pro" : "Go Pro"}
+            {validating ? "Pro…" : isPro ? "Pro" : licenseExpired ? "Pro expired" : "Go Pro"}
+            {isPro && (
+              <span
+                className="h-1.5 w-1.5 rounded-full bg-emerald-400"
+                aria-hidden
+              />
+            )}
           </button>
         </div>
       </div>
