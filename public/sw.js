@@ -1,16 +1,59 @@
-/* Garage Ghost service worker — enables PWA installability and basic offline support. */
-const CACHE = "garage-ghost-v1";
+/* Garage Ghost service worker v2 — PWA shell + offline fallback.
+ *
+ * Strategy:
+ * - Precache the app shell (main routes, icons, manifest, offline page) at install.
+ * - Cache-first for versioned static assets (/_next/static/, /icons/, manifest).
+ * - Network-first for navigations; when offline, serve the cached copy of the
+ *   page, falling back to /offline.html for any route not yet visited.
+ * - Versioned cache name so old caches are cleaned automatically on activate.
+ */
+const CACHE = "garage-ghost-v2";
 const STATIC_PREFIXES = ["/_next/static/", "/icons/", "/manifest.webmanifest"];
 
-self.addEventListener("install", () => {
-  self.skipWaiting();
+/* Routes precached at install so the app opens offline after first visit. */
+const PRECACHE_URLS = [
+  "/",
+  "/diagnose",
+  "/history",
+  "/pricing",
+  "/legal/privacy",
+  "/legal/terms",
+  "/legal/refunds",
+  "/legal/contact",
+  "/offline.html",
+  "/icons/icon-192.png",
+  "/icons/icon-512.png",
+  "/icons/icon-maskable-512.png",
+  "/icons/apple-touch-icon.png",
+  "/manifest.webmanifest",
+];
+
+self.addEventListener("install", (event) => {
+  event.waitUntil(
+    caches
+      .open(CACHE)
+      .then((cache) => cache.addAll(PRECACHE_URLS))
+      .catch(() => {
+        /* Some shell routes may 404 in odd deployments — precaching is
+         * best-effort; the network-first fallback still covers them. */
+      })
+      .then(() => self.skipWaiting())
+  );
 });
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches
       .keys()
-      .then((keys) => Promise.all(keys.filter((key) => key !== CACHE).map((key) => caches.delete(key))))
+      .then((keys) =>
+        // Prefix-based cleanup: drop every cache this app has ever created
+        // except the current version, so future cache versions self-clean.
+        Promise.all(
+          keys
+            .filter((key) => key.startsWith("garage-ghost-") && key !== CACHE)
+            .map((key) => caches.delete(key))
+        )
+      )
       .then(() => self.clients.claim())
   );
 });
@@ -23,6 +66,7 @@ self.addEventListener("fetch", (event) => {
   if (url.origin !== location.origin) return;
 
   const isStatic = STATIC_PREFIXES.some((prefix) => url.pathname.startsWith(prefix));
+  const isNavigation = request.mode === "navigate";
 
   // Cache-first for versioned static assets (JS/CSS chunks, icons, manifest)
   if (isStatic) {
@@ -41,18 +85,30 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Network-first for pages; fall back to the cached copy when offline
+  // Network-first for pages; offline → cached copy → /offline.html
+  if (isNavigation) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          if (response.ok) {
+            const copy = response.clone();
+            caches.open(CACHE).then((cache) => cache.put(request, copy));
+          }
+          return response;
+        })
+        .catch(() =>
+          caches
+            .match(request)
+            .then((cached) => cached || caches.match("/offline.html"))
+            .then((fallback) => fallback || caches.match("/"))
+        )
+    );
+    return;
+  }
+
+  // Same-origin non-navigation, non-static (e.g. API-ish fetches): network with
+  // cache fallback, no write-back to keep the cache predictable.
   event.respondWith(
-    fetch(request)
-      .then((response) => {
-        if (response.ok) {
-          const copy = response.clone();
-          caches.open(CACHE).then((cache) => cache.put(request, copy));
-        }
-        return response;
-      })
-      .catch(() =>
-        caches.match(request).then((cached) => cached || caches.match("/"))
-      )
+    fetch(request).catch(() => caches.match(request))
   );
 });

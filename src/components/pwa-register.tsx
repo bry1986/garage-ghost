@@ -14,10 +14,13 @@ export function PwaRegister() {
 
     // Register as soon as the component hydrates. Do not wait for the `load`
     // event: for statically-served pages it can fire before hydration, which
-    // would mean the listener never runs.
-    navigator.serviceWorker.register("/sw.js").catch((error) => {
-      console.error("Service worker registration failed:", error);
-    });
+    // would mean the listener never runs. updateViaCache: "none" ensures the
+    // browser always re-fetches /sw.js so SW updates are never stuck in cache.
+    navigator.serviceWorker
+      .register("/sw.js", { updateViaCache: "none" })
+      .catch((error) => {
+        console.error("Service worker registration failed:", error);
+      });
   }, []);
 
   return null;

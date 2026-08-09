@@ -6,6 +6,7 @@ import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { ProProvider } from "@/components/pro-provider";
 import { PwaRegister } from "@/components/pwa-register";
+import { SplashOverlay } from "@/components/splash-overlay";
 import { APP_NAME, APP_TAGLINE } from "@/lib/constants";
 
 const geistSans = Geist({
@@ -41,6 +42,80 @@ export const metadata: Metadata = {
   icons: {
     icon: "/icons/icon-512.png",
     apple: "/icons/apple-touch-icon.png",
+    // iOS launch splash screens (apple-touch-startup-image), matched per device
+    // by CSS media query. Generated to match each device's portrait screen.
+    other: [
+      {
+        rel: "apple-touch-startup-image",
+        url: "/icons/splash/iPhone-SE-640x1136.png",
+        media: "(device-width: 320px) and (device-height: 568px)",
+      },
+      {
+        rel: "apple-touch-startup-image",
+        url: "/icons/splash/iPhone-8-750x1334.png",
+        media: "(device-width: 375px) and (device-height: 667px)",
+      },
+      {
+        rel: "apple-touch-startup-image",
+        url: "/icons/splash/iPhone-8Plus-1242x2208.png",
+        media: "(device-width: 414px) and (device-height: 736px)",
+      },
+      {
+        rel: "apple-touch-startup-image",
+        url: "/icons/splash/iPhone-X-1125x2436.png",
+        media: "(device-width: 375px) and (device-height: 812px)",
+      },
+      {
+        rel: "apple-touch-startup-image",
+        url: "/icons/splash/iPhone-XR-828x1792.png",
+        media: "(device-width: 414px) and (device-height: 896px)",
+      },
+      {
+        rel: "apple-touch-startup-image",
+        url: "/icons/splash/iPhone-XSMax-1242x2688.png",
+        media: "(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3)",
+      },
+      {
+        rel: "apple-touch-startup-image",
+        url: "/icons/splash/iPhone-12-1170x2532.png",
+        media: "(device-width: 390px) and (device-height: 844px)",
+      },
+      {
+        rel: "apple-touch-startup-image",
+        url: "/icons/splash/iPhone-12ProMax-1284x2778.png",
+        media: "(device-width: 428px) and (device-height: 926px)",
+      },
+      {
+        rel: "apple-touch-startup-image",
+        url: "/icons/splash/iPhone-14Pro-1179x2556.png",
+        media: "(device-width: 393px) and (device-height: 852px)",
+      },
+      {
+        rel: "apple-touch-startup-image",
+        url: "/icons/splash/iPhone-14ProMax-1290x2796.png",
+        media: "(device-width: 430px) and (device-height: 932px)",
+      },
+      {
+        rel: "apple-touch-startup-image",
+        url: "/icons/splash/iPad-768x1024-1536x2048.png",
+        media: "(device-width: 768px) and (device-height: 1024px)",
+      },
+      {
+        rel: "apple-touch-startup-image",
+        url: "/icons/splash/iPad-Air-1668x2224.png",
+        media: "(device-width: 834px) and (device-height: 1112px)",
+      },
+      {
+        rel: "apple-touch-startup-image",
+        url: "/icons/splash/iPad-Pro11-1668x2388.png",
+        media: "(device-width: 834px) and (device-height: 1194px)",
+      },
+      {
+        rel: "apple-touch-startup-image",
+        url: "/icons/splash/iPad-Pro129-2048x2732.png",
+        media: "(device-width: 1024px) and (device-height: 1366px)",
+      },
+    ],
   },
 };
 
@@ -58,6 +133,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       className={`${geistSans.variable} ${geistMono.variable} ${spaceGrotesk.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col bg-zinc-950 text-zinc-100">
+        <SplashOverlay />
         <PwaRegister />
         <ProProvider>
           <Header />

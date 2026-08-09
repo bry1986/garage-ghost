@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#09090b" />
+    <title>You're offline — Garage Ghost</title>
+    <style>
+      :root {
+        --bg: #09090b;
+        --surface: #101013;
+        --border: #27272a;
+        --amber: #f59e0b;
+        --zinc-100: #fafafa;
+        --zinc-300: #d4d4d8;
+        --zinc-400: #a1a1aa;
+        --zinc-500: #71717a;
+        --red: #ef4444;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        min-height: 100vh;
+      }
+      body {
+        background: var(--bg);
+        color: var(--zinc-100);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
+          sans-serif;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+      }
+      .card {
+        width: 100%;
+        max-width: 420px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 32px 28px;
+        text-align: center;
+      }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 56px;
+        height: 56px;
+        border-radius: 14px;
+        border: 1px solid rgba(245, 158, 11, 0.4);
+        background: rgba(245, 158, 11, 0.1);
+      }
+      .badge svg {
+        width: 28px;
+        height: 28px;
+        color: var(--amber);
+      }
+      h1 {
+        font-size: 20px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        margin: 18px 0 6px;
+      }
+      p {
+        font-size: 14px;
+        line-height: 1.6;
+        color: var(--zinc-400);
+        margin: 0 0 8px;
+      }
+      .note {
+        margin-top: 16px;
+        padding: 12px 14px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.02);
+        text-align: left;
+        font-size: 12.5px;
+        line-height: 1.6;
+        color: var(--zinc-400);
+      }
+      .note strong {
+        color: var(--zinc-300);
+      }
+      .emergency {
+        margin-top: 12px;
+        padding: 12px 14px;
+        border: 1px solid rgba(239, 68, 68, 0.4);
+        border-radius: 10px;
+        background: rgba(239, 68, 68, 0.08);
+        text-align: left;
+        font-size: 12.5px;
+        line-height: 1.6;
+        color: #fecaca;
+      }
+      .emergency strong {
+        color: #fca5a5;
+        text-transform: uppercase;
+        font-size: 11px;
+        letter-spacing: 0.05em;
+      }
+      a {
+        color: var(--amber);
+        text-decoration: none;
+        font-weight: 600;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+      .actions {
+        margin-top: 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .retry {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        background: var(--amber);
+        color: #09090b;
+        font-weight: 700;
+        border-radius: 10px;
+        padding: 12px 16px;
+        font-size: 14px;
+      }
+      .retry:hover {
+        text-decoration: none;
+        opacity: 0.92;
+      }
+      .retry svg {
+        width: 16px;
+        height: 16px;
+      }
+      .muted {
+        color: var(--zinc-500);
+        font-size: 11.5px;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="card" role="main">
+      <span class="badge" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+        </svg>
+      </span>
+      <h1>You're offline</h1>
+      <p>
+        Garage Ghost needs a connection to analyze a new warning. Your saved reports are still in
+        this browser and can be opened from History.
+      </p>
+
+      <div class="note">
+        <strong>Saved reports:</strong> anything you already diagnosed is stored on this device and
+        remains available offline from the History page.
+      </div>
+
+      <div class="emergency">
+        <strong>Stop safely</strong><br />
+        If you are on the road and see a red warning light, smoke, a fuel smell, overheating, or
+        loss of braking or steering — stop safely and call roadside assistance or a qualified
+        workshop. Don&rsquo;t rely on the app in an emergency.
+      </div>
+
+      <div class="actions">
+        <a class="retry" href="./" onclick="location.reload(); return false;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+            <path d="M3 3v5h5" />
+          </svg>
+          Retry connection
+        </a>
+      </div>
+
+      <p class="muted">Garage Ghost · Educational guidance only — not a diagnosis.</p>
+    </main>
+  </body>
+</html>
