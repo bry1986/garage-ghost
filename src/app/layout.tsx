@@ -1,11 +1,12 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Space_Grotesk } from "next/font/google";
 import type { ReactNode } from "react";
 import "./globals.css";
 import { Header } from "@/components/header";
+import { Footer } from "@/components/footer";
 import { ProProvider } from "@/components/pro-provider";
 import { PwaRegister } from "@/components/pwa-register";
-import { APP_NAME, APP_TAGLINE, PUTER_DEVELOPER_URL } from "@/lib/constants";
+import { APP_NAME, APP_TAGLINE } from "@/lib/constants";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,6 +16,12 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+});
+
+const spaceGrotesk = Space_Grotesk({
+  variable: "--font-space-grotesk",
+  subsets: ["latin"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -46,27 +53,18 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
+    <html
+      lang="en"
+      className={`${geistSans.variable} ${geistMono.variable} ${spaceGrotesk.variable} h-full antialiased`}
+    >
       <body className="flex min-h-full flex-col bg-zinc-950 text-zinc-100">
         <PwaRegister />
         <ProProvider>
           <Header />
-          <main className="mx-auto w-full max-w-5xl flex-1 px-4 pb-32 pt-8">{children}</main>
-          <footer className="border-t border-zinc-800">
-          <div className="mx-auto flex w-full max-w-5xl flex-col items-center justify-between gap-2 px-4 py-4 text-xs text-zinc-500 sm:flex-row">
-            <p>
-              © {new Date().getFullYear()} {APP_NAME}. Educational guidance only — not a diagnosis.
-            </p>
-            <a
-              href={PUTER_DEVELOPER_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline-offset-2 transition-colors hover:text-zinc-300 hover:underline"
-            >
-              Powered by Puter
-            </a>
-          </div>
-        </footer>
+          <main className="mx-auto w-full max-w-6xl flex-1 px-4 pb-24 pt-6 sm:px-6 sm:pt-10">
+            {children}
+          </main>
+          <Footer />
         </ProProvider>
       </body>
     </html>

@@ -10,15 +10,19 @@ import {
   Crown,
   HelpCircle,
   Info,
+  Loader2,
   MessageCircle,
   OctagonAlert,
   Printer,
+  RotateCcw,
   Send,
   ShieldAlert,
   Wrench,
   XCircle,
 } from "lucide-react";
-import { CONFIDENCE_LABEL, DISCLAIMER, PRIMARY_BUTTON_CLASSES, RISK_META, safeRiskLevel } from "@/lib/constants";
+import { Disclosure } from "@/components/ui/disclosure";
+import { FixedDisclaimer } from "@/components/fixed-disclaimer";
+import { CONFIDENCE_LABEL, DISCLAIMER, RISK_META, safeRiskLevel } from "@/lib/constants";
 import {
   COST_DISCLAIMER,
   estimateRepairCosts,
@@ -47,6 +51,8 @@ interface DiagnosisResultProps {
   vehicle?: SavedVehicle;
   symptoms?: string;
   language?: ResponseLanguage;
+  /** Called when the user clicks "Start another assessment". */
+  onRestart?: () => void;
   /**
    * False when viewing a report that was already generated (e.g. from history):
    * the report is always shown in full and does not count toward the free
@@ -60,16 +66,38 @@ interface FollowUpItem {
   answer: string;
 }
 
-const RISK_ICONS: Record<RiskLevel, typeof OctagonAlert> = {
-  STOP_NOW: OctagonAlert,
-  DRIVE_CAREFULLY: AlertTriangle,
-  BOOK_SERVICE: CalendarClock,
-};
-
 const LIKELIHOOD_CLASSES: Record<Confidence, string> = {
   low: "bg-zinc-700/40 text-zinc-400",
   medium: "bg-amber-500/15 text-amber-300",
   high: "bg-red-500/15 text-red-300",
+};
+
+/** Full-width severity banner treatment per risk level. */
+const SEVERITY_HEADER: Record<
+  RiskLevel,
+  { container: string; badge: string; title: string; blurb: string; icon: typeof OctagonAlert }
+> = {
+  STOP_NOW: {
+    container: "border-red-500/60 bg-red-500/15",
+    badge: "bg-red-500 text-white",
+    title: "Stop now — take this seriously",
+    blurb: "Stop safely as soon as possible and call for professional help. Do not ignore this.",
+    icon: OctagonAlert,
+  },
+  DRIVE_CAREFULLY: {
+    container: "border-amber-500/50 bg-amber-500/10",
+    badge: "bg-amber-500 text-zinc-950",
+    title: "Drive carefully",
+    blurb: "Drive with care and have the vehicle checked as soon as possible.",
+    icon: AlertTriangle,
+  },
+  BOOK_SERVICE: {
+    container: "border-sky-500/50 bg-sky-500/10",
+    badge: "bg-sky-500 text-zinc-950",
+    title: "Book a service",
+    blurb: "Schedule an inspection with a qualified workshop.",
+    icon: CalendarClock,
+  },
 };
 
 function buildReportText(
@@ -142,6 +170,7 @@ export function DiagnosisResult({
   vehicle,
   symptoms,
   language = "English",
+  onRestart,
   consumeQuota = true,
 }: DiagnosisResultProps) {
   const [copied, setCopied] = useState(false);
@@ -234,20 +263,33 @@ export function DiagnosisResult({
   };
 
   const riskLevel = safeRiskLevel(result.riskLevel);
-  const RiskIcon = RISK_ICONS[riskLevel];
+  const severity = SEVERITY_HEADER[riskLevel];
+  const SeverityIcon = severity.icon;
   const followUpEnabled = Boolean(vehicle);
 
   return (
     <>
       <section
         aria-labelledby="diagnosis-result-heading"
-        className="space-y-6 rounded-lg border border-zinc-800 bg-zinc-900 p-4 sm:p-6"
+        className="result-rise space-y-6 rounded-lg border border-zinc-800 bg-zinc-900 p-4 sm:p-6"
       >
-        <div>
-          <h2 id="diagnosis-result-heading" className="text-lg font-semibold text-zinc-50">
-            Analysis
-          </h2>
-          <p className="mt-1 text-sm text-zinc-400">{vehicleLabel}</p>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 id="diagnosis-result-heading" className="font-display text-lg font-bold text-zinc-50">
+              Assessment
+            </h2>
+            <p className="mt-0.5 text-sm text-zinc-400">{vehicleLabel}</p>
+          </div>
+          {onRestart && (
+            <button
+              type="button"
+              onClick={onRestart}
+              className="inline-flex items-center gap-2 rounded-md border border-zinc-700 px-3 py-1.5 text-xs font-medium text-zinc-200 transition-colors hover:border-amber-500/60 hover:text-amber-300"
+            >
+              <RotateCcw className="h-3.5 w-3.5" aria-hidden />
+              Start another assessment
+            </button>
+          )}
         </div>
 
         {source === "demo" && (
@@ -271,34 +313,47 @@ export function DiagnosisResult({
           </div>
         )}
 
-        <div className="flex flex-wrap items-center gap-3">
-          <span
-            className={cn(
-              "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide ring-1 ring-inset",
-              RISK_META[riskLevel].badgeClasses
-            )}
-          >
-            <RiskIcon className="h-3.5 w-3.5" aria-hidden />
-            {RISK_META[riskLevel].label}
-          </span>
-          <p className="text-xs text-zinc-400">
+        {/* ----------------------- Severity header ----------------------- */}
+        <div
+          role="status"
+          className={cn(
+            "rounded-lg border-2 p-4 sm:p-5",
+            severity.container
+          )}
+        >
+          <div className="flex flex-wrap items-center gap-3">
+            <span
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide",
+                severity.badge
+              )}
+            >
+              <SeverityIcon className="h-4 w-4" aria-hidden />
+              {RISK_META[riskLevel].label}
+            </span>
+            <p className="text-sm font-semibold text-zinc-100">{severity.title}</p>
+          </div>
+          <p className="mt-2 text-sm font-medium text-zinc-200">
             {result.detectedWarning} · {CONFIDENCE_LABEL[result.confidence]}
           </p>
+          <p className="mt-1 text-xs text-zinc-400">{severity.blurb}</p>
         </div>
-        <p className="text-xs text-zinc-500">{RISK_META[riskLevel].description}</p>
 
+        {/* ----------------------- Summary ----------------------- */}
         <div>
           <h3 className="text-sm font-semibold text-zinc-200">Summary</h3>
           <p className="mt-2 text-sm leading-relaxed text-zinc-300">{result.summary}</p>
         </div>
 
+        {/* ----------------------- Possible causes (expandable) ----------------------- */}
         {result.possibleCauses.length > 0 && (
-          <div>
-            <h3 className="flex items-center gap-2 text-sm font-semibold text-zinc-200">
-              <Wrench className="h-4 w-4 text-zinc-400" aria-hidden />
-              Possible causes
-            </h3>
-            <ul className="mt-3 space-y-2">
+          <Disclosure
+            title="Possible causes"
+            icon={<Wrench className="h-4 w-4 text-zinc-400" aria-hidden />}
+            defaultOpen
+            buttonLabel="Show or hide possible causes"
+          >
+            <ul className="space-y-2">
               {result.possibleCauses.map((item, index) => (
                 <li
                   key={index}
@@ -316,10 +371,10 @@ export function DiagnosisResult({
                 </li>
               ))}
             </ul>
-          </div>
+          </Disclosure>
         )}
 
-        {/* Estimated repair cost — FIXD-style ballpark ranges */}
+        {/* ----------------------- Estimated repair cost ----------------------- */}
         <div>
           <h3 className="flex items-center gap-2 text-sm font-semibold text-zinc-200">
             <CircleDollarSign className="h-4 w-4 text-emerald-400" aria-hidden />
@@ -392,13 +447,15 @@ export function DiagnosisResult({
           )}
         </div>
 
+        {/* ----------------------- Safe checks (expandable) ----------------------- */}
         {result.safeChecks.length > 0 && (
-          <div>
-            <h3 className="flex items-center gap-2 text-sm font-semibold text-zinc-200">
-              <CheckCircle2 className="h-4 w-4 text-emerald-400" aria-hidden />
-              Safe checks you can do
-            </h3>
-            <ul className="mt-3 space-y-2">
+          <Disclosure
+            title="Safe checks you can do"
+            icon={<CheckCircle2 className="h-4 w-4 text-emerald-400" aria-hidden />}
+            defaultOpen
+            buttonLabel="Show or hide safe checks"
+          >
+            <ul className="space-y-2">
               {result.safeChecks.map((item, index) => (
                 <li key={index} className="flex items-start gap-2 text-sm text-zinc-300">
                   <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" aria-hidden />
@@ -406,16 +463,17 @@ export function DiagnosisResult({
                 </li>
               ))}
             </ul>
-          </div>
+          </Disclosure>
         )}
 
+        {/* ----------------------- Do not do (always visible — safety) ----------------------- */}
         {result.doNotDo.length > 0 && (
-          <div>
-            <h3 className="flex items-center gap-2 text-sm font-semibold text-zinc-200">
-              <XCircle className="h-4 w-4 text-red-400" aria-hidden />
+          <div className="rounded-lg border border-red-500/40 bg-red-500/5 p-4">
+            <h3 className="flex items-center gap-2 text-sm font-semibold text-red-300">
+              <XCircle className="h-4 w-4" aria-hidden />
               Do not do
             </h3>
-            <ul className="mt-3 space-y-2">
+            <ul className="mt-2 space-y-2">
               {result.doNotDo.map((item, index) => (
                 <li key={index} className="flex items-start gap-2 text-sm text-zinc-300">
                   <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" aria-hidden />
@@ -426,13 +484,14 @@ export function DiagnosisResult({
           </div>
         )}
 
+        {/* ----------------------- Questions (expandable) ----------------------- */}
         {result.questions.length > 0 && (
-          <div>
-            <h3 className="flex items-center gap-2 text-sm font-semibold text-zinc-200">
-              <HelpCircle className="h-4 w-4 text-sky-400" aria-hidden />
-              Questions to answer or ask a mechanic
-            </h3>
-            <ul className="mt-3 space-y-2">
+          <Disclosure
+            title="Questions to answer or ask a mechanic"
+            icon={<HelpCircle className="h-4 w-4 text-sky-400" aria-hidden />}
+            buttonLabel="Show or hide questions for the mechanic"
+          >
+            <ul className="space-y-2">
               {result.questions.map((item, index) => (
                 <li key={index} className="flex items-start gap-2 text-sm text-zinc-300">
                   <HelpCircle className="mt-0.5 h-4 w-4 shrink-0 text-sky-400" aria-hidden />
@@ -440,9 +499,10 @@ export function DiagnosisResult({
                 </li>
               ))}
             </ul>
-          </div>
+          </Disclosure>
         )}
 
+        {/* ----------------------- Mechanic-ready report ----------------------- */}
         <div>
           <h3 className="flex items-center gap-2 text-sm font-semibold text-zinc-200">
             <ShieldAlert className="h-4 w-4 text-amber-400" aria-hidden />
@@ -491,6 +551,7 @@ export function DiagnosisResult({
           </p>
         </div>
 
+        {/* ----------------------- Follow-up ----------------------- */}
         {followUpEnabled && (
           <div className="border-t border-zinc-800 pt-5">
             <h3 className="flex items-center gap-2 text-sm font-semibold text-zinc-200">
@@ -503,10 +564,7 @@ export function DiagnosisResult({
             </p>
             <div className="mt-3 space-y-3">
               {followUps.map((item, index) => (
-                <div
-                  key={index}
-                  className="rounded-md border border-zinc-800 bg-zinc-950/60 p-3"
-                >
+                <div key={index} className="rounded-md border border-zinc-800 bg-zinc-950/60 p-3">
                   <p className="text-sm font-medium text-zinc-200">Q: {item.question}</p>
                   <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-zinc-300">
                     {item.answer}
@@ -530,14 +588,16 @@ export function DiagnosisResult({
                   type="submit"
                   disabled={followUpLoading || followUpInput.trim().length === 0}
                   className={cn(
-                    PRIMARY_BUTTON_CLASSES,
-                    "shrink-0",
+                    "inline-flex items-center justify-center gap-2 rounded-md bg-amber-500 px-4 py-2.5 text-sm font-semibold text-zinc-950 transition-colors hover:bg-amber-400",
                     (followUpLoading || followUpInput.trim().length === 0) &&
                       "cursor-not-allowed opacity-60"
                   )}
                 >
                   {followUpLoading ? (
-                    <span className="text-xs">Answering…</span>
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+                      Answering…
+                    </>
                   ) : (
                     <>
                       <Send className="h-3.5 w-3.5" aria-hidden />
@@ -555,6 +615,20 @@ export function DiagnosisResult({
                 </p>
               )}
             </div>
+          </div>
+        )}
+
+        {/* Start another assessment (bottom, when provided) */}
+        {onRestart && (
+          <div className="border-t border-zinc-800 pt-5 text-center">
+            <button
+              type="button"
+              onClick={onRestart}
+              className="inline-flex items-center justify-center gap-2 rounded-md border border-zinc-700 px-5 py-2.5 text-sm font-semibold text-zinc-200 transition-colors hover:border-amber-500/60 hover:text-amber-300"
+            >
+              <RotateCcw className="h-4 w-4" aria-hidden />
+              Start another assessment
+            </button>
           </div>
         )}
       </section>
@@ -644,15 +718,21 @@ export function DiagnosisResult({
       </div>
 
       {/* Fixed emergency disclaimer — always visible with a result */}
-      <div
-        role="note"
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-zinc-800 bg-zinc-950/95 px-4 py-3 backdrop-blur"
-      >
-        <div className="mx-auto flex max-w-5xl items-start gap-2 text-xs leading-relaxed text-zinc-300">
-          <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" aria-hidden />
-          <p>{DISCLAIMER}</p>
+      <FixedDisclaimer />
+
+      {/* Copy confirmation toast */}
+      {copied && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="toast-pop fixed bottom-20 left-1/2 z-40 -translate-x-1/2"
+        >
+          <div className="flex items-center gap-2 rounded-full border border-emerald-500/40 bg-zinc-900 px-4 py-2 text-xs font-semibold text-emerald-300 shadow-lg">
+            <CheckCircle2 className="h-4 w-4" aria-hidden />
+            Report copied to clipboard
+          </div>
         </div>
-      </div>
+      )}
     </>
   );
 }

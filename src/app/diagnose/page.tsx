@@ -12,8 +12,10 @@ export default function DiagnosePage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-zinc-50">Diagnose a warning</h1>
-        <p className="mt-1 text-sm text-zinc-400">
+        <h1 className="font-display text-2xl font-bold tracking-tight text-zinc-50 sm:text-3xl">
+          Diagnose a warning
+        </h1>
+        <p className="mt-1.5 text-sm text-zinc-400">
           Enter your vehicle details and describe what you notice. You will receive educational
           guidance and safe next steps.
         </p>

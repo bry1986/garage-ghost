@@ -1,19 +1,35 @@
 "use client";
 
-import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent, type DragEvent, type FormEvent } from "react";
 import {
   ArrowRight,
+  Battery,
   BookMarked,
   Camera,
   Car,
+  CircleHelp,
+  CloudFog,
+  Cog,
+  Compass,
+  Disc3,
+  Fuel,
+  Gauge,
+  ImagePlus,
   Info,
   Loader2,
   ScanLine,
   Search,
   ShieldCheck,
+  Thermometer,
   Trash2,
+  Waves,
+  X,
+  Zap,
 } from "lucide-react";
 import { DiagnosisResult, PrintFallback } from "@/components/diagnosis-result";
+import { FixedDisclaimer } from "@/components/fixed-disclaimer";
+import { Stepper, type DiagnosisStep } from "@/components/stepper";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   ACCEPTED_IMAGE_TYPES,
   FUEL_TYPES,
@@ -21,7 +37,6 @@ import {
   MAX_IMAGE_BYTES,
   PRIMARY_BUTTON_CLASSES,
   PUTER_DEVELOPER_URL,
-  SECONDARY_BUTTON_CLASSES,
   SYMPTOM_CHIPS,
 } from "@/lib/constants";
 import { describePuterError, runDiagnosis, type DiagnosisOutput } from "@/lib/diagnosis";
@@ -34,11 +49,50 @@ import type { ResponseLanguage, SavedVehicle, VehicleProfile } from "@/types/dia
 const inputClasses =
   "w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 transition-colors hover:border-zinc-600 focus:border-amber-500 focus:outline-none";
 const labelClasses = "mb-1.5 block text-sm font-medium text-zinc-300";
-const legendClasses = "mb-3 text-sm font-semibold uppercase tracking-wide text-zinc-200";
+
+/** Lucide icon per quick symptom chip (automotive command-center visual). */
+const CHIP_ICONS: Record<(typeof SYMPTOM_CHIPS)[number], typeof Gauge> = {
+  "Loss of power": Gauge,
+  "Engine noise": Cog,
+  Vibrations: Waves,
+  Smoke: CloudFog,
+  "Fuel smell": Fuel,
+  Overheating: Thermometer,
+  "Hard braking": Disc3,
+  "Steering issue": Compass,
+  "Battery problem": Battery,
+  "Strange electrical smell": Zap,
+};
 
 function buildStoredSymptoms(text: string, chips: string[]): string {
   if (chips.length === 0) return text;
   return `${text}${text ? " " : ""}[Selected: ${chips.join(", ")}]`;
+}
+
+function ResultSkeleton() {
+  return (
+    <div className="card-surface space-y-5 p-5 sm:p-6" aria-hidden>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-6 w-28" />
+          <Skeleton className="h-6 w-20" />
+        </div>
+        <Skeleton className="h-6 w-24 rounded-full" />
+      </div>
+      <Skeleton className="h-4 w-3/4" />
+      <Skeleton className="h-4 w-full" />
+      <Skeleton className="h-4 w-5/6" />
+      <div className="space-y-2 pt-2">
+        <Skeleton className="h-3 w-40" />
+        <Skeleton className="h-3 w-full" />
+        <Skeleton className="h-3 w-11/12" />
+      </div>
+      <div className="flex flex-wrap gap-2 pt-2">
+        <Skeleton className="h-9 w-36 rounded-md" />
+        <Skeleton className="h-9 w-44 rounded-md" />
+      </div>
+    </div>
+  );
 }
 
 export function VehicleDiagnosisForm() {
@@ -54,6 +108,7 @@ export function VehicleDiagnosisForm() {
   const [image, setImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
+  const [dragging, setDragging] = useState(false);
 
   const [validationError, setValidationError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -76,6 +131,10 @@ export function VehicleDiagnosisForm() {
   const [profileNote, setProfileNote] = useState<string | null>(null);
 
   const resultRef = useRef<HTMLDivElement>(null);
+  const vehicleRef = useRef<HTMLFieldSetElement>(null);
+  const symptomsRef = useRef<HTMLFieldSetElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const dragCounter = useRef(0);
 
   useEffect(() => {
     // Reading the external localStorage store once after mount (client only).
@@ -89,6 +148,26 @@ export function VehicleDiagnosisForm() {
     };
   }, [imagePreview]);
 
+  // ---------------------------------------------------------------------
+  // Guided-step derivation (visual only — the form stays on one page)
+  // ---------------------------------------------------------------------
+  const vehicleComplete = brand.trim().length > 0 && model.trim().length > 0 && /^\d{4}$/.test(year.trim());
+  const symptomsComplete = symptoms.trim().length > 0;
+  const assessmentActive = loading || output !== null;
+
+  const currentStep: number = assessmentActive ? 3 : symptomsComplete ? 2 : vehicleComplete ? 1 : 0;
+  const activeStep: DiagnosisStep = assessmentActive
+    ? "assessment"
+    : symptomsComplete
+      ? "symptoms"
+      : "vehicle";
+
+  const navigateTo = (step: DiagnosisStep) => {
+    const target = step === "vehicle" ? vehicleRef : step === "symptoms" ? symptomsRef : resultRef;
+    target.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  // ---------------------------------------------------------------------
   const toggleChip = (chip: string) => {
     setSelectedChips((prev) =>
       prev.includes(chip) ? prev.filter((item) => item !== chip) : [...prev, chip]
@@ -144,7 +223,7 @@ export function VehicleDiagnosisForm() {
     saveProfile(profile);
     setProfiles(getProfiles());
     setSelectedProfileId(profile.id);
-    setProfileNote(`Saved \u201c${profile.label}\u201d for quick reuse.`);
+    setProfileNote(`Saved “${profile.label}” for quick reuse.`);
   };
 
   const handleProfileSelect = (id: string) => {
@@ -156,7 +235,7 @@ export function VehicleDiagnosisForm() {
     setYear(profile.vehicle.year);
     setFuelType(profile.vehicle.fuelType ?? "");
     setMileage(profile.vehicle.mileage ?? "");
-    setProfileNote(`Loaded \u201c${profile.label}\u201d.`);
+    setProfileNote(`Loaded “${profile.label}”.`);
   };
 
   const handleDeleteProfile = () => {
@@ -165,7 +244,7 @@ export function VehicleDiagnosisForm() {
     deleteProfile(selectedProfileId);
     setProfiles(getProfiles());
     setSelectedProfileId("");
-    setProfileNote(`Removed saved vehicle${profile ? ` \u201c${profile.label}\u201d` : ""}.`);
+    setProfileNote(`Removed saved vehicle${profile ? ` “${profile.label}”` : ""}.`);
   };
 
   const clearImage = () => {
@@ -173,14 +252,11 @@ export function VehicleDiagnosisForm() {
     setImage(null);
     setImagePreview(null);
     setImageError(null);
+    if (imageInputRef.current) imageInputRef.current.value = "";
   };
 
-  const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0] ?? null;
+  const acceptImageFile = (file: File | null) => {
     setImageError(null);
-    if (imagePreview) URL.revokeObjectURL(imagePreview);
-    setImage(null);
-    setImagePreview(null);
     if (!file) return;
     if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
       setImageError("Unsupported file type. Please upload a JPG, PNG or WebP photo.");
@@ -190,10 +266,38 @@ export function VehicleDiagnosisForm() {
       setImageError("The photo is larger than 10 MB. Please choose a smaller image.");
       return;
     }
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
     setImage(file);
     setImagePreview(URL.createObjectURL(file));
+  };
+
+  const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
+    acceptImageFile(event.target.files?.[0] ?? null);
     // Reset the input so selecting the same file again still fires onChange.
     event.currentTarget.value = "";
+  };
+
+  const handleDragEnter = (event: DragEvent) => {
+    event.preventDefault();
+    dragCounter.current += 1;
+    setDragging(true);
+  };
+
+  const handleDragLeave = (event: DragEvent) => {
+    event.preventDefault();
+    dragCounter.current -= 1;
+    if (dragCounter.current === 0) setDragging(false);
+  };
+
+  const handleDragOver = (event: DragEvent) => {
+    event.preventDefault();
+  };
+
+  const handleDrop = (event: DragEvent) => {
+    event.preventDefault();
+    dragCounter.current = 0;
+    setDragging(false);
+    acceptImageFile(event.dataTransfer.files?.[0] ?? null);
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -216,6 +320,7 @@ export function VehicleDiagnosisForm() {
 
     if (problems.length > 0) {
       setValidationError(problems.join(" "));
+      vehicleRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       return;
     }
 
@@ -266,6 +371,14 @@ export function VehicleDiagnosisForm() {
     }
   };
 
+  const startAnotherAssessment = () => {
+    setOutput(null);
+    setError(null);
+    setValidationError(null);
+    setImageNote(false);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const vehicleLabel = [brand.trim(), model.trim(), year.trim()].filter(Boolean).join(" ");
 
   // FIXD-style ballpark cost for the DTC card (derived during render, not a hook).
@@ -283,11 +396,14 @@ export function VehicleDiagnosisForm() {
     : null;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 pb-16">
+      {/* Guided 3-step progress */}
+      <Stepper current={currentStep} active={activeStep} onNavigate={navigateTo} />
+
       {/* OBD-II code lookup — instant, no AI needed */}
       <section
         aria-labelledby="dtc-heading"
-        className="rounded-lg border border-zinc-800 bg-zinc-900 p-4"
+        className="card-surface p-4 sm:p-5"
       >
         <h2
           id="dtc-heading"
@@ -315,7 +431,10 @@ export function VehicleDiagnosisForm() {
             placeholder="e.g. P0300"
             className={cn(inputClasses, "uppercase sm:max-w-44")}
           />
-          <button type="submit" className={cn(SECONDARY_BUTTON_CLASSES, "shrink-0")}>
+          <button
+            type="submit"
+            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-md border border-zinc-700 px-4 py-2 text-sm font-semibold text-zinc-200 transition-colors hover:border-amber-500/60 hover:text-amber-300"
+          >
             <Search className="h-4 w-4" aria-hidden />
             Look up
           </button>
@@ -326,10 +445,7 @@ export function VehicleDiagnosisForm() {
           </p>
         )}
         {dtcResult && (
-          <div
-            role="status"
-            className="mt-3 rounded-md border border-zinc-700 bg-zinc-950/60 p-3"
-          >
+          <div role="status" className="mt-3 rounded-md border border-zinc-700 bg-zinc-950/60 p-3">
             <div className="flex flex-wrap items-center gap-2">
               <span className="rounded bg-amber-500/15 px-2 py-0.5 font-mono text-xs font-bold text-amber-300">
                 {dtcResult.code}
@@ -396,10 +512,7 @@ export function VehicleDiagnosisForm() {
       </section>
 
       {/* Saved vehicles */}
-      <section
-        aria-labelledby="profiles-heading"
-        className="rounded-lg border border-zinc-800 bg-zinc-900 p-4"
-      >
+      <section aria-labelledby="profiles-heading" className="card-surface p-4 sm:p-5">
         <h2
           id="profiles-heading"
           className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-zinc-200"
@@ -434,8 +547,7 @@ export function VehicleDiagnosisForm() {
               onClick={handleSaveProfile}
               disabled={!canSaveProfile}
               className={cn(
-                SECONDARY_BUTTON_CLASSES,
-                "shrink-0",
+                "inline-flex shrink-0 items-center justify-center gap-2 rounded-md border border-zinc-700 px-4 py-2.5 text-sm font-semibold text-zinc-200 transition-colors hover:border-amber-500/60 hover:text-amber-300",
                 !canSaveProfile && "cursor-not-allowed opacity-50"
               )}
               title="Fill in brand, model and year above, then save"
@@ -464,9 +576,14 @@ export function VehicleDiagnosisForm() {
 
       <form onSubmit={handleSubmit} noValidate className="space-y-8">
         <div className="grid gap-8 lg:grid-cols-2">
-          {/* Vehicle details */}
-          <fieldset className="space-y-4">
-            <legend className={legendClasses}>Vehicle details</legend>
+          {/* ------------------------------ Step 1: Vehicle */}
+          <fieldset ref={vehicleRef} className="scroll-mt-24 space-y-4">
+            <legend className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-zinc-200">
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-500/15 text-xs font-bold text-amber-400">
+                1
+              </span>
+              Vehicle details
+            </legend>
             <div>
               <label htmlFor="brand" className={labelClasses}>
                 Brand <span className="text-red-400" aria-hidden>*</span>
@@ -573,9 +690,14 @@ export function VehicleDiagnosisForm() {
             </div>
           </fieldset>
 
-          {/* Symptoms */}
-          <fieldset className="space-y-4">
-            <legend className={legendClasses}>Symptoms</legend>
+          {/* ------------------------------ Step 2: Symptoms */}
+          <fieldset ref={symptomsRef} className="scroll-mt-24 space-y-4">
+            <legend className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-zinc-200">
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-500/15 text-xs font-bold text-amber-400">
+                2
+              </span>
+              Symptoms
+            </legend>
             <div>
               <label htmlFor="symptoms" className={labelClasses}>
                 What are you noticing? <span className="text-red-400" aria-hidden>*</span>
@@ -597,6 +719,7 @@ export function VehicleDiagnosisForm() {
               <div className="flex flex-wrap gap-2" role="group" aria-label="Common symptoms">
                 {SYMPTOM_CHIPS.map((chip) => {
                   const selected = selectedChips.includes(chip);
+                  const ChipIcon = CHIP_ICONS[chip];
                   return (
                     <button
                       key={chip}
@@ -604,12 +727,13 @@ export function VehicleDiagnosisForm() {
                       aria-pressed={selected}
                       onClick={() => toggleChip(chip)}
                       className={cn(
-                        "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+                        "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all",
                         selected
                           ? "border-amber-500 bg-amber-500/15 text-amber-300"
                           : "border-zinc-700 bg-zinc-900 text-zinc-300 hover:border-zinc-500 hover:text-zinc-100"
                       )}
                     >
+                      <ChipIcon className="h-3.5 w-3.5" aria-hidden />
                       {chip}
                     </button>
                   );
@@ -617,45 +741,78 @@ export function VehicleDiagnosisForm() {
               </div>
             </div>
 
+            {/* Scanner-style photo uploader */}
             <div>
-              <label htmlFor="image" className={labelClasses}>
+              <span className={labelClasses}>
                 Dashboard warning-light photo{" "}
                 <span className="font-normal text-zinc-500">(optional)</span>
-              </label>
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
-                <label className="inline-flex cursor-pointer items-center gap-2 self-start rounded-md border border-dashed border-zinc-600 bg-zinc-900 px-3 py-2.5 text-sm text-zinc-300 transition-colors hover:border-amber-500/60 hover:text-zinc-100 focus-within:ring-2 focus-within:ring-amber-500">
-                  <Camera className="h-4 w-4" aria-hidden />
-                  {image ? "Change photo" : "Upload photo"}
-                  <input
-                    id="image"
-                    name="image"
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    className="sr-only"
-                    onChange={handleImageChange}
+              </span>
+              {imagePreview ? (
+                <div className="card-sunken overflow-hidden">
+                  {/* eslint-disable-next-line @next/next/no-img-element -- client-side blob URL preview; next/image does not apply */}
+                  <img
+                    src={imagePreview}
+                    alt="Preview of the uploaded dashboard warning-light photo"
+                    className="aspect-[16/9] w-full object-cover"
                   />
-                </label>
-                {imagePreview && (
-                  <div className="flex items-start gap-3">
-                    {/* eslint-disable-next-line @next/next/no-img-element -- client-side blob URL preview; next/image does not apply */}
-                    <img
-                      src={imagePreview}
-                      alt="Preview of the uploaded dashboard warning-light photo"
-                      className="h-20 w-32 rounded-md border border-zinc-700 object-cover"
-                    />
-                    <div className="text-xs text-zinc-400">
-                      <p className="max-w-[12rem] truncate">{image?.name}</p>
+                  <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2.5">
+                    <p className="max-w-[14rem] truncate text-xs text-zinc-400">
+                      {image?.name ?? "Photo attached"}
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => imageInputRef.current?.click()}
+                        className="inline-flex items-center gap-1.5 rounded-md border border-zinc-700 px-3 py-1.5 text-xs font-medium text-zinc-200 transition-colors hover:border-amber-500/60 hover:text-amber-300"
+                      >
+                        <ImagePlus className="h-3.5 w-3.5" aria-hidden />
+                        Replace
+                      </button>
                       <button
                         type="button"
                         onClick={clearImage}
-                        className="mt-1 font-medium text-red-400 underline-offset-2 hover:underline"
+                        className="inline-flex items-center gap-1.5 rounded-md border border-zinc-700 px-3 py-1.5 text-xs font-medium text-red-300 transition-colors hover:border-red-500/60 hover:bg-red-500/10"
                       >
-                        Remove photo
+                        <X className="h-3.5 w-3.5" aria-hidden />
+                        Remove
                       </button>
                     </div>
                   </div>
-                )}
-              </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => imageInputRef.current?.click()}
+                  onDragEnter={handleDragEnter}
+                  onDragLeave={handleDragLeave}
+                  onDragOver={handleDragOver}
+                  onDrop={handleDrop}
+                  aria-label="Upload a dashboard warning-light photo — drag and drop or click to browse"
+                  className={cn(
+                    "relative flex w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed px-4 py-8 transition-colors",
+                    dragging
+                      ? "border-amber-500 bg-amber-500/10"
+                      : "border-zinc-700 bg-zinc-900 hover:border-amber-500/60"
+                  )}
+                >
+                  <span className="flex h-10 w-10 items-center justify-center rounded-lg border border-zinc-700 bg-zinc-950 text-zinc-400">
+                    <Camera className="h-5 w-5" aria-hidden />
+                  </span>
+                  <span className="text-sm font-medium text-zinc-200">
+                    {dragging ? "Release to add photo" : "Drag & drop or click to scan"}
+                  </span>
+                  <span className="text-xs text-zinc-500">JPG, PNG or WebP · up to 10 MB</span>
+                </button>
+              )}
+              <input
+                ref={imageInputRef}
+                id="image"
+                name="image"
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="sr-only"
+                onChange={handleImageChange}
+              />
               {imageError ? (
                 <p role="alert" className="mt-1.5 text-xs text-red-400">
                   {imageError}
@@ -670,14 +827,16 @@ export function VehicleDiagnosisForm() {
           </fieldset>
         </div>
 
+        {/* ------------------------------ Analyze */}
         <div className="space-y-3">
           <button
             type="submit"
             disabled={loading}
             className={cn(
+              "w-full items-center justify-center gap-2 rounded-md bg-amber-500 px-6 py-3.5 text-base font-semibold text-zinc-950 transition-all hover:bg-amber-400",
               PRIMARY_BUTTON_CLASSES,
-              "w-full sm:w-auto",
-              loading && "cursor-not-allowed opacity-60"
+              "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400",
+              loading && "cursor-not-allowed opacity-70"
             )}
           >
             {loading ? (
@@ -692,14 +851,18 @@ export function VehicleDiagnosisForm() {
               </>
             )}
           </button>
-          <p aria-live="polite" role="status" className="min-h-5 text-xs text-amber-300">
+          <p aria-live="polite" role="status" className="min-h-5 text-center text-xs text-amber-300">
             {loading ? loadingStatus : ""}
           </p>
           {validationError && (
-            <p role="alert" className="text-sm text-red-400">
+            <p role="alert" className="text-center text-sm text-red-400">
               {validationError}
             </p>
           )}
+          <p className="flex items-center justify-center gap-1.5 text-center text-xs text-zinc-500">
+            <CircleHelp className="h-3.5 w-3.5 shrink-0" aria-hidden />
+            Always prioritize your safety — see the disclaimer at the bottom.
+          </p>
         </div>
       </form>
 
@@ -732,6 +895,8 @@ export function VehicleDiagnosisForm() {
         </p>
       </div>
 
+      {loading && <ResultSkeleton />}
+
       {output ? (
         <div ref={resultRef} className="scroll-mt-24">
           <DiagnosisResult
@@ -742,10 +907,15 @@ export function VehicleDiagnosisForm() {
             vehicle={lastVehicle ?? undefined}
             symptoms={symptoms.trim()}
             language={language}
+            onRestart={startAnotherAssessment}
           />
         </div>
       ) : (
-        <PrintFallback />
+        <>
+          <PrintFallback />
+          {/* Fixed disclaimer is visible before submitting and while loading */}
+          <FixedDisclaimer />
+        </>
       )}
     </div>
   );

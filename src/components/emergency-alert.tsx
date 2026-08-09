@@ -1,4 +1,4 @@
-import { TriangleAlert } from "lucide-react";
+import { OctagonAlert } from "lucide-react";
 import { EMERGENCY_MESSAGE } from "@/lib/constants";
 
 export function EmergencyAlert() {
@@ -6,12 +6,14 @@ export function EmergencyAlert() {
     <section
       role="alert"
       aria-label="Emergency safety warning"
-      className="rounded-lg border border-red-500/40 bg-red-500/10 p-4"
+      className="rounded-xl border-2 border-red-500/50 bg-red-500/10 p-4 sm:p-5"
     >
       <div className="flex items-start gap-3">
-        <TriangleAlert className="mt-0.5 h-5 w-5 shrink-0 text-red-400" aria-hidden />
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-500/15">
+          <OctagonAlert className="h-5 w-5 text-red-400" aria-hidden />
+        </span>
         <div>
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-red-300">
+          <h2 className="font-display text-sm font-bold uppercase tracking-wide text-red-300">
             Stop safely
           </h2>
           <p className="mt-1 text-sm leading-relaxed text-red-100/90">{EMERGENCY_MESSAGE}</p>

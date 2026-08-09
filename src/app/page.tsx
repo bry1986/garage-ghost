@@ -1,138 +1,180 @@
 import Link from "next/link";
-import { ArrowRight, History, Wrench } from "lucide-react";
-import { EmergencyAlert } from "@/components/emergency-alert";
-import { ProPricingSection } from "@/components/pro-pricing";
-import { SpiralAnimation } from "@/components/ui/spiral-animation";
 import {
-  APP_NAME,
-  APP_TAGLINE,
-  LANGUAGES,
-  PRIMARY_BUTTON_CLASSES,
-  SECONDARY_BUTTON_CLASSES,
-} from "@/lib/constants";
+  ArrowRight,
+  BookOpen,
+  Camera,
+  ClipboardList,
+  FileSearch,
+  Globe2,
+  Gauge,
+  Lock,
+  ShieldCheck,
+} from "lucide-react";
+import { EmergencyAlert } from "@/components/emergency-alert";
+import { InstrumentCluster } from "@/components/instrument-cluster";
+import { ProPricingSection } from "@/components/pro-pricing";
+import { SampleReport } from "@/components/sample-report";
+import { APP_NAME, APP_TAGLINE, LANGUAGES } from "@/lib/constants";
 
 const STEPS = [
   {
-    title: "Tell us about the vehicle",
-    text: "Brand, model and year, plus optional details like fuel type or mileage.",
+    icon: ClipboardList,
+    title: "Tell us what happened",
+    text: "Enter your vehicle details and describe the symptoms you notice — warning light, sound, smell or behaviour.",
   },
   {
-    title: "Describe the symptoms",
-    text: "What do you see or hear, when, and how often? Use quick chips and optionally attach a photo of a warning light.",
+    icon: Camera,
+    title: "Add a dashboard photo (optional)",
+    text: "Attach a photo of the warning light. It helps the analysis, but is never required.",
   },
   {
-    title: "Get safe next steps",
-    text: "Receive a risk level, safe checks, questions for the mechanic and a copyable report.",
+    icon: ShieldCheck,
+    title: "Get a safety-first next step",
+    text: "Receive a clear risk level, safe checks, questions for your mechanic and a copyable report.",
+  },
+];
+
+const TRUST_ITEMS = [
+  {
+    icon: BookOpen,
+    title: "Educational guidance",
+    text: "General information to help you understand the warning — not a diagnosis.",
+  },
+  {
+    icon: Globe2,
+    title: "Multilingual",
+    text: `Answers in ${LANGUAGES.join(", ")}.`,
+  },
+  {
+    icon: Lock,
+    title: "Privacy-first",
+    text: "Your reports stay in this browser. No account required.",
   },
 ];
 
 export default function HomePage() {
   return (
-    <div className="space-y-14 overflow-x-clip">
-      <section className="relative left-1/2 w-screen -translate-x-1/2 overflow-hidden bg-black">
-        {/* Animated spiral backdrop */}
-        <div className="absolute inset-0" aria-hidden="true">
-          <SpiralAnimation />
-        </div>
-        {/* Scrim so the content stays readable and blends into the page */}
-        <div
-          className="pointer-events-none absolute inset-0 bg-gradient-to-b from-zinc-950 via-zinc-950/35 to-zinc-950"
-          aria-hidden="true"
-        />
-        <div className="relative z-10 mx-auto flex min-h-[80vh] w-full max-w-5xl flex-col items-center justify-center px-4 py-24 text-center sm:py-32">
-          <div
-            className="hero-rise mx-auto mb-6 inline-flex h-14 w-14 items-center justify-center rounded-xl border border-amber-500/40 bg-amber-500/10"
-            style={{ animationDelay: "0.05s" }}
-          >
-            <Wrench className="h-7 w-7 text-amber-400" aria-hidden />
+    <div className="space-y-16 overflow-x-clip pb-4">
+      {/* ------------------------------------------------ Hero */}
+      <section aria-labelledby="hero-heading" className="grid items-center gap-10 lg:grid-cols-2 lg:gap-8">
+        <div>
+          <div className="hero-rise inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-amber-300">
+            <Gauge className="h-3.5 w-3.5" aria-hidden />
+            Safety-first AI triage
           </div>
           <h1
-            className="hero-rise text-3xl font-bold tracking-tight text-zinc-50 sm:text-5xl"
-            style={{ animationDelay: "0.12s" }}
+            id="hero-heading"
+            className="hero-rise mt-5 font-display text-4xl font-bold tracking-tight text-zinc-50 sm:text-5xl"
+            style={{ animationDelay: "0.05s" }}
           >
             {APP_NAME}
           </h1>
           <p
-            className="hero-rise mt-3 text-base font-medium text-amber-400 sm:text-lg"
-            style={{ animationDelay: "0.18s" }}
+            className="hero-rise mt-3 text-lg font-medium text-amber-400"
+            style={{ animationDelay: "0.1s" }}
           >
             {APP_TAGLINE}
           </p>
           <p
-            className="hero-rise mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-zinc-300 sm:text-base"
-            style={{ animationDelay: "0.24s" }}
+            className="hero-rise mt-4 max-w-xl text-sm leading-relaxed text-zinc-300 sm:text-base"
+            style={{ animationDelay: "0.15s" }}
           >
             Describe what your vehicle is telling you and get clear, educational guidance on warning
             lights, unusual sounds, smells and behaviour — plus safe checks, questions for your
             mechanic, and a mechanic-ready report.
           </p>
           <div
-            className="hero-rise mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row"
-            style={{ animationDelay: "0.3s" }}
+            className="hero-rise mt-8 flex flex-col gap-3 sm:flex-row"
+            style={{ animationDelay: "0.2s" }}
           >
-            <Link href="/diagnose" className={PRIMARY_BUTTON_CLASSES}>
-              Diagnose my warning <ArrowRight className="h-4 w-4" aria-hidden />
+            <Link
+              href="/diagnose"
+              className="inline-flex items-center justify-center gap-2 rounded-md bg-amber-500 px-5 py-3 text-sm font-semibold text-zinc-950 transition-colors hover:bg-amber-400"
+            >
+              Start a safe assessment
+              <ArrowRight className="h-4 w-4" aria-hidden />
             </Link>
-            <Link href="/history" className={SECONDARY_BUTTON_CLASSES}>
-              <History className="h-4 w-4" aria-hidden />
-              My saved reports
-            </Link>
+            <a
+              href="#sample-report"
+              className="inline-flex items-center justify-center gap-2 rounded-md border border-zinc-700 px-5 py-3 text-sm font-semibold text-zinc-200 transition-colors hover:border-zinc-500 hover:text-white"
+            >
+              <FileSearch className="h-4 w-4" aria-hidden />
+              View a sample report
+            </a>
           </div>
         </div>
+
+        <div className="hero-rise" style={{ animationDelay: "0.25s" }}>
+          <InstrumentCluster />
+        </div>
       </section>
 
+      {/* ------------------------------------------------ Emergency */}
       <EmergencyAlert />
 
-      <section className="grid gap-4 sm:grid-cols-2">
-        <div className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-5">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-amber-400">
-            What this is
-          </h2>
-          <p className="mt-2 text-sm leading-relaxed text-zinc-300">
-            A safety-first triage aid. It turns your description into educational guidance:
-            possible causes, safe checks you can do without tools, questions to answer or ask, and
-            a report to hand to a qualified mechanic.
-          </p>
-        </div>
-        <div className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-5">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-400">
-            What this is not
-          </h2>
-          <p className="mt-2 text-sm leading-relaxed text-zinc-300">
-            Not a professional diagnosis. It cannot inspect your vehicle and must never replace a
-            qualified mechanic, workshop, or roadside assistance in an emergency.
-          </p>
-        </div>
+      {/* ------------------------------------------------ Trust strip */}
+      <section aria-label="What this is" className="grid gap-4 sm:grid-cols-3">
+        {TRUST_ITEMS.map((item) => (
+          <div key={item.title} className="card-surface p-5">
+            <item.icon className="h-5 w-5 text-amber-400" aria-hidden />
+            <h2 className="mt-3 text-sm font-semibold text-zinc-100">{item.title}</h2>
+            <p className="mt-1.5 text-sm leading-relaxed text-zinc-400">{item.text}</p>
+          </div>
+        ))}
       </section>
 
-      <section>
-        <h2 className="text-xl font-semibold text-zinc-50">How it works</h2>
-        <ol className="mt-4 grid gap-4 sm:grid-cols-3">
+      {/* ------------------------------------------------ How it works */}
+      <section aria-labelledby="how-it-works-heading">
+        <div className="text-center">
+          <p className="text-xs font-semibold uppercase tracking-wide text-amber-400">
+            How it works
+          </p>
+          <h2 id="how-it-works-heading" className="mt-2 font-display text-2xl font-bold tracking-tight text-zinc-50">
+            Three steps to a safer next move
+          </h2>
+        </div>
+        <ol className="mt-8 grid gap-4 sm:grid-cols-3">
           {STEPS.map((step, index) => (
-            <li key={step.title} className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-5">
-              <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-amber-500/15 text-sm font-bold text-amber-400">
-                {index + 1}
+            <li key={step.title} className="card-surface relative p-6">
+              <span
+                className="absolute right-4 top-4 font-mono text-xs font-bold text-zinc-600"
+                aria-hidden
+              >
+                0{index + 1}
               </span>
-              <h3 className="mt-3 text-sm font-semibold text-zinc-100">{step.title}</h3>
+              <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-amber-500/40 bg-amber-500/10">
+                <step.icon className="h-5 w-5 text-amber-400" aria-hidden />
+              </span>
+              <h3 className="mt-4 text-sm font-semibold text-zinc-100">{step.title}</h3>
               <p className="mt-1.5 text-sm leading-relaxed text-zinc-400">{step.text}</p>
             </li>
           ))}
         </ol>
-        <p className="mt-4 text-xs text-zinc-500">
-          Available in {LANGUAGES.join(", ")}.
-        </p>
       </section>
 
+      {/* ------------------------------------------------ Sample report */}
+      <section id="sample-report" aria-label="Sample report" className="scroll-mt-24">
+        <SampleReport />
+      </section>
+
+      {/* ------------------------------------------------ Pro teaser */}
       <ProPricingSection />
 
-      <section className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-6 text-center">
-        <h2 className="text-lg font-semibold text-zinc-50">A warning light on? Start here.</h2>
+      {/* ------------------------------------------------ Final CTA */}
+      <section className="card-surface border-amber-500/30 bg-amber-500/5 p-8 text-center">
+        <h2 className="font-display text-xl font-bold text-zinc-50">
+          A warning light on? Start here.
+        </h2>
         <p className="mx-auto mt-2 max-w-xl text-sm text-zinc-400">
-          If the situation is dangerous, stop safely and call for help first — then use Garage
-          Ghost to understand the warning.
+          If the situation is dangerous, stop safely and call for help first — then use{" "}
+          {APP_NAME} to understand the warning.
         </p>
-        <Link href="/diagnose" className={`${PRIMARY_BUTTON_CLASSES} mt-5`}>
-          Analyze safely
+        <Link
+          href="/diagnose"
+          className="mt-6 inline-flex items-center justify-center gap-2 rounded-md bg-amber-500 px-6 py-3 text-sm font-semibold text-zinc-950 transition-colors hover:bg-amber-400"
+        >
+          Start a safe assessment
+          <ArrowRight className="h-4 w-4" aria-hidden />
         </Link>
       </section>
     </div>

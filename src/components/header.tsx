@@ -1,104 +1,231 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { AlertTriangle, CheckCircle2, Crown, Wrench } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Crown, Menu, Wrench, X } from "lucide-react";
 import { usePro } from "@/components/pro-provider";
 import { APP_NAME } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
-  { href: "/", label: "Home" },
   { href: "/diagnose", label: "Diagnose" },
   { href: "/history", label: "History" },
+  { href: "/pricing", label: "Pricing" },
 ];
 
 export function Header() {
   const pathname = usePathname();
   const { isPro, licenseStatus, validating, openModal } = usePro();
   const licenseExpired = !isPro && licenseStatus === "expired";
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  // Close the mobile drawer on route change and lock scroll while open.
+  const prevPathname = useRef(pathname);
+  useEffect(() => {
+    if (prevPathname.current !== pathname) {
+      prevPathname.current = pathname;
+      setDrawerOpen(false);
+    }
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!drawerOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setDrawerOpen(false);
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleKey);
+    };
+  }, [drawerOpen]);
+
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const drawerWasOpen = useRef(false);
+
+  // Move focus into the drawer when it opens and restore it to the trigger on
+  // close, so keyboard/screen-reader users stay oriented. Guarded against the
+  // initial mount (the menu button must not steal focus on page load).
+  useEffect(() => {
+    if (drawerOpen && !drawerWasOpen.current) {
+      drawerWasOpen.current = true;
+      closeButtonRef.current?.focus();
+    } else if (!drawerOpen && drawerWasOpen.current) {
+      drawerWasOpen.current = false;
+      menuButtonRef.current?.focus();
+    }
+  }, [drawerOpen]);
+
+  const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
+
+  const proLabel = validating
+    ? "Pro…"
+    : isPro
+      ? "Pro"
+      : licenseExpired
+        ? "Pro expired"
+        : "Go Pro";
+
+  const proTitle = validating
+    ? "Checking license…"
+    : isPro
+      ? "Pro license active"
+      : licenseExpired
+        ? "Your Pro license has expired — click to renew"
+        : "Upgrade to Pro";
+
+  const proAria = isPro
+    ? "Open Pro settings — license active"
+    : licenseExpired
+      ? "Renew Pro — license expired"
+      : "Upgrade to Pro";
+
+  const ProBadge = (
+    <button
+      type="button"
+      onClick={openModal}
+      title={proTitle}
+      aria-label={proAria}
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+        isPro
+          ? "text-emerald-400 hover:bg-zinc-800/60"
+          : licenseExpired
+            ? "border border-red-500/40 bg-red-500/5 text-red-300 hover:border-red-400/60 hover:bg-red-500/10"
+            : "border border-amber-500/40 bg-amber-500/5 text-amber-300 hover:border-amber-400/60 hover:bg-amber-500/10"
+      )}
+    >
+      {isPro ? (
+        <CheckCircle2 className="h-4 w-4" aria-hidden />
+      ) : licenseExpired ? (
+        <AlertTriangle className="h-4 w-4" aria-hidden />
+      ) : (
+        <Crown className="h-4 w-4" aria-hidden />
+      )}
+      {proLabel}
+      {isPro && <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" aria-hidden />}
+    </button>
+  );
 
   return (
     <header className="sticky top-0 z-40 border-b border-zinc-800 bg-zinc-950/90 backdrop-blur">
-      <div className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between px-4">
+      <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 sm:px-6">
         <Link
           href="/"
-          className="flex items-center gap-2 rounded-md transition-opacity hover:opacity-80"
+          className="group flex items-center gap-2 rounded-md transition-opacity hover:opacity-80"
           aria-label={`${APP_NAME} home`}
         >
-          <Wrench className="h-5 w-5 text-amber-400" aria-hidden />
-          <span className="text-sm font-semibold tracking-tight text-zinc-100">{APP_NAME}</span>
+          <span className="flex h-8 w-8 items-center justify-center rounded-md border border-amber-500/40 bg-amber-500/10 transition-colors group-hover:bg-amber-500/20">
+            <Wrench className="h-4 w-4 text-amber-400" aria-hidden />
+          </span>
+          <span className="font-display text-sm font-semibold tracking-tight text-zinc-100">
+            {APP_NAME}
+          </span>
         </Link>
+
+        {/* Desktop nav */}
         <div className="flex items-center gap-2">
-          <nav aria-label="Main navigation">
+          <nav aria-label="Main navigation" className="hidden md:block">
             <ul className="flex items-center gap-1">
-              {NAV_ITEMS.map((item) => {
-                const isActive =
-                  item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
-                return (
-                  <li key={item.href}>
-                    <Link
-                      href={item.href}
-                      aria-current={isActive ? "page" : undefined}
-                      className={cn(
-                        "rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                        isActive
-                          ? "bg-zinc-800 text-amber-400"
-                          : "text-zinc-300 hover:bg-zinc-800/60 hover:text-zinc-100"
-                      )}
-                    >
-                      {item.label}
-                    </Link>
-                  </li>
-                );
-              })}
+              {NAV_ITEMS.map((item) => (
+                <li key={item.href}>
+                  <Link
+                    href={item.href}
+                    aria-current={isActive(item.href) ? "page" : undefined}
+                    className={cn(
+                      "rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                      isActive(item.href)
+                        ? "bg-zinc-800 text-amber-400"
+                        : "text-zinc-300 hover:bg-zinc-800/60 hover:text-zinc-100"
+                    )}
+                  >
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </nav>
+          <div className="hidden md:block">{ProBadge}</div>
+          {/* Mobile: menu + compact Pro trigger */}
           <button
+            ref={menuButtonRef}
             type="button"
-            onClick={openModal}
-            title={
-              validating
-                ? "Checking license…"
-                : isPro
-                  ? "Pro license active"
-                  : licenseExpired
-                    ? "Your Pro license has expired — click to renew"
-                    : "Upgrade to Pro"
-            }
-            className={cn(
-              "inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-              isPro
-                ? "text-emerald-400 hover:bg-zinc-800/60"
-                : licenseExpired
-                  ? "border border-red-500/40 bg-red-500/5 text-red-300 hover:border-red-400/60 hover:bg-red-500/10"
-                  : "border border-amber-500/40 bg-amber-500/5 text-amber-300 hover:border-amber-400/60 hover:bg-amber-500/10"
-            )}
-            aria-label={
-              isPro
-                ? "Open Pro settings — license active"
-                : licenseExpired
-                  ? "Renew Pro — license expired"
-                  : "Upgrade to Pro"
-            }
+            className="rounded-md p-2 text-zinc-300 transition-colors hover:bg-zinc-800 hover:text-zinc-100 md:hidden"
+            onClick={() => setDrawerOpen(true)}
+            aria-label="Open navigation menu"
+            aria-expanded={drawerOpen}
           >
-            {isPro ? (
-              <CheckCircle2 className="h-4 w-4" aria-hidden />
-            ) : licenseExpired ? (
-              <AlertTriangle className="h-4 w-4" aria-hidden />
-            ) : (
-              <Crown className="h-4 w-4" aria-hidden />
-            )}
-            {validating ? "Pro…" : isPro ? "Pro" : licenseExpired ? "Pro expired" : "Go Pro"}
-            {isPro && (
-              <span
-                className="h-1.5 w-1.5 rounded-full bg-emerald-400"
-                aria-hidden
-              />
-            )}
+            <Menu className="h-5 w-5" aria-hidden />
           </button>
         </div>
       </div>
+
+      {/* Mobile drawer */}
+      {drawerOpen && (
+        <div className="fixed inset-0 z-50 md:hidden">
+          <button
+            type="button"
+            aria-label="Close navigation menu"
+            tabIndex={-1}
+            onClick={() => setDrawerOpen(false)}
+            className="absolute inset-0 cursor-default bg-black/70 backdrop-blur-sm"
+          />
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Navigation menu"
+            className="drawer-in absolute inset-y-0 right-0 flex w-72 max-w-[85vw] flex-col border-l border-zinc-800 bg-zinc-950 shadow-2xl"
+          >
+            <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-4">
+              <span className="font-display text-sm font-semibold text-zinc-100">Menu</span>
+              <button
+                ref={closeButtonRef}
+                type="button"
+                onClick={() => setDrawerOpen(false)}
+                aria-label="Close menu"
+                className="rounded-md p-1.5 text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-zinc-100"
+              >
+                <X className="h-4 w-4" aria-hidden />
+              </button>
+            </div>
+            <nav aria-label="Mobile navigation" className="flex flex-1 flex-col gap-1 p-3">
+              <Link
+                href="/"
+                onClick={() => setDrawerOpen(false)}
+                className={cn(
+                  "rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
+                  isActive("/")
+                    ? "bg-zinc-800 text-amber-400"
+                    : "text-zinc-300 hover:bg-zinc-800/60 hover:text-zinc-100"
+                )}
+              >
+                Home
+              </Link>
+              {NAV_ITEMS.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setDrawerOpen(false)}
+                  aria-current={isActive(item.href) ? "page" : undefined}
+                  className={cn(
+                    "rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
+                    isActive(item.href)
+                      ? "bg-zinc-800 text-amber-400"
+                      : "text-zinc-300 hover:bg-zinc-800/60 hover:text-zinc-100"
+                  )}
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
+            <div className="border-t border-zinc-800 p-3">{ProBadge}</div>
+          </div>
+        </div>
+      )}
     </header>
   );
 }
