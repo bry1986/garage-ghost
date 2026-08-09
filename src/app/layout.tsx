@@ -6,6 +6,7 @@ import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { ProProvider } from "@/components/pro-provider";
 import { PwaRegister } from "@/components/pwa-register";
+import { RoutePrefetcher } from "@/components/route-prefetcher";
 import { SplashOverlay } from "@/components/splash-overlay";
 import { APP_NAME, APP_TAGLINE } from "@/lib/constants";
 
@@ -135,6 +136,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body className="flex min-h-full flex-col bg-zinc-950 text-zinc-100">
         <SplashOverlay />
         <PwaRegister />
+        <RoutePrefetcher />
         <ProProvider>
           <Header />
           <main className="mx-auto w-full max-w-6xl flex-1 px-4 pb-24 pt-6 sm:px-6 sm:pt-10">
