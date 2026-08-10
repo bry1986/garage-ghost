@@ -73,6 +73,19 @@ body {
   outline-offset: 2px;
 }
 
+/* Interactive affordance: clickable controls show a pointer cursor */
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]),
+select:not(:disabled),
+input[type="file"] {
+  cursor: pointer;
+}
+
+button:disabled,
+select:disabled {
+  cursor: not-allowed;
+}
+
 ::selection {
   background-color: rgb(245 158 11 / 0.3);
 }
@@ -244,6 +257,84 @@ body {
   animation: drawer-in 0.22s ease-out both;
 }
 
+/* Photo preview appear (diagnose uploader) */
+@keyframes photo-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.photo-in {
+  animation: photo-in 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Modal / dialog panel enter (scale + fade, exit-fast feel) */
+@keyframes modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.965);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.modal-in {
+  animation: modal-in 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Backdrop fade for dialogs */
+@keyframes backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.backdrop-in {
+  animation: backdrop-in 0.18s ease-out both;
+}
+
+/* Inline validation error appear */
+@keyframes error-in {
+  from {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.error-in {
+  animation: error-in 0.16s ease-out both;
+}
+
+/* Active step glow (stepper) — one-shot, replayed only when a step becomes
+   active (the circle is re-keyed by active state). Never loops. */
+@keyframes step-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(245 158 11 / 0);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgb(245 158 11 / 0.18);
+  }
+}
+
+.step-pulse {
+  animation: step-pulse 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
 /* Respect reduced motion everywhere */
 @media (prefers-reduced-motion: reduce) {
   html {
@@ -257,7 +348,12 @@ body {
   .needle-sweep,
   .gauge-glow,
   .step-pop,
-  .drawer-in {
+  .drawer-in,
+  .photo-in,
+  .modal-in,
+  .backdrop-in,
+  .error-in,
+  .step-pulse {
     animation: none;
   }
   * {

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, Crown, FileText, Infinity as InfinityIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { usePro } from "@/components/pro-provider";
 import { FREE_ESTIMATES_PER_DAY, PRO_PRICE_ANNUAL, PRO_PRICE_MONTHLY } from "@/lib/pro";
 
@@ -72,14 +73,10 @@ export function ProPricingSection() {
               </li>
             ))}
           </ul>
-          <button
-            type="button"
-            onClick={openModal}
-            className="mt-5 inline-flex items-center justify-center gap-2 rounded-md bg-amber-500 px-4 py-2.5 text-sm font-semibold text-zinc-950 transition-colors hover:bg-amber-400"
-          >
+          <Button type="button" onClick={openModal} className="mt-5">
             <Crown className="h-4 w-4" aria-hidden />
             {isPro ? "Manage Pro" : "Get Pro"}
-          </button>
+          </Button>
           <Link
             href="/pricing"
             className="mt-3 inline-flex items-center justify-center gap-1.5 text-xs font-medium text-amber-300 underline-offset-2 hover:underline"

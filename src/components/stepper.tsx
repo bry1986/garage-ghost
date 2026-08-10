@@ -28,7 +28,7 @@ export function Stepper({ current, active, onNavigate }: StepperProps) {
   return (
     <nav
       aria-label="Diagnosis progress"
-      className="card-surface flex w-full items-center justify-between px-3 py-3 sm:px-5"
+      className="card-surface flex w-full items-center justify-between px-2 py-3 sm:px-5"
     >
       <ol className="flex w-full items-center">
         {STEP_ORDER.map((step, index) => {
@@ -40,17 +40,20 @@ export function Stepper({ current, active, onNavigate }: StepperProps) {
           const button = (
             <span
               className={cn(
-                "flex items-center gap-2.5 rounded-md px-2 py-1.5 transition-colors",
+                "flex items-center gap-1.5 rounded-md px-1.5 py-1.5 transition-colors sm:gap-2.5 sm:px-2",
                 onNavigate && "cursor-pointer hover:bg-zinc-800/60"
               )}
             >
               <span
+                /* Re-key by active state so the one-shot glow replays exactly
+                   when a step becomes active (and never loops). */
+                key={isActive ? "step-active" : "step-idle"}
                 className={cn(
-                  "step-pop flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-xs font-bold transition-colors",
+                  "step-pop flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-[10px] font-bold transition-colors sm:h-7 sm:w-7 sm:text-xs",
                   showCheck
                     ? "border-emerald-500/50 bg-emerald-500/15 text-emerald-400"
                     : isActive
-                      ? "border-amber-500 bg-amber-500 text-zinc-950"
+                      ? "step-pulse border-amber-500 bg-amber-500 text-zinc-950"
                       : "border-zinc-700 bg-zinc-900 text-zinc-500"
                 )}
                 aria-hidden
@@ -81,7 +84,7 @@ export function Stepper({ current, active, onNavigate }: StepperProps) {
                 <span
                   aria-hidden
                   className={cn(
-                    "mx-1 h-px flex-1 sm:mx-2",
+                    "mx-0.5 h-px flex-1 sm:mx-2",
                     current >= stepNumber ? "bg-emerald-500/50" : "bg-zinc-800"
                   )}
                 />

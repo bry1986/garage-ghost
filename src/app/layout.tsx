@@ -138,8 +138,20 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <PwaRegister />
         <RoutePrefetcher />
         <ProProvider>
+          {/* Skip link: kept off-screen (translated + hidden) until focused, so
+              it never conflicts with sticky header positioning or the sr-only
+              clip (which would fight focus:absolute at the same specificity). */}
+          <a
+            href="#main-content"
+            className="fixed left-4 top-4 z-50 -translate-y-24 rounded-md bg-amber-500 px-4 py-2 text-sm font-semibold text-zinc-950 opacity-0 shadow-lg transition-all duration-200 focus:translate-y-0 focus:opacity-100"
+          >
+            Skip to main content
+          </a>
           <Header />
-          <main className="mx-auto w-full max-w-6xl flex-1 px-4 pb-24 pt-6 sm:px-6 sm:pt-10">
+          <main
+            id="main-content"
+            className="mx-auto w-full max-w-6xl flex-1 scroll-mt-20 px-4 pb-24 pt-6 sm:px-6 sm:pt-10"
+          >
             {children}
           </main>
           <Footer />

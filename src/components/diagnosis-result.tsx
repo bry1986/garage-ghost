@@ -21,6 +21,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { Disclosure } from "@/components/ui/disclosure";
+import { Button } from "@/components/ui/button";
 import { FixedDisclaimer } from "@/components/fixed-disclaimer";
 import { CONFIDENCE_LABEL, DISCLAIMER, RISK_META, safeRiskLevel } from "@/lib/constants";
 import {
@@ -271,7 +272,11 @@ export function DiagnosisResult({
     <>
       <section
         aria-labelledby="diagnosis-result-heading"
-        className="result-rise space-y-6 rounded-lg border border-zinc-800 bg-zinc-900 p-4 sm:p-6"
+        className={cn(
+          "space-y-6 rounded-lg border border-zinc-800 bg-zinc-900 p-4 sm:p-6",
+          // STOP_NOW results are never animated — the urgency must read instantly.
+          riskLevel !== "STOP_NOW" && "result-rise"
+        )}
       >
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -281,14 +286,10 @@ export function DiagnosisResult({
             <p className="mt-0.5 text-sm text-zinc-400">{vehicleLabel}</p>
           </div>
           {onRestart && (
-            <button
-              type="button"
-              onClick={onRestart}
-              className="inline-flex items-center gap-2 rounded-md border border-zinc-700 px-3 py-1.5 text-xs font-medium text-zinc-200 transition-colors hover:border-amber-500/60 hover:text-amber-300"
-            >
+            <Button type="button" onClick={onRestart} variant="outline" size="sm">
               <RotateCcw className="h-3.5 w-3.5" aria-hidden />
               Start another assessment
-            </button>
+            </Button>
           )}
         </div>
 
@@ -315,7 +316,7 @@ export function DiagnosisResult({
 
         {/* ----------------------- Severity header ----------------------- */}
         <div
-          role="status"
+          role={riskLevel === "STOP_NOW" ? "alert" : "status"}
           className={cn(
             "rounded-lg border-2 p-4 sm:p-5",
             severity.container
@@ -401,14 +402,10 @@ export function DiagnosisResult({
                   Upgrade to Pro for unlimited repair cost estimates.
                 </span>
               </p>
-              <button
-                type="button"
-                onClick={openModal}
-                className="mt-3 inline-flex items-center gap-2 rounded-md bg-amber-500 px-3 py-1.5 text-xs font-semibold text-zinc-950 transition-colors hover:bg-amber-400"
-              >
+              <Button type="button" onClick={openModal} size="sm" className="mt-3">
                 <Crown className="h-3.5 w-3.5" aria-hidden />
                 Go Pro
-              </button>
+              </Button>
             </div>
           ) : (
             <>
@@ -512,19 +509,15 @@ export function DiagnosisResult({
             {result.mechanicReport}
           </pre>
           <div className="mt-3 flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              onClick={handleCopy}
-              className="inline-flex items-center gap-2 rounded-md border border-zinc-700 px-3 py-1.5 text-xs font-medium text-zinc-200 transition-colors hover:border-amber-500/60 hover:text-amber-300"
-            >
+            <Button type="button" onClick={handleCopy} variant="outline" size="sm">
               {copied ? (
                 <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" aria-hidden />
               ) : (
                 <Clipboard className="h-3.5 w-3.5" aria-hidden />
               )}
               {copied ? "Copied" : "Copy report"}
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               onClick={() => {
                 if (!isPro) {
@@ -533,11 +526,12 @@ export function DiagnosisResult({
                 }
                 window.print();
               }}
-              className="inline-flex items-center gap-2 rounded-md border border-zinc-700 px-3 py-1.5 text-xs font-medium text-zinc-200 transition-colors hover:border-amber-500/60 hover:text-amber-300"
+              variant="outline"
+              size="sm"
             >
               <Printer className="h-3.5 w-3.5" aria-hidden />
               Print / Save as PDF
-            </button>
+            </Button>
             {copyError && (
               <p role="alert" className="text-xs text-red-400">
                 {copyError}
@@ -584,14 +578,9 @@ export function DiagnosisResult({
                   placeholder="e.g. It vibrates more when cold — does that change anything?"
                   className="w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 transition-colors focus:border-amber-500 focus:outline-none"
                 />
-                <button
+                <Button
                   type="submit"
                   disabled={followUpLoading || followUpInput.trim().length === 0}
-                  className={cn(
-                    "inline-flex items-center justify-center gap-2 rounded-md bg-amber-500 px-4 py-2.5 text-sm font-semibold text-zinc-950 transition-colors hover:bg-amber-400",
-                    (followUpLoading || followUpInput.trim().length === 0) &&
-                      "cursor-not-allowed opacity-60"
-                  )}
                 >
                   {followUpLoading ? (
                     <>
@@ -604,7 +593,7 @@ export function DiagnosisResult({
                       Ask
                     </>
                   )}
-                </button>
+                </Button>
               </form>
               <p aria-live="polite" role="status" className="min-h-4 text-xs text-amber-300">
                 {followUpLoading ? followUpStatus : ""}
@@ -621,14 +610,10 @@ export function DiagnosisResult({
         {/* Start another assessment (bottom, when provided) */}
         {onRestart && (
           <div className="border-t border-zinc-800 pt-5 text-center">
-            <button
-              type="button"
-              onClick={onRestart}
-              className="inline-flex items-center justify-center gap-2 rounded-md border border-zinc-700 px-5 py-2.5 text-sm font-semibold text-zinc-200 transition-colors hover:border-amber-500/60 hover:text-amber-300"
-            >
+            <Button type="button" onClick={onRestart} variant="outline">
               <RotateCcw className="h-4 w-4" aria-hidden />
               Start another assessment
-            </button>
+            </Button>
           </div>
         )}
       </section>

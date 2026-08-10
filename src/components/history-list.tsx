@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { CarFront, ChevronDown, History as HistoryIcon, ShieldCheck, Trash2 } from "lucide-react";
+import { Button, buttonClassNames } from "@/components/ui/button";
 import { DiagnosisResult, PrintFallback } from "@/components/diagnosis-result";
 import { RISK_META, safeRiskLevel } from "@/lib/constants";
 import { clearHistory, deleteDiagnosis, getHistory } from "@/lib/storage";
@@ -89,7 +90,7 @@ export function HistoryList() {
               aria-pressed={filter === option.value}
               onClick={() => setFilter(option.value)}
               className={cn(
-                "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+                "rounded-full border px-3 py-1.5 text-xs font-medium transition-all duration-150 active:scale-95",
                 filter === option.value
                   ? "border-amber-500 bg-amber-500/15 text-amber-300"
                   : "border-zinc-700 bg-zinc-900 text-zinc-400 hover:border-zinc-500 hover:text-zinc-200"
@@ -130,10 +131,7 @@ export function HistoryList() {
           <p className="mx-auto mt-1 max-w-sm text-sm text-zinc-500">
             Run your first diagnosis and it will be saved here so you can refer back to it later.
           </p>
-          <Link
-            href="/diagnose"
-            className="mt-5 inline-flex items-center justify-center gap-2 rounded-md bg-amber-500 px-5 py-2.5 text-sm font-semibold text-zinc-950 transition-colors hover:bg-amber-400"
-          >
+          <Link href="/diagnose" className={buttonClassNames({ className: "mt-5" })}>
             Start a safe assessment
           </Link>
         </div>
@@ -161,7 +159,15 @@ export function HistoryList() {
                     riskMeta.badgeClasses
                   )}
                 />
-                <div className="card-surface p-4 sm:p-5">
+                <div className="card-surface relative p-4 transition-transform duration-150 hover:-translate-y-0.5 sm:p-5">
+                  {/* Risk-colored left accent — severity is also in the badge + text, never color alone */}
+                  <span
+                    aria-hidden
+                    className={cn(
+                      "absolute left-0 top-5 bottom-5 w-[3px] rounded-r-full",
+                      riskMeta.leftAccent
+                    )}
+                  />
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0">
                       <h3 className="flex items-center gap-2 font-display text-sm font-semibold text-zinc-100">
@@ -181,26 +187,28 @@ export function HistoryList() {
                   </div>
                   <p className="mt-2 line-clamp-2 text-sm text-zinc-400">{item.result.summary}</p>
                   <div className="mt-3 flex flex-wrap gap-2">
-                    <button
+                    <Button
                       type="button"
                       onClick={() => toggleOpen(item.id)}
                       aria-expanded={open}
-                      className="inline-flex items-center gap-1.5 rounded-md border border-zinc-700 px-3 py-1.5 text-xs font-medium text-zinc-200 transition-colors hover:border-amber-500/60 hover:text-amber-300"
+                      variant="outline"
+                      size="sm"
                     >
                       {open ? "Hide report" : "View report"}
                       <ChevronDown
                         className={cn("h-3.5 w-3.5 transition-transform", open && "rotate-180")}
                         aria-hidden
                       />
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       type="button"
                       onClick={() => handleDelete(item.id)}
-                      className="inline-flex items-center gap-1.5 rounded-md border border-zinc-700 px-3 py-1.5 text-xs font-medium text-zinc-300 transition-colors hover:border-red-500/60 hover:text-red-300"
+                      variant="danger"
+                      size="sm"
                     >
                       <Trash2 className="h-3.5 w-3.5" aria-hidden />
                       Delete
-                    </button>
+                    </Button>
                   </div>
                   {open && (
                     <div className="mt-4 border-t border-zinc-800 pt-4">

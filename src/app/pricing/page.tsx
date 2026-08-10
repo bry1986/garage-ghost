@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { CircleHelp, Crown, FileText, FolderOpen, History, Infinity as InfinityIcon } from "lucide-react";
 import { PricingCards } from "@/components/pricing-cards";
+import { PricingFaq } from "@/components/pricing-faq";
 import { FREE_ESTIMATES_PER_DAY, PRO_PRICE_ANNUAL, PRO_PRICE_MONTHLY } from "@/lib/pro";
 import { PUTER_DEVELOPER_URL } from "@/lib/constants";
 
@@ -92,6 +93,8 @@ export default function PricingPage() {
           amounts. Pro is verified in your browser via the Lemon Squeezy license API (${PRO_PRICE_MONTHLY.toFixed(2)}/mo or ${PRO_PRICE_ANNUAL.toFixed(2)}/yr).
         </p>
       </section>
+
+      <PricingFaq />
     </div>
   );
 }

@@ -1,7 +1,9 @@
 "use client";
 
 import { Check, Crown, ExternalLink } from "lucide-react";
+import { Button, buttonClassNames } from "@/components/ui/button";
 import { usePro } from "@/components/pro-provider";
+import { cn } from "@/lib/utils";
 import {
   getAnnualCheckoutUrl,
   getMonthlyCheckoutUrl,
@@ -93,24 +95,24 @@ export function PricingCards() {
           </p>
 
           {isPro ? (
-            <button
+            <Button
               type="button"
               onClick={openModal}
-              className="mt-4 inline-flex items-center justify-center gap-2 rounded-md border border-zinc-700 px-4 py-2.5 text-sm font-semibold text-zinc-200 transition-colors hover:border-amber-500/60 hover:text-amber-300"
+              variant="outline"
+              className="mt-4"
             >
               <Crown className="h-4 w-4" aria-hidden />
               Manage Pro
-            </button>
+            </Button>
           ) : card.href ? (
             <a
               href={card.href}
               target="_blank"
               rel="noopener noreferrer"
-              className={
-                card.highlighted
-                  ? "mt-4 inline-flex items-center justify-center gap-2 rounded-md bg-amber-500 px-4 py-2.5 text-sm font-semibold text-zinc-950 transition-colors hover:bg-amber-400"
-                  : "mt-4 inline-flex items-center justify-center gap-2 rounded-md border border-zinc-700 px-4 py-2.5 text-sm font-semibold text-zinc-200 transition-colors hover:border-amber-500/60 hover:text-amber-300"
-              }
+              className={cn(
+                "mt-4",
+                buttonClassNames({ variant: card.highlighted ? "primary" : "outline" })
+              )}
             >
               {card.cta}
               <ExternalLink className="h-4 w-4" aria-hidden />

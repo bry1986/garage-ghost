@@ -29,13 +29,14 @@ import {
 import { DiagnosisResult, PrintFallback } from "@/components/diagnosis-result";
 import { FixedDisclaimer } from "@/components/fixed-disclaimer";
 import { Stepper, type DiagnosisStep } from "@/components/stepper";
+import { SymptomSafetyWarning } from "@/components/symptom-safety-warning";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   ACCEPTED_IMAGE_TYPES,
   FUEL_TYPES,
   LANGUAGES,
   MAX_IMAGE_BYTES,
-  PRIMARY_BUTTON_CLASSES,
   PUTER_DEVELOPER_URL,
   SYMPTOM_CHIPS,
 } from "@/lib/constants";
@@ -49,6 +50,9 @@ import type { ResponseLanguage, SavedVehicle, VehicleProfile } from "@/types/dia
 const inputClasses =
   "w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 transition-colors hover:border-zinc-600 focus:border-amber-500 focus:outline-none";
 const labelClasses = "mb-1.5 block text-sm font-medium text-zinc-300";
+
+/** Fields that can carry an inline validation error. */
+type FieldKey = "brand" | "model" | "year" | "symptoms";
 
 /** Lucide icon per quick symptom chip (automotive command-center visual). */
 const CHIP_ICONS: Record<(typeof SYMPTOM_CHIPS)[number], typeof Gauge> = {
@@ -111,6 +115,7 @@ export function VehicleDiagnosisForm() {
   const [dragging, setDragging] = useState(false);
 
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<FieldKey, string>>>({});
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadingStatus, setLoadingStatus] = useState("");
@@ -168,6 +173,15 @@ export function VehicleDiagnosisForm() {
   };
 
   // ---------------------------------------------------------------------
+  const clearFieldError = (field: FieldKey) => {
+    setFieldErrors((prev) => {
+      if (!(field in prev)) return prev;
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
+  };
+
   const toggleChip = (chip: string) => {
     setSelectedChips((prev) =>
       prev.includes(chip) ? prev.filter((item) => item !== chip) : [...prev, chip]
@@ -201,6 +215,7 @@ export function VehicleDiagnosisForm() {
     setDtcSearched(false);
     setDtcError(null);
     setDtcNote(`Added ${entry.code} to your symptom description below.`);
+    clearFieldError("symptoms");
   };
 
   const canSaveProfile =
@@ -236,6 +251,9 @@ export function VehicleDiagnosisForm() {
     setFuelType(profile.vehicle.fuelType ?? "");
     setMileage(profile.vehicle.mileage ?? "");
     setProfileNote(`Loaded “${profile.label}”.`);
+    clearFieldError("brand");
+    clearFieldError("model");
+    clearFieldError("year");
   };
 
   const handleDeleteProfile = () => {
@@ -302,29 +320,35 @@ export function VehicleDiagnosisForm() {
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    // Guard against accidental double submissions while a request is in flight.
+    if (loading) return;
 
-    const problems: string[] = [];
-    if (brand.trim().length === 0) problems.push("Brand is required.");
-    if (model.trim().length === 0) problems.push("Model is required.");
+    // Field-level errors are shown inline next to each input, plus one
+    // aggregate alert near the button so assistive tech announces them.
+    const nextFieldErrors: Partial<Record<FieldKey, string>> = {};
+    if (brand.trim().length === 0) nextFieldErrors.brand = "Brand is required.";
+    if (model.trim().length === 0) nextFieldErrors.model = "Model is required.";
     const yearValue = year.trim();
     if (!/^\d{4}$/.test(yearValue)) {
-      problems.push("Enter a valid 4-digit year.");
+      nextFieldErrors.year = "Enter a valid 4-digit year.";
     } else {
       const numericYear = Number(yearValue);
       const currentYear = new Date().getFullYear();
       if (numericYear < 1900 || numericYear > currentYear + 1) {
-        problems.push(`Year must be between 1900 and ${currentYear + 1}.`);
+        nextFieldErrors.year = `Year must be between 1900 and ${currentYear + 1}.`;
       }
     }
-    if (symptoms.trim().length === 0) problems.push("Describe your symptoms.");
+    if (symptoms.trim().length === 0) nextFieldErrors.symptoms = "Describe your symptoms.";
 
-    if (problems.length > 0) {
-      setValidationError(problems.join(" "));
+    if (Object.keys(nextFieldErrors).length > 0) {
+      setFieldErrors(nextFieldErrors);
+      setValidationError("Please fix the highlighted fields before analyzing.");
       vehicleRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       return;
     }
 
     setValidationError(null);
+    setFieldErrors({});
     setError(null);
     setOutput(null);
     setImageNote(image !== null);
@@ -375,6 +399,7 @@ export function VehicleDiagnosisForm() {
     setOutput(null);
     setError(null);
     setValidationError(null);
+    setFieldErrors({});
     setImageNote(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -431,13 +456,10 @@ export function VehicleDiagnosisForm() {
             placeholder="e.g. P0300"
             className={cn(inputClasses, "uppercase sm:max-w-44")}
           />
-          <button
-            type="submit"
-            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-md border border-zinc-700 px-4 py-2 text-sm font-semibold text-zinc-200 transition-colors hover:border-amber-500/60 hover:text-amber-300"
-          >
+          <Button type="submit" variant="outline" className="shrink-0">
             <Search className="h-4 w-4" aria-hidden />
             Look up
-          </button>
+          </Button>
         </form>
         {dtcError && (
           <p role="alert" className="mt-2 text-xs text-red-400">
@@ -484,14 +506,16 @@ export function VehicleDiagnosisForm() {
                 — rough ballpark, varies by vehicle, region and workshop.
               </p>
             )}
-            <button
+            <Button
               type="button"
               onClick={() => applyDtcToSymptoms(dtcResult)}
-              className="mt-3 inline-flex items-center gap-1.5 rounded-md border border-zinc-700 px-3 py-1.5 text-xs font-medium text-zinc-200 transition-colors hover:border-amber-500/60 hover:text-amber-300"
+              variant="outline"
+              size="sm"
+              className="mt-3"
             >
               Use this code in the analysis
               <ArrowRight className="h-3.5 w-3.5" aria-hidden />
-            </button>
+            </Button>
           </div>
         )}
         {dtcSearched && !dtcResult && !dtcError && (
@@ -542,28 +566,27 @@ export function VehicleDiagnosisForm() {
             ))}
           </select>
           <div className="flex flex-wrap gap-2">
-            <button
+            <Button
               type="button"
               onClick={handleSaveProfile}
               disabled={!canSaveProfile}
-              className={cn(
-                "inline-flex shrink-0 items-center justify-center gap-2 rounded-md border border-zinc-700 px-4 py-2.5 text-sm font-semibold text-zinc-200 transition-colors hover:border-amber-500/60 hover:text-amber-300",
-                !canSaveProfile && "cursor-not-allowed opacity-50"
-              )}
+              variant="outline"
+              className="shrink-0"
               title="Fill in brand, model and year above, then save"
             >
               <BookMarked className="h-4 w-4" aria-hidden />
               Save current vehicle
-            </button>
+            </Button>
             {selectedProfileId && (
-              <button
+              <Button
                 type="button"
                 onClick={handleDeleteProfile}
-                className="inline-flex shrink-0 items-center gap-2 rounded-md border border-zinc-700 px-4 py-2.5 text-sm font-semibold text-zinc-300 transition-colors hover:border-red-500/60 hover:text-red-300"
+                variant="danger"
+                className="shrink-0"
               >
                 <Trash2 className="h-4 w-4" aria-hidden />
                 Delete saved
-              </button>
+              </Button>
             )}
           </div>
         </div>
@@ -595,10 +618,20 @@ export function VehicleDiagnosisForm() {
                 autoComplete="off"
                 required
                 value={brand}
-                onChange={(event) => setBrand(event.target.value)}
+                aria-invalid={Boolean(fieldErrors.brand)}
+                aria-describedby={fieldErrors.brand ? "brand-error" : undefined}
+                onChange={(event) => {
+                  setBrand(event.target.value);
+                  clearFieldError("brand");
+                }}
                 placeholder="e.g. Audi"
-                className={inputClasses}
+                className={cn(inputClasses, fieldErrors.brand && "border-red-500/70 focus:border-red-500")}
               />
+              {fieldErrors.brand && (
+                <p id="brand-error" className="mt-1 text-xs text-red-400">
+                  {fieldErrors.brand}
+                </p>
+              )}
             </div>
             <div>
               <label htmlFor="model" className={labelClasses}>
@@ -611,10 +644,20 @@ export function VehicleDiagnosisForm() {
                 autoComplete="off"
                 required
                 value={model}
-                onChange={(event) => setModel(event.target.value)}
+                aria-invalid={Boolean(fieldErrors.model)}
+                aria-describedby={fieldErrors.model ? "model-error" : undefined}
+                onChange={(event) => {
+                  setModel(event.target.value);
+                  clearFieldError("model");
+                }}
                 placeholder="e.g. A3"
-                className={inputClasses}
+                className={cn(inputClasses, fieldErrors.model && "border-red-500/70 focus:border-red-500")}
               />
+              {fieldErrors.model && (
+                <p id="model-error" className="mt-1 text-xs text-red-400">
+                  {fieldErrors.model}
+                </p>
+              )}
             </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
@@ -630,10 +673,20 @@ export function VehicleDiagnosisForm() {
                   maxLength={4}
                   required
                   value={year}
-                  onChange={(event) => setYear(event.target.value.replace(/\D/g, ""))}
+                  aria-invalid={Boolean(fieldErrors.year)}
+                  aria-describedby={fieldErrors.year ? "year-error" : undefined}
+                  onChange={(event) => {
+                    setYear(event.target.value.replace(/\D/g, ""));
+                    clearFieldError("year");
+                  }}
                   placeholder="e.g. 2017"
-                  className={inputClasses}
+                  className={cn(inputClasses, fieldErrors.year && "border-red-500/70 focus:border-red-500")}
                 />
+                {fieldErrors.year && (
+                  <p id="year-error" className="mt-1 text-xs text-red-400">
+                    {fieldErrors.year}
+                  </p>
+                )}
               </div>
               <div>
                 <label htmlFor="mileage" className={labelClasses}>
@@ -708,10 +761,20 @@ export function VehicleDiagnosisForm() {
                 required
                 rows={5}
                 value={symptoms}
-                onChange={(event) => setSymptoms(event.target.value)}
+                aria-invalid={Boolean(fieldErrors.symptoms)}
+                aria-describedby={fieldErrors.symptoms ? "symptoms-error" : undefined}
+                onChange={(event) => {
+                  setSymptoms(event.target.value);
+                  clearFieldError("symptoms");
+                }}
                 placeholder="e.g. Orange engine light and loss of power above 2500 RPM. When did it start, how often does it happen, does it change with speed or temperature?"
-                className={cn(inputClasses, "resize-y")}
+                className={cn(inputClasses, "resize-y", fieldErrors.symptoms && "border-red-500/70 focus:border-red-500")}
               />
+              {fieldErrors.symptoms && (
+                <p id="symptoms-error" className="mt-1 text-xs text-red-400">
+                  {fieldErrors.symptoms}
+                </p>
+              )}
             </div>
 
             <div>
@@ -727,7 +790,7 @@ export function VehicleDiagnosisForm() {
                       aria-pressed={selected}
                       onClick={() => toggleChip(chip)}
                       className={cn(
-                        "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all",
+                        "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all duration-150 active:scale-95",
                         selected
                           ? "border-amber-500 bg-amber-500/15 text-amber-300"
                           : "border-zinc-700 bg-zinc-900 text-zinc-300 hover:border-zinc-500 hover:text-zinc-100"
@@ -739,6 +802,8 @@ export function VehicleDiagnosisForm() {
                   );
                 })}
               </div>
+              {/* Non-blocking safety warning for dangerous symptom selections */}
+              <SymptomSafetyWarning selectedChips={selectedChips} />
             </div>
 
             {/* Scanner-style photo uploader */}
@@ -748,7 +813,8 @@ export function VehicleDiagnosisForm() {
                 <span className="font-normal text-zinc-500">(optional)</span>
               </span>
               {imagePreview ? (
-                <div className="card-sunken overflow-hidden">
+                /* Re-key by URL so the appear animation replays on Replace too. */
+                <div key={imagePreview} className="card-sunken photo-in overflow-hidden">
                   {/* eslint-disable-next-line @next/next/no-img-element -- client-side blob URL preview; next/image does not apply */}
                   <img
                     src={imagePreview}
@@ -829,16 +895,7 @@ export function VehicleDiagnosisForm() {
 
         {/* ------------------------------ Analyze */}
         <div className="space-y-3">
-          <button
-            type="submit"
-            disabled={loading}
-            className={cn(
-              "w-full items-center justify-center gap-2 rounded-md bg-amber-500 px-6 py-3.5 text-base font-semibold text-zinc-950 transition-all hover:bg-amber-400",
-              PRIMARY_BUTTON_CLASSES,
-              "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400",
-              loading && "cursor-not-allowed opacity-70"
-            )}
-          >
+          <Button type="submit" disabled={loading} size="full">
             {loading ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
@@ -850,7 +907,7 @@ export function VehicleDiagnosisForm() {
                 Analyze safely
               </>
             )}
-          </button>
+          </Button>
           <p aria-live="polite" role="status" className="min-h-5 text-center text-xs text-amber-300">
             {loading ? loadingStatus : ""}
           </p>

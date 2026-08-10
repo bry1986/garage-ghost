@@ -42,3 +42,11 @@ yarn-error.log*
 next-env.d.ts
 
 .vercel
+
+# agent skill tooling (regenerable via `npx skills add`)
+.agents/
+.claude/
+skills-lock.json
+
+# generated design-system docs (regenerable via ui-ux-pro-max --persist)
+design-system/

@@ -12,7 +12,7 @@ import {
   Loader2,
   X,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Button, buttonClassNames } from "@/components/ui/button";
 import {
   FREE_ESTIMATES_PER_DAY,
   PRO_PRICE_ANNUAL,
@@ -165,11 +165,11 @@ export function ProModal({
           aria-label="Close"
           tabIndex={-1}
           onClick={handleClose}
-          className="absolute inset-0 cursor-default bg-black/70 backdrop-blur-sm"
+          className="backdrop-in absolute inset-0 cursor-default bg-black/70 backdrop-blur-sm"
         />
         <div
           ref={panelRef}
-          className="relative z-10 w-full max-w-md rounded-lg border border-zinc-700 bg-zinc-900 shadow-2xl"
+          className="modal-in relative z-10 w-full max-w-md rounded-lg border border-zinc-700 bg-zinc-900 shadow-2xl"
         >
           <div className="flex flex-col items-center gap-4 px-6 py-10 text-center">
             <div
@@ -197,14 +197,9 @@ export function ProModal({
                 </li>
               ))}
             </ul>
-            <button
-              ref={thanksRef}
-              type="button"
-              onClick={handleClose}
-              className="w-full rounded-md bg-amber-500 px-4 py-2.5 text-sm font-semibold text-zinc-950 transition-colors hover:bg-amber-400"
-            >
+            <Button ref={thanksRef} type="button" onClick={handleClose} size="full">
               Start diagnosing
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -224,12 +219,12 @@ export function ProModal({
         aria-label="Close upgrade dialog"
         tabIndex={-1}
         onClick={handleClose}
-        className="absolute inset-0 cursor-default bg-black/70 backdrop-blur-sm"
+        className="backdrop-in absolute inset-0 cursor-default bg-black/70 backdrop-blur-sm"
       />
 
       <div
         ref={panelRef}
-        className="relative z-10 max-h-[90vh] w-full max-w-md overflow-y-auto rounded-lg border border-zinc-700 bg-zinc-900 shadow-2xl"
+        className="modal-in relative z-10 max-h-[90vh] w-full max-w-md overflow-y-auto rounded-lg border border-zinc-700 bg-zinc-900 shadow-2xl"
       >
         <div className="flex items-center justify-between border-b border-zinc-800 px-5 py-4">
           <h2 id="pro-modal-title" className="flex items-center gap-2 text-sm font-semibold text-zinc-50">
@@ -261,7 +256,7 @@ export function ProModal({
                 href={billingUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded-md border border-zinc-700 px-3 py-1.5 text-xs font-medium text-zinc-200 transition-colors hover:border-amber-500/60 hover:text-amber-300"
+                className={buttonClassNames({ variant: "outline", size: "sm" })}
               >
                 Manage subscription
                 <ExternalLink className="h-3.5 w-3.5" aria-hidden />
@@ -334,7 +329,7 @@ export function ProModal({
                   href={monthlyUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center gap-2 rounded-md bg-amber-500 px-4 py-2.5 text-sm font-semibold text-zinc-950 transition-colors hover:bg-amber-400"
+                  className={buttonClassNames({})}
                 >
                   Get Pro — ${PRO_PRICE_MONTHLY.toFixed(2)}/month
                   <ExternalLink className="h-4 w-4" aria-hidden />
@@ -350,7 +345,7 @@ export function ProModal({
                   href={annualUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center gap-2 rounded-md border border-zinc-700 px-4 py-2.5 text-sm font-semibold text-zinc-200 transition-colors hover:border-amber-500/60 hover:text-amber-300"
+                  className={buttonClassNames({ variant: "outline" })}
                 >
                   ${PRO_PRICE_ANNUAL.toFixed(2)}/year
                   <ExternalLink className="h-4 w-4" aria-hidden />
@@ -380,14 +375,10 @@ export function ProModal({
                   disabled={activating}
                   className="w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 font-mono text-xs text-zinc-100 placeholder-zinc-600 transition-colors focus:border-amber-500 focus:outline-none"
                 />
-                <button
+                <Button
                   type="submit"
+                  variant="outline"
                   disabled={activating || licenseKey.trim().length === 0}
-                  className={cn(
-                    "inline-flex items-center justify-center gap-2 rounded-md border border-zinc-700 px-4 py-2 text-sm font-semibold text-zinc-200 transition-colors hover:border-amber-500/60 hover:text-amber-300",
-                    (activating || licenseKey.trim().length === 0) &&
-                      "cursor-not-allowed opacity-60"
-                  )}
                 >
                   {activating ? (
                     <>
@@ -400,7 +391,7 @@ export function ProModal({
                       Activate license
                     </>
                   )}
-                </button>
+                </Button>
               </form>
               {activationError && (
                 <p role="alert" className="mt-2 text-xs text-red-400">

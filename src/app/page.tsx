@@ -1,15 +1,16 @@
 import Link from "next/link";
 import {
   ArrowRight,
-  BookOpen,
   Camera,
   ClipboardList,
   FileSearch,
+  FileText,
   Globe2,
   Gauge,
   Lock,
   ShieldCheck,
 } from "lucide-react";
+import { buttonClassNames } from "@/components/ui/button";
 import { EmergencyAlert } from "@/components/emergency-alert";
 import { InstrumentCluster } from "@/components/instrument-cluster";
 import { ProPricingSection } from "@/components/pro-pricing";
@@ -34,21 +35,26 @@ const STEPS = [
   },
 ];
 
-const TRUST_ITEMS = [
-  {
-    icon: BookOpen,
-    title: "Educational guidance",
-    text: "General information to help you understand the warning — not a diagnosis.",
-  },
+const VALUE_ITEMS = [
   {
     icon: Globe2,
-    title: "Multilingual",
-    text: `Answers in ${LANGUAGES.join(", ")}.`,
+    title: "Multilingual guidance",
+    text: `Answers in ${LANGUAGES.join(", ")} — whatever language the road speaks.`,
+  },
+  {
+    icon: FileText,
+    title: "Mechanic-ready report",
+    text: "A copyable, printable hand-off summary you can share with a workshop.",
   },
   {
     icon: Lock,
-    title: "Privacy-first",
+    title: "Private browser history",
     text: "Your reports stay in this browser. No account required.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Safety comes first",
+    text: "Educational guidance only — never a substitute for a qualified mechanic.",
   },
 ];
 
@@ -60,21 +66,15 @@ export default function HomePage() {
         <div>
           <div className="hero-rise inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-amber-300">
             <Gauge className="h-3.5 w-3.5" aria-hidden />
-            Safety-first AI triage
+            {APP_NAME} · Safety-first AI triage
           </div>
           <h1
             id="hero-heading"
             className="hero-rise mt-5 font-display text-4xl font-bold tracking-tight text-zinc-50 sm:text-5xl"
             style={{ animationDelay: "0.05s" }}
           >
-            {APP_NAME}
-          </h1>
-          <p
-            className="hero-rise mt-3 text-lg font-medium text-amber-400"
-            style={{ animationDelay: "0.1s" }}
-          >
             {APP_TAGLINE}
-          </p>
+          </h1>
           <p
             className="hero-rise mt-4 max-w-xl text-sm leading-relaxed text-zinc-300 sm:text-base"
             style={{ animationDelay: "0.15s" }}
@@ -87,24 +87,31 @@ export default function HomePage() {
             className="hero-rise mt-8 flex flex-col gap-3 sm:flex-row"
             style={{ animationDelay: "0.2s" }}
           >
-            <Link
-              href="/diagnose"
-              className="inline-flex items-center justify-center gap-2 rounded-md bg-amber-500 px-5 py-3 text-sm font-semibold text-zinc-950 transition-colors hover:bg-amber-400"
-            >
+            <Link href="/diagnose" className={buttonClassNames({ size: "lg" })}>
               Start a safe assessment
               <ArrowRight className="h-4 w-4" aria-hidden />
             </Link>
             <a
               href="#sample-report"
-              className="inline-flex items-center justify-center gap-2 rounded-md border border-zinc-700 px-5 py-3 text-sm font-semibold text-zinc-200 transition-colors hover:border-zinc-500 hover:text-white"
+              className={buttonClassNames({ variant: "outline", size: "lg" })}
             >
               <FileSearch className="h-4 w-4" aria-hidden />
               View a sample report
             </a>
           </div>
+          <p
+            className="hero-rise mt-5 flex max-w-xl items-start gap-2 text-xs leading-relaxed text-zinc-500"
+            style={{ animationDelay: "0.25s" }}
+          >
+            <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-400" aria-hidden />
+            <span>
+              Educational guidance, not a diagnosis — and never a substitute for a qualified
+              mechanic. In an emergency, stop safely and call for help first.
+            </span>
+          </p>
         </div>
 
-        <div className="hero-rise" style={{ animationDelay: "0.25s" }}>
+        <div className="hero-rise" style={{ animationDelay: "0.3s" }}>
           <InstrumentCluster />
         </div>
       </section>
@@ -112,10 +119,13 @@ export default function HomePage() {
       {/* ------------------------------------------------ Emergency */}
       <EmergencyAlert />
 
-      {/* ------------------------------------------------ Trust strip */}
-      <section aria-label="What this is" className="grid gap-4 sm:grid-cols-3">
-        {TRUST_ITEMS.map((item) => (
-          <div key={item.title} className="card-surface p-5">
+      {/* ------------------------------------------------ Value strip */}
+      <section aria-label="What you get" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {VALUE_ITEMS.map((item) => (
+          <div
+            key={item.title}
+            className="card-surface p-5 transition-colors duration-150 hover:border-amber-500/40"
+          >
             <item.icon className="h-5 w-5 text-amber-400" aria-hidden />
             <h2 className="mt-3 text-sm font-semibold text-zinc-100">{item.title}</h2>
             <p className="mt-1.5 text-sm leading-relaxed text-zinc-400">{item.text}</p>
@@ -135,7 +145,10 @@ export default function HomePage() {
         </div>
         <ol className="mt-8 grid gap-4 sm:grid-cols-3">
           {STEPS.map((step, index) => (
-            <li key={step.title} className="card-surface relative p-6">
+            <li
+              key={step.title}
+              className="card-surface relative p-6 transition-colors duration-150 hover:border-amber-500/40"
+            >
               <span
                 className="absolute right-4 top-4 font-mono text-xs font-bold text-zinc-600"
                 aria-hidden
@@ -171,7 +184,7 @@ export default function HomePage() {
         </p>
         <Link
           href="/diagnose"
-          className="mt-6 inline-flex items-center justify-center gap-2 rounded-md bg-amber-500 px-6 py-3 text-sm font-semibold text-zinc-950 transition-colors hover:bg-amber-400"
+          className={buttonClassNames({ size: "lg", className: "mt-6" })}
         >
           Start a safe assessment
           <ArrowRight className="h-4 w-4" aria-hidden />

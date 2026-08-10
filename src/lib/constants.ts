@@ -25,6 +25,19 @@ export const SYMPTOM_CHIPS = [
   "Strange electrical smell",
 ] as const;
 
+/**
+ * Symptom chips that describe potentially dangerous situations. Selecting any
+ * of these surfaces a non-blocking safety warning on the diagnose form.
+ */
+export const DANGEROUS_SYMPTOM_CHIPS = [
+  "Smoke",
+  "Fuel smell",
+  "Overheating",
+  "Hard braking",
+  "Steering issue",
+  "Strange electrical smell",
+] as const;
+
 /** Default Puter.ai model for analysis. */
 export const DEFAULT_MODEL = "gpt-5.6-luna";
 
@@ -64,6 +77,8 @@ export const DISCLAIMER =
 export interface RiskMeta {
   label: string;
   badgeClasses: string;
+  /** Colored left accent for history cards (severity is also text + icon). */
+  leftAccent: string;
   description: string;
 }
 
@@ -71,16 +86,19 @@ export const RISK_META: Record<RiskLevel, RiskMeta> = {
   STOP_NOW: {
     label: "STOP NOW",
     badgeClasses: "bg-red-500/15 text-red-400 ring-red-500/40",
+    leftAccent: "bg-red-500/70",
     description: "Stop safely as soon as possible and call for professional help.",
   },
   DRIVE_CAREFULLY: {
     label: "DRIVE CAREFULLY",
     badgeClasses: "bg-amber-500/15 text-amber-400 ring-amber-500/40",
+    leftAccent: "bg-amber-500/70",
     description: "Drive with care and have the vehicle checked soon.",
   },
   BOOK_SERVICE: {
     label: "BOOK SERVICE",
     badgeClasses: "bg-sky-500/15 text-sky-400 ring-sky-500/40",
+    leftAccent: "bg-sky-500/70",
     description: "Schedule an inspection with a qualified workshop.",
   },
 };
@@ -96,8 +114,4 @@ export function safeRiskLevel(level: unknown): RiskLevel {
   return typeof level === "string" && level in RISK_META ? (level as RiskLevel) : "BOOK_SERVICE";
 }
 
-export const PRIMARY_BUTTON_CLASSES =
-  "inline-flex items-center justify-center gap-2 rounded-md bg-amber-500 px-4 py-2.5 text-sm font-semibold text-zinc-950 transition-colors hover:bg-amber-400";
 
-export const SECONDARY_BUTTON_CLASSES =
-  "inline-flex items-center justify-center gap-2 rounded-md border border-zinc-700 px-4 py-2.5 text-sm font-semibold text-zinc-200 transition-colors hover:border-zinc-500 hover:text-white";
