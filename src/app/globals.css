@@ -319,6 +319,42 @@ select:disabled {
   animation: error-in 0.16s ease-out both;
 }
 
+/* Hero word ring — a slow orbital turntable of dashboard words circling the
+   instrument cluster. Words sweep behind the opaque gauge dial and re-emerge
+   around it, like an inscription on a machined bezel. One orbit = 48s, so the
+   motion reads as ambient depth, not attention-grabbing. */
+@keyframes word-ring-orbit {
+  from {
+    transform: rotateY(0deg);
+  }
+  to {
+    transform: rotateY(-360deg);
+  }
+}
+
+.word-ring {
+  /* The camera: without this the 3D transforms project flat (parallel
+     projection) and the turntable loses all foreshortening. 60rem ≈ 960px
+     suits a ring of ~200px radius. */
+  perspective: 60rem;
+}
+
+.word-ring-stage {
+  animation: word-ring-orbit 48s linear infinite;
+  will-change: transform;
+}
+
+.word-ring-word {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+/* Pause the orbit whenever the hero scrolls out of view (GPU is only spent
+   while the ring is actually visible). */
+.word-ring[data-paused="true"] .word-ring-stage {
+  animation-play-state: paused;
+}
+
 /* Active step glow (stepper) — one-shot, replayed only when a step becomes
    active (the circle is re-keyed by active state). Never loops. */
 @keyframes step-pulse {
@@ -353,8 +389,14 @@ select:disabled {
   .modal-in,
   .backdrop-in,
   .error-in,
-  .step-pulse {
+  .step-pulse,
+  .word-ring-stage {
     animation: none;
+  }
+  /* Hide the decorative ring entirely — its frozen frame would sit behind
+     the opaque gauge dial, so a static word would never be visible. */
+  .word-ring {
+    opacity: 0;
   }
   * {
     transition-duration: 0.01ms !important;
