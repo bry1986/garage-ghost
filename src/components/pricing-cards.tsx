@@ -33,6 +33,9 @@ export function PricingCards() {
     "Saved vehicle profiles for faster checks",
   ];
 
+  // What yearly saves vs paying monthly for a full year.
+  const annualSavings = PRO_PRICE_MONTHLY * 12 - PRO_PRICE_ANNUAL;
+
   const cards: PricingCardData[] = [
     {
       plan: "Monthly",
@@ -60,7 +63,7 @@ export function PricingCards() {
           key={card.plan}
           className={
             card.highlighted
-              ? "relative flex flex-col rounded-xl border border-amber-500/50 bg-amber-500/5 p-6"
+              ? "card-glow relative flex flex-col rounded-xl border bg-amber-500/5 p-6"
               : "relative flex flex-col rounded-xl border border-zinc-800 bg-zinc-900 p-6"
           }
         >
@@ -79,6 +82,11 @@ export function PricingCards() {
             <span className="text-sm text-zinc-400">{card.period}</span>
           </p>
           <p className="mt-1 text-xs text-zinc-500">{card.note}</p>
+          {card.highlighted && (
+            <p className="mt-1.5 inline-flex w-fit items-center gap-1.5 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-semibold text-emerald-300 ring-1 ring-inset ring-emerald-500/30">
+              Save ${annualSavings.toFixed(2)} per year
+            </p>
+          )}
 
           <ul className="mt-5 flex-1 space-y-2.5">
             {features.map((feature) => (

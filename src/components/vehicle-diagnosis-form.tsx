@@ -48,7 +48,7 @@ import { cn, generateId } from "@/lib/utils";
 import type { ResponseLanguage, SavedVehicle, VehicleProfile } from "@/types/diagnostic";
 
 const inputClasses =
-  "w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 transition-colors hover:border-zinc-600 focus:border-amber-500 focus:outline-none";
+  "w-full rounded-lg border border-zinc-700/80 bg-zinc-900/70 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 shadow-[inset_0_1px_0_rgba(255,255,255,0.02)] transition-[border-color,box-shadow,background-color] duration-150 hover:border-zinc-600 focus:border-amber-500 focus:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20";
 const labelClasses = "mb-1.5 block text-sm font-medium text-zinc-300";
 
 /** Fields that can carry an inline validation error. */
@@ -434,7 +434,9 @@ export function VehicleDiagnosisForm() {
           id="dtc-heading"
           className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-zinc-200"
         >
-          <ScanLine className="h-4 w-4 text-amber-400" aria-hidden />
+          <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-amber-500/30 bg-amber-500/10">
+            <ScanLine className="h-4 w-4 text-amber-400" aria-hidden />
+          </span>
           OBD-II code lookup
         </h2>
         <p className="mt-1 text-xs leading-relaxed text-zinc-500">
@@ -541,7 +543,9 @@ export function VehicleDiagnosisForm() {
           id="profiles-heading"
           className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-zinc-200"
         >
-          <Car className="h-4 w-4 text-amber-400" aria-hidden />
+          <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-amber-500/30 bg-amber-500/10">
+            <Car className="h-4 w-4 text-amber-400" aria-hidden />
+          </span>
           Saved vehicles
         </h2>
         <p className="mt-1 text-xs text-zinc-500">
@@ -600,9 +604,9 @@ export function VehicleDiagnosisForm() {
       <form onSubmit={handleSubmit} noValidate className="space-y-8">
         <div className="grid gap-8 lg:grid-cols-2">
           {/* ------------------------------ Step 1: Vehicle */}
-          <fieldset ref={vehicleRef} className="scroll-mt-24 space-y-4">
-            <legend className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-zinc-200">
-              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-500/15 text-xs font-bold text-amber-400">
+          <fieldset ref={vehicleRef} className="scroll-mt-24 space-y-4 rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 sm:p-5">
+            <legend className="flex items-center gap-2 px-1.5 text-sm font-semibold uppercase tracking-wide text-zinc-200">
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-amber-500 text-xs font-bold text-zinc-950 shadow-[0_0_14px_rgba(245,158,11,0.35)]">
                 1
               </span>
               Vehicle details
@@ -744,9 +748,9 @@ export function VehicleDiagnosisForm() {
           </fieldset>
 
           {/* ------------------------------ Step 2: Symptoms */}
-          <fieldset ref={symptomsRef} className="scroll-mt-24 space-y-4">
-            <legend className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-zinc-200">
-              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-500/15 text-xs font-bold text-amber-400">
+          <fieldset ref={symptomsRef} className="scroll-mt-24 space-y-4 rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 sm:p-5">
+            <legend className="flex items-center gap-2 px-1.5 text-sm font-semibold uppercase tracking-wide text-zinc-200">
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-amber-500 text-xs font-bold text-zinc-950 shadow-[0_0_14px_rgba(245,158,11,0.35)]">
                 2
               </span>
               Symptoms
@@ -790,10 +794,10 @@ export function VehicleDiagnosisForm() {
                       aria-pressed={selected}
                       onClick={() => toggleChip(chip)}
                       className={cn(
-                        "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all duration-150 active:scale-95",
+                        "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-[transform,color,background-color,border-color,box-shadow] duration-150 active:scale-95",
                         selected
-                          ? "border-amber-500 bg-amber-500/15 text-amber-300"
-                          : "border-zinc-700 bg-zinc-900 text-zinc-300 hover:border-zinc-500 hover:text-zinc-100"
+                          ? "border-amber-500 bg-amber-500/15 text-amber-300 shadow-[0_0_12px_rgba(245,158,11,0.15)]"
+                          : "border-zinc-700/80 bg-zinc-900/70 text-zinc-300 hover:border-zinc-500 hover:text-zinc-100"
                       )}
                     >
                       <ChipIcon className="h-3.5 w-3.5" aria-hidden />
@@ -855,10 +859,10 @@ export function VehicleDiagnosisForm() {
                   onDrop={handleDrop}
                   aria-label="Upload a dashboard warning-light photo — drag and drop or click to browse"
                   className={cn(
-                    "relative flex w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed px-4 py-8 transition-colors",
+                    "relative flex w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed px-4 py-8 transition-[border-color,background-color,transform] duration-200 active:scale-[0.99]",
                     dragging
                       ? "border-amber-500 bg-amber-500/10"
-                      : "border-zinc-700 bg-zinc-900 hover:border-amber-500/60"
+                      : "border-zinc-700/80 bg-zinc-900/70 hover:border-amber-500/60 hover:bg-zinc-900"
                   )}
                 >
                   <span className="flex h-10 w-10 items-center justify-center rounded-lg border border-zinc-700 bg-zinc-950 text-zinc-400">
@@ -894,8 +898,16 @@ export function VehicleDiagnosisForm() {
         </div>
 
         {/* ------------------------------ Analyze */}
-        <div className="space-y-3">
-          <Button type="submit" disabled={loading} size="full">
+        <div className="card-sunken space-y-3 p-4 sm:p-5">
+          {loading && (
+            <div
+              aria-hidden="true"
+              className="h-1 w-full overflow-hidden rounded-full bg-zinc-800"
+            >
+              <div className="progress-sweep h-full w-1/3 rounded-full bg-amber-500/80" />
+            </div>
+          )}
+          <Button type="submit" disabled={loading} size="full" className={cn(loading && "cursor-wait!")}>
             {loading ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
@@ -932,7 +944,7 @@ export function VehicleDiagnosisForm() {
         </div>
       )}
 
-      <div className="rounded-md border border-zinc-800 bg-zinc-900/60 p-3 text-xs leading-relaxed text-zinc-400">
+      <div className="card-sunken p-3 text-xs leading-relaxed text-zinc-400">
         <p className="flex items-center gap-1.5 font-medium text-zinc-300">
           <Info className="h-3.5 w-3.5 text-amber-400" aria-hidden />
           About AI analysis

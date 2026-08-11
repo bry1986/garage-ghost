@@ -122,8 +122,8 @@ export function HistoryList() {
 
       {items.length === 0 ? (
         <div className="card-surface p-10 text-center sm:p-14">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-zinc-800 bg-zinc-900">
-            <HistoryIcon className="h-6 w-6 text-zinc-600" aria-hidden />
+          <div className="relative mx-auto flex h-14 w-14 items-center justify-center rounded-full border border-amber-500/30 bg-amber-500/10 shadow-[0_0_24px_rgba(245,158,11,0.15)]">
+            <HistoryIcon className="h-7 w-7 text-amber-400" aria-hidden />
           </div>
           <h2 className="mt-4 font-display text-base font-semibold text-zinc-200">
             No saved diagnoses yet

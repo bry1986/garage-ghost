@@ -51,9 +51,9 @@ export function Stepper({ current, active, onNavigate }: StepperProps) {
                 className={cn(
                   "step-pop flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-[10px] font-bold transition-colors sm:h-7 sm:w-7 sm:text-xs",
                   showCheck
-                    ? "border-emerald-500/50 bg-emerald-500/15 text-emerald-400"
+                    ? "border-emerald-500/50 bg-emerald-500/15 text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.15)]"
                     : isActive
-                      ? "step-pulse border-amber-500 bg-amber-500 text-zinc-950"
+                      ? "step-pulse border-amber-500 bg-amber-500 text-zinc-950 shadow-[0_0_16px_rgba(245,158,11,0.35)]"
                       : "border-zinc-700 bg-zinc-900 text-zinc-500"
                 )}
                 aria-hidden
@@ -84,7 +84,7 @@ export function Stepper({ current, active, onNavigate }: StepperProps) {
                 <span
                   aria-hidden
                   className={cn(
-                    "mx-0.5 h-px flex-1 sm:mx-2",
+                    "mx-0.5 h-px flex-1 transition-colors duration-500 sm:mx-2",
                     current >= stepNumber ? "bg-emerald-500/50" : "bg-zinc-800"
                   )}
                 />

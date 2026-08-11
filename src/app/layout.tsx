@@ -1,9 +1,10 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono, Space_Grotesk } from "next/font/google";
+import { Geist, Geist_Mono, Instrument_Serif, Space_Grotesk } from "next/font/google";
 import type { ReactNode } from "react";
 import "./globals.css";
-import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
+import { Header } from "@/components/header";
+import { MainShell } from "@/components/main-shell";
 import { ProProvider } from "@/components/pro-provider";
 import { PwaRegister } from "@/components/pwa-register";
 import { RoutePrefetcher } from "@/components/route-prefetcher";
@@ -22,6 +23,13 @@ const geistMono = Geist_Mono({
 
 const spaceGrotesk = Space_Grotesk({
   variable: "--font-space-grotesk",
+  subsets: ["latin"],
+  display: "swap",
+});
+
+const instrumentSerif = Instrument_Serif({
+  weight: "400",
+  variable: "--font-instrument-serif",
   subsets: ["latin"],
   display: "swap",
 });
@@ -131,7 +139,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${spaceGrotesk.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${spaceGrotesk.variable} ${instrumentSerif.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col bg-zinc-950 text-zinc-100">
         <SplashOverlay />
@@ -148,12 +156,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             Skip to main content
           </a>
           <Header />
-          <main
-            id="main-content"
-            className="mx-auto w-full max-w-6xl flex-1 scroll-mt-20 px-4 pb-24 pt-6 sm:px-6 sm:pt-10"
-          >
-            {children}
-          </main>
+          <MainShell>{children}</MainShell>
           <Footer />
         </ProProvider>
       </body>

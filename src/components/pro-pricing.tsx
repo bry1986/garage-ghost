@@ -24,8 +24,7 @@ export function ProPricingSection() {
   return (
     <section aria-labelledby="pro-pricing-heading" className="scroll-mt-24">
       <div className="text-center">
-        <p className="text-xs font-semibold uppercase tracking-wide text-amber-400">Garage Ghost Pro</p>
-        <h2 id="pro-pricing-heading" className="mt-2 font-display text-2xl font-bold tracking-tight text-zinc-50">
+        <h2 id="pro-pricing-heading" className="font-display text-2xl font-bold tracking-tight text-zinc-50 sm:text-3xl">
           The features drivers pay for most
         </h2>
         <p className="mx-auto mt-2 max-w-xl text-sm text-zinc-400">

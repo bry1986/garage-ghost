@@ -328,9 +328,9 @@ export function DiagnosisResult({
           riskLevel !== "STOP_NOW" && "result-rise"
         )}
       >
-        {/* Double-bezel outer shell: machined-housing look without gradients */}
-        <div className="rounded-[1.75rem] bg-zinc-950/60 p-1.5 ring-1 ring-white/5 sm:p-2">
-          <div className="space-y-6 rounded-[1.5rem] border border-zinc-800 bg-zinc-900 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] sm:p-6">
+        <div className="card-surface-raised p-4 shadow-[0_24px_60px_-32px_rgba(0,0,0,0.8)] sm:p-6">
+          {/* Section entrances stagger 60ms apart — never applied to STOP_NOW. */}
+          <div className={cn("space-y-6", riskLevel !== "STOP_NOW" && "stagger-in")}>
             {/* ----------------------- Header ----------------------- */}
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-3">
@@ -397,6 +397,7 @@ export function DiagnosisResult({
                     <span
                       className={cn(
                         "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wider",
+                        riskLevel !== "STOP_NOW" && "pop-in",
                         severity.badge
                       )}
                     >

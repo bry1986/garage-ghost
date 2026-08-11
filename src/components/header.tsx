@@ -10,6 +10,8 @@ import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
   { href: "/diagnose", label: "Diagnose" },
+  { href: "/vin", label: "VIN decoder" },
+  { href: "/workshops", label: "Workshops" },
   { href: "/history", label: "History" },
   { href: "/pricing", label: "Pricing" },
 ];
@@ -59,6 +61,10 @@ export function Header() {
       menuButtonRef.current?.focus();
     }
   }, [drawerOpen]);
+
+  // The landing page carries its own full-bleed hero with an integrated glass
+  // nav — the global sticky header stays off it (hooks above are unconditional).
+  if (pathname === "/") return null;
 
   const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
 
@@ -119,7 +125,7 @@ export function Header() {
           className="group flex items-center gap-2 rounded-md transition-opacity hover:opacity-80"
           aria-label={`${APP_NAME} home`}
         >
-          <span className="flex h-8 w-8 items-center justify-center rounded-md border border-amber-500/40 bg-amber-500/10 transition-colors group-hover:bg-amber-500/20">
+          <span className="flex h-8 w-8 items-center justify-center rounded-md border border-amber-500/40 bg-amber-500/10 shadow-[0_0_14px_rgba(245,158,11,0.15)] transition-[background-color,box-shadow] duration-200 group-hover:bg-amber-500/20 group-hover:shadow-[0_0_20px_rgba(245,158,11,0.3)]">
             <Wrench className="h-4 w-4 text-amber-400" aria-hidden />
           </span>
           <span className="font-display text-sm font-semibold tracking-tight text-zinc-100">
@@ -131,22 +137,34 @@ export function Header() {
         <div className="flex items-center gap-2">
           <nav aria-label="Main navigation" className="hidden md:block">
             <ul className="flex items-center gap-1">
-              {NAV_ITEMS.map((item) => (
-                <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    aria-current={isActive(item.href) ? "page" : undefined}
-                    className={cn(
-                      "rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                      isActive(item.href)
-                        ? "bg-zinc-800 text-amber-400"
-                        : "text-zinc-300 hover:bg-zinc-800/60 hover:text-zinc-100"
-                    )}
-                  >
-                    {item.label}
-                  </Link>
-                </li>
-              ))}
+              {NAV_ITEMS.map((item) => {
+                const active = isActive(item.href);
+                return (
+                  <li key={item.href}>
+                    <Link
+                      href={item.href}
+                      aria-current={active ? "page" : undefined}
+                      className={cn(
+                        "relative rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                        active
+                          ? "bg-zinc-800 text-amber-400"
+                          : "text-zinc-300 hover:bg-zinc-800/60 hover:text-zinc-100"
+                      )}
+                    >
+                      {item.label}
+                      {/* Active-route underline — scaleX affordance, gated to
+                          fine pointers so touch never fires a false hover. */}
+                      <span
+                        aria-hidden
+                        className={cn(
+                          "absolute inset-x-2.5 -bottom-px h-px origin-left scale-x-0 rounded-full bg-gradient-to-r from-amber-400 via-amber-400/70 to-transparent transition-transform duration-200 ease-[var(--ease-out)]",
+                          active && "scale-x-100"
+                        )}
+                      />
+                    </Link>
+                  </li>
+                );
+              })}
             </ul>
           </nav>
           <div className="hidden md:block">{ProBadge}</div>
@@ -163,6 +181,12 @@ export function Header() {
           </button>
         </div>
       </div>
+
+      {/* Amber hairline — a soft command-center light across the bottom edge */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-amber-500/25 to-transparent"
+      />
 
       {/* Mobile drawer */}
       {drawerOpen && (

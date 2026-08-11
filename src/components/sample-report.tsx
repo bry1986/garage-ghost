@@ -2,7 +2,7 @@ import { AlertTriangle, CheckCircle2, Wrench, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 const SAMPLE = {
-  vehicle: "Audi A3 · 2017 · Diesel · 145,000 km",
+  vehicle: "Audi A3, 2017, Diesel, 145,000 km",
   detectedWarning: "Engine management light (amber)",
   summary:
     "The amber engine-management light combined with reduced power above 2,500 RPM is typically a drivetrain/management issue rather than an emergency — but a fault scan is needed to pinpoint it. Drive carefully and book a workshop inspection.",
@@ -21,11 +21,11 @@ const SAMPLE = {
 export function SampleReport() {
   return (
     <section
-      aria-labelledby="sample-report-heading"
-      className="card-surface result-rise mx-auto mt-8 max-w-xl p-5 sm:p-6"
+      aria-labelledby="sample-report-card-heading"
+      className="card-surface max-w-xl p-5 sm:p-6"
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 id="sample-report-heading" className="font-display text-sm font-semibold text-zinc-100">
+        <h2 id="sample-report-card-heading" className="font-display text-sm font-semibold text-zinc-100">
           Sample report
         </h2>
         <Badge variant="brand">BOOK SERVICE</Badge>

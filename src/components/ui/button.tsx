@@ -6,15 +6,20 @@ import { cn } from "@/lib/utils";
  * previously duplicated as inline Tailwind strings across ~7 files).
  * Variants follow the automotive command-center system: amber primary,
  * zinc outline, ghost, red danger, emerald success.
+ *
+ * Motion discipline (animate skill):
+ * - explicit property transitions only — never `transition-all`
+ * - press feedback via transform (100–160ms), hover lift gated to fine pointers
  */
 
 export type ButtonVariant = "primary" | "outline" | "ghost" | "danger" | "success";
 export type ButtonSize = "sm" | "md" | "lg" | "full";
 
 const VARIANT_CLASSES: Record<ButtonVariant, string> = {
-  primary: "bg-amber-500 text-zinc-950 hover:bg-amber-400",
+  primary:
+    "bg-amber-500 text-zinc-950 shadow-[0_1px_2px_rgba(0,0,0,0.35)] hover:bg-amber-400",
   outline:
-    "border border-zinc-700 text-zinc-200 hover:border-zinc-500 hover:text-white",
+    "border border-zinc-700/80 text-zinc-200 hover:border-zinc-500 hover:text-white",
   ghost: "text-zinc-300 hover:bg-zinc-800/60 hover:text-zinc-100",
   danger:
     "border border-red-500/40 text-red-300 hover:border-red-400/60 hover:bg-red-500/10",
@@ -22,15 +27,15 @@ const VARIANT_CLASSES: Record<ButtonVariant, string> = {
 };
 
 const SIZE_CLASSES: Record<ButtonSize, string> = {
-  sm: "gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium",
-  md: "gap-2 rounded-md px-4 py-2.5 text-sm font-semibold",
-  lg: "gap-2 rounded-md px-6 py-3 text-sm font-semibold",
+  sm: "gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium",
+  md: "gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold",
+  lg: "gap-2 rounded-lg px-6 py-3 text-sm font-semibold",
   full:
-    "w-full items-center justify-center gap-2 rounded-md px-6 py-3.5 text-base font-semibold",
+    "w-full items-center justify-center gap-2 rounded-lg px-6 py-3.5 text-base font-semibold",
 };
 
 const BASE_CLASSES =
-  "inline-flex items-center justify-center rounded-md transition-all duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 disabled:cursor-not-allowed disabled:opacity-60 active:scale-[0.98]";
+  "inline-flex items-center justify-center rounded-lg transition-[transform,color,background-color,border-color,box-shadow,opacity] duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 disabled:cursor-not-allowed disabled:opacity-60 active:scale-[0.97]";
 
 interface ButtonStyleOptions {
   variant?: ButtonVariant;
