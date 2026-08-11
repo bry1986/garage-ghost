@@ -34,10 +34,46 @@ const RADIUS_OPTIONS = [
   { value: 25000, label: "25 km" },
 ] as const;
 
+const COMMON_BRANDS = [
+  "Alfa Romeo",
+  "Audi",
+  "BMW",
+  "BYD",
+  "Chevrolet",
+  "Citroën",
+  "Dacia",
+  "Fiat",
+  "Ford",
+  "Honda",
+  "Hyundai",
+  "Jeep",
+  "Kia",
+  "Land Rover",
+  "Lexus",
+  "Mazda",
+  "Mercedes-Benz",
+  "Mini",
+  "Mitsubishi",
+  "Nissan",
+  "Opel",
+  "Peugeot",
+  "Porsche",
+  "Renault",
+  "Seat",
+  "Škoda",
+  "Subaru",
+  "Suzuki",
+  "Tesla",
+  "Toyota",
+  "Volkswagen",
+  "Volvo",
+];
+
 const inputClasses =
   "w-full rounded-lg border border-zinc-700/80 bg-zinc-900/70 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 shadow-[inset_0_1px_0_rgba(255,255,255,0.02)] transition-[border-color,box-shadow,background-color] duration-150 hover:border-zinc-600 focus:border-amber-500 focus:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20";
 
 export function WorkshopFinder() {
+  const [brand, setBrand] = useState("");
   const [place, setPlace] = useState("");
   const [radius, setRadius] = useState<number>(10000);
   const [locationLabel, setLocationLabel] = useState("");
@@ -52,7 +88,7 @@ export function WorkshopFinder() {
     setStatus("Searching the workshop directory…");
     setLocationLabel(label);
     try {
-      const results = await fetchNearbyWorkshops(origin, radius);
+      const results = await fetchNearbyWorkshops(origin, radius, brand.trim() || undefined);
       setWorkshops(results);
     } catch (cause) {
       console.error("Garage Ghost workshop search failed:", cause);
@@ -102,6 +138,14 @@ export function WorkshopFinder() {
     }
   };
 
+  const brandQuery = brand.trim();
+  const displayBrand = brandQuery
+    ? brandQuery
+        .split(/\s+/)
+        .filter(Boolean)
+        .map((word) => word[0].toUpperCase() + word.slice(1))
+        .join(" ")
+    : "";
   const resultsCount = workshops?.length ?? 0;
 
   return (
@@ -122,28 +166,56 @@ export function WorkshopFinder() {
             Use my location
           </Button>
           <span aria-hidden className="hidden h-5 w-px bg-zinc-700/80 sm:block" />
-          <span className="text-xs text-zinc-500">or search by place:</span>
+          <span className="text-xs text-zinc-500">or search by brand &amp; city:</span>
         </div>
 
-        <form onSubmit={handlePlaceSearch} className="mt-3 flex flex-col gap-2 sm:flex-row">
-          <label htmlFor="place" className="sr-only">
-            Place name
-          </label>
-          <input
-            id="place"
-            name="place"
-            type="text"
-            autoComplete="off"
-            value={place}
-            onChange={(event) => setPlace(event.target.value)}
-            placeholder="e.g. Munich, Germany"
-            className={cn(inputClasses, "sm:max-w-xs")}
-          />
+        <form onSubmit={handlePlaceSearch} className="mt-3 grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
+          <div>
+            <label htmlFor="brand" className="sr-only">
+              Car brand
+            </label>
+            <input
+              id="brand"
+              name="brand"
+              type="text"
+              list="common-car-brands"
+              autoComplete="off"
+              value={brand}
+              onChange={(event) => setBrand(event.target.value)}
+              placeholder="Car brand · e.g. Audi"
+              className={inputClasses}
+            />
+            <datalist id="common-car-brands">
+              {COMMON_BRANDS.map((candidate) => (
+                <option key={candidate} value={candidate} />
+              ))}
+            </datalist>
+          </div>
+          <div>
+            <label htmlFor="place" className="sr-only">
+              City
+            </label>
+            <input
+              id="place"
+              name="place"
+              type="text"
+              autoComplete="off"
+              value={place}
+              onChange={(event) => setPlace(event.target.value)}
+              placeholder="City · e.g. Munich"
+              className={inputClasses}
+            />
+          </div>
           <Button type="submit" variant="outline" disabled={loading || place.trim().length === 0} className="shrink-0">
             <Search className="h-4 w-4" aria-hidden />
             Search
           </Button>
         </form>
+
+        <p className="mt-2 text-[11px] text-zinc-500">
+          Leave the brand empty to list every repair workshop in the city — add a brand (Audi,
+          Mercedes, Hyundai…) to narrow results to that brand’s workshops and dealers.
+        </p>
 
         {/* Radius */}
         <div className="mt-4 border-t border-zinc-800 pt-3">
@@ -192,7 +264,7 @@ export function WorkshopFinder() {
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 id="workshop-results-heading" className="flex items-center gap-2 font-display text-lg font-bold tracking-tight text-zinc-50">
               <Store className="h-4.5 w-4.5 text-amber-400" aria-hidden />
-              {resultsCount} workshop{resultsCount === 1 ? "" : "s"} near {locationLabel}
+              {resultsCount} {displayBrand ? `${displayBrand} ` : ""}workshop{resultsCount === 1 ? "" : "s"} near {locationLabel}
             </h2>
             <p className="text-xs text-zinc-500">Within {formatDistance(radius)}</p>
           </div>
@@ -201,7 +273,15 @@ export function WorkshopFinder() {
             <div className="card-surface p-10 text-center">
               <MapPin className="mx-auto h-6 w-6 text-zinc-600" aria-hidden />
               <p className="mt-3 text-sm text-zinc-400">
-                No car-repair workshops found nearby. Try a wider radius or a different place.
+                {displayBrand ? (
+                  <>
+                    No <span className="font-semibold text-zinc-300">{displayBrand}</span>{" "}
+                    workshops found near {locationLabel}. Try a wider radius, a different city, or
+                    check the brand spelling.
+                  </>
+                ) : (
+                  "No car-repair workshops found nearby. Try a wider radius or a different place."
+                )}
               </p>
             </div>
           ) : (

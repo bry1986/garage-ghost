@@ -42,7 +42,18 @@ export interface LocationError {
   message: string;
 }
 
-const OVERPASS_ENDPOINT = "https://overpass-api.de/api/interpreter";
+/**
+ * Overpass mirrors, tried in order until one answers. The main public
+ * instance is frequently rate-limited or slow, so falling back keeps
+ * searches working. (osm.ch is a regional mirror — skipped on purpose.)
+ */
+const OVERPASS_ENDPOINTS = [
+  "https://overpass-api.de/api/interpreter",
+  "https://overpass.kumi.systems/api/interpreter",
+  "https://overpass.private.coffee/api/interpreter",
+  "https://overpass.openstreetmap.ru/api/interpreter",
+  "https://overpass.nchc.org.tw/api/interpreter",
+];
 const NOMINATIM_ENDPOINT = "https://nominatim.openstreetmap.org/search";
 
 /** Ask the browser for the current position (with a 12s guard). */
@@ -128,43 +139,100 @@ interface OverpassElement {
   tags?: Record<string, string | undefined>;
 }
 
+interface OverpassResponse {
+  elements?: OverpassElement[];
+}
+
 /**
- * Query Overpass for car-repair shops within `radiusMeters` of a point.
- * Uses `out center` so ways/relations resolve to a usable coordinate.
+ * Turn a user-typed brand (e.g. "land rover", "Mercedes-Benz", "Škoda")
+ * into a case-insensitive POSIX-ERE regex that also matches the compact
+ * spelling ("Landrover"), hyphen or space separators ("Mercedes-Benz"), and
+ * the accented form ("Škoda" vs "Skoda"). Word boundaries are NOT used —
+ * Overpass uses the OS POSIX regex engine, which rejects \b.
+ */
+function brandPattern(brand: string): string {
+  const raw = brand.trim().toLowerCase();
+  const stripped = raw.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  return [...new Set([raw, stripped])]
+    .map((variant) => variant.split(/[^a-z0-9]+/).filter((word) => word.length > 0))
+    .filter((words) => words.length > 0)
+    .map((words) => words.join("[- ]?"))
+    .join("|");
+}
+
+/**
+ * Build the Overpass query. Without a brand this matches every car-repair
+ * shop in range; with a brand it matches repair shops AND dealerships
+ * (`shop=car` — authorised service centres) whose name, brand or operator
+ * tag contains the brand, case-insensitively.
+ */
+function buildWorkshopQuery(origin: LatLon, radiusMeters: number, brand?: string): string {
+  const radius = Math.round(radiusMeters);
+  const { lat, lon } = origin;
+  const types = ["node", "way", "relation"] as const;
+  const repairTags = ["amenity=car_repair", "shop=car_repair"];
+  // If a brand is given but produces no searchable letters (e.g. "!!!"), fall
+  // back to the plain query rather than emitting an empty regex, which can
+  // make Overpass reject the request outright.
+  const pattern = brand ? brandPattern(brand) : "";
+  const categories = pattern ? [...repairTags, "shop=car"] : repairTags;
+  const blocks: string[] = [];
+
+  for (const type of types) {
+    for (const category of categories) {
+      if (pattern) {
+        for (const key of ["name", "brand", "operator"]) {
+          blocks.push(`${type}(around:${radius},${lat},${lon})[${category}]["${key}"~"${pattern}",i];`);
+        }
+      } else {
+        blocks.push(`${type}(around:${radius},${lat},${lon})[${category}];`);
+      }
+    }
+  }
+
+  return `[out:json][timeout:25];\n(\n${blocks.join("\n")}\n);\nout center;`;
+}
+
+/** Try each Overpass mirror in turn and return the first success. */
+async function fetchOverpass(query: string): Promise<OverpassResponse> {
+  const failures: string[] = [];
+  for (const endpoint of OVERPASS_ENDPOINTS) {
+    try {
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({ data: query }).toString(),
+        signal: AbortSignal.timeout(20000),
+      });
+      if (response.ok) {
+        return (await response.json()) as OverpassResponse;
+      }
+      failures.push(`${endpoint} (${response.status})`);
+    } catch {
+      failures.push(endpoint);
+    }
+  }
+  const allBusy = failures.every((failure) =>
+    /\((429|503|504)\)/.test(failure)
+  );
+  throw new Error(
+    allBusy
+      ? "The workshop directory is busy right now. Please wait a moment and try again."
+      : "The workshop directory could not be reached. Please try again in a moment."
+  );
+}
+
+/**
+ * Query Overpass for car-repair shops within `radiusMeters` of a point,
+ * optionally filtered to a car brand. Uses `out center` so ways/relations
+ * resolve to a usable coordinate.
  */
 export async function fetchNearbyWorkshops(
   origin: LatLon,
-  radiusMeters: number
+  radiusMeters: number,
+  brand?: string
 ): Promise<Workshop[]> {
-  const query = `
-    [out:json][timeout:25];
-    (
-      node(around:${Math.round(radiusMeters)},${origin.lat},${origin.lon})[amenity=car_repair];
-      way(around:${Math.round(radiusMeters)},${origin.lat},${origin.lon})[amenity=car_repair];
-      relation(around:${Math.round(radiusMeters)},${origin.lat},${origin.lon})[amenity=car_repair];
-      node(around:${Math.round(radiusMeters)},${origin.lat},${origin.lon})[shop=car_repair];
-      way(around:${Math.round(radiusMeters)},${origin.lat},${origin.lon})[shop=car_repair];
-      relation(around:${Math.round(radiusMeters)},${origin.lat},${origin.lon})[shop=car_repair];
-    );
-    out center;
-  `;
-
-  const response = await fetch(OVERPASS_ENDPOINT, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({ data: query }).toString(),
-    signal: AbortSignal.timeout(30000),
-  });
-  if (!response.ok) {
-    // 429 = the shared instance is busy — surface a helpful message.
-    throw new Error(
-      response.status === 429
-        ? "The workshop directory is busy right now. Please wait a moment and try again."
-        : `The workshop directory request failed (${response.status}). Try again in a moment.`
-    );
-  }
-
-  const data = (await response.json()) as { elements?: OverpassElement[] };
+  const data = await fetchOverpass(buildWorkshopQuery(origin, radiusMeters, brand));
   const elements = data.elements ?? [];
 
   return elements

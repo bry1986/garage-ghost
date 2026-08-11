@@ -5,7 +5,7 @@ import { WorkshopFinder } from "@/components/workshop-finder";
 export const metadata: Metadata = {
   title: "Find a workshop",
   description:
-    "Find car-repair workshops near you using your location or a place name — powered by free OpenStreetMap data, no account needed.",
+    "Find workshops for your car brand in any city — powered by free OpenStreetMap data, with phone numbers and directions, no account needed.",
 };
 
 export default function WorkshopsPage() {
@@ -20,8 +20,9 @@ export default function WorkshopsPage() {
           Find a workshop
         </h1>
         <p className="mt-1.5 max-w-2xl text-sm text-zinc-400">
-          Search for car-repair workshops near you — by your current location or a place name —
-          with distance and directions. Results come from OpenStreetMap and are never stored.
+          Type your car brand (Audi, Mercedes, Hyundai…) and a city to find that brand’s workshops
+          and dealers with phone numbers and directions — or use your current location. Results
+          come from OpenStreetMap and are never stored.
         </p>
       </div>
       <WorkshopFinder />
