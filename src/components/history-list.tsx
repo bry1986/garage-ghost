@@ -92,7 +92,7 @@ export function HistoryList() {
               className={cn(
                 "rounded-full border px-3 py-1.5 text-xs font-medium transition-all duration-150 active:scale-95",
                 filter === option.value
-                  ? "border-amber-500 bg-amber-500/15 text-amber-300"
+                  ? "border-brand bg-brand/15 text-brand"
                   : "border-zinc-700 bg-zinc-900 text-zinc-400 hover:border-zinc-500 hover:text-zinc-200"
               )}
             >
@@ -122,8 +122,8 @@ export function HistoryList() {
 
       {items.length === 0 ? (
         <div className="card-surface p-10 text-center sm:p-14">
-          <div className="relative mx-auto flex h-14 w-14 items-center justify-center rounded-full border border-amber-500/30 bg-amber-500/10 shadow-[0_0_24px_rgba(245,158,11,0.15)]">
-            <HistoryIcon className="h-7 w-7 text-amber-400" aria-hidden />
+          <div className="relative mx-auto flex h-14 w-14 items-center justify-center rounded-full border border-brand/30 bg-brand/10 shadow-[0_0_24px_rgba(37,99,235,0.15)]">
+            <HistoryIcon className="h-7 w-7 text-brand" aria-hidden />
           </div>
           <h2 className="mt-4 font-display text-base font-semibold text-zinc-200">
             No saved diagnoses yet
@@ -217,6 +217,8 @@ export function HistoryList() {
                         source={item.source}
                         vehicleLabel={vehicleLabel}
                         imageNote={false}
+                        symptoms={item.symptoms}
+                        language={item.language}
                         consumeQuota={false}
                       />
                     </div>

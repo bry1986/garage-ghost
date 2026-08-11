@@ -10,16 +10,15 @@ const FAQ_ITEMS = [
   {
     question: "What's the difference between Free, Monthly and Yearly?",
     answer: [
-      `Free costs nothing, forever: unlimited diagnoses, follow-up questions and DTC code lookups, ${FREE_ESTIMATES_PER_DAY} repair cost estimates per day, and a copyable mechanic-ready report.`,
-      `Monthly ($${PRO_PRICE_MONTHLY.toFixed(2)}/month) and Yearly ($${PRO_PRICE_ANNUAL.toFixed(2)}/year) are the same Pro plan — unlimited estimates, PDF reports, saved reports and vehicle profiles. Yearly bills once a year and saves $${ANNUAL_SAVINGS.toFixed(2)} compared with paying month to month.`,
-      "Start on Free with nothing to set up and no credit card, then upgrade only if you need unlimited estimates and printable reports.",
+      `Free costs nothing, forever: unlimited diagnoses, follow-up questions and DTC code lookups, ${FREE_ESTIMATES_PER_DAY} repair cost estimates per day, and a copyable mechanic-ready report with a free PDF download.`,
+      `Monthly ($${PRO_PRICE_MONTHLY.toFixed(2)}/month) and Yearly ($${PRO_PRICE_ANNUAL.toFixed(2)}/year) are the same Pro plan — unlimited estimates, saved reports and vehicle profiles. Yearly bills once a year and saves $${ANNUAL_SAVINGS.toFixed(2)} compared with paying month to month.`,
+      "Start on Free with nothing to set up and no credit card — PDF downloads are included — then upgrade only if you need unlimited estimates and saved reports.",
     ],
   },
   {
     question: "What exactly does Pro include?",
     answer: [
       `Unlimited repair cost estimates (the free tier allows ${FREE_ESTIMATES_PER_DAY} per day).`,
-      "Print / Save-as-PDF mechanic reports.",
       "Saved reports & maintenance history on this device.",
       "Saved vehicle profiles for faster checks.",
     ],
@@ -58,7 +57,7 @@ export function PricingFaq() {
   return (
     <section aria-labelledby="faq-heading" className="mx-auto max-w-2xl">
       <div className="text-center">
-        <p className="text-xs font-semibold uppercase tracking-wide text-amber-400">FAQ</p>
+        <p className="text-xs font-semibold uppercase tracking-wide text-brand">FAQ</p>
         <h2 id="faq-heading" className="mt-2 font-display text-xl font-bold tracking-tight text-zinc-50">
           Common questions
         </h2>
@@ -68,7 +67,7 @@ export function PricingFaq() {
           <Disclosure
             key={item.question}
             title={item.question}
-            icon={<CircleHelp className="h-4 w-4 text-amber-400" aria-hidden />}
+            icon={<CircleHelp className="h-4 w-4 text-brand" aria-hidden />}
             buttonLabel={`Show or hide the answer to “${item.question}”`}
           >
             <ul className="space-y-2">
@@ -88,7 +87,7 @@ export function PricingFaq() {
           href={PUTER_DEVELOPER_URL}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-zinc-400 underline underline-offset-2 hover:text-amber-300"
+          className="text-zinc-400 underline underline-offset-2 hover:text-brand"
         >
           Puter developer docs
         </a>{" "}

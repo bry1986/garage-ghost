@@ -1,4 +1,4 @@
-/* Garage Ghost service worker v3 — PWA shell + offline fallback.
+/* Garage Ghost service worker v4 — PWA shell + offline fallback.
  *
  * Strategy:
  * - Precache the app shell (main routes, icons, manifest, offline page) at install.
@@ -7,7 +7,7 @@
  *   page, falling back to /offline.html for any route not yet visited.
  * - Versioned cache name so old caches are cleaned automatically on activate.
  */
-const CACHE = "garage-ghost-v3";
+const CACHE = "garage-ghost-v4";
 const STATIC_PREFIXES = ["/_next/static/", "/icons/", "/manifest.webmanifest"];
 
 /* Routes precached at install so the app opens offline after first visit. */

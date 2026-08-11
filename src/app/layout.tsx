@@ -6,6 +6,7 @@ import { Footer } from "@/components/footer";
 import { Header } from "@/components/header";
 import { MainShell } from "@/components/main-shell";
 import { ProProvider } from "@/components/pro-provider";
+import { ThemeProvider } from "@/components/theme-provider";
 import { PwaRegister } from "@/components/pwa-register";
 import { RoutePrefetcher } from "@/components/route-prefetcher";
 import { SplashOverlay } from "@/components/splash-overlay";
@@ -129,36 +130,55 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#09090b",
+  themeColor: "#f7f8fa",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
 };
+
+// Inline FOUC guard: apply the saved/system theme before first paint so the
+// page never flashes the wrong mode. Runs before React hydration.
+const THEME_SCRIPT = `
+(function () {
+  try {
+    var stored = localStorage.getItem("garage-ghost:theme");
+    var dark = stored === "dark" || (stored !== "light" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+    var root = document.documentElement;
+    root.classList.toggle("dark", dark);
+  } catch (e) {}
+})();
+`;
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} ${spaceGrotesk.variable} ${instrumentSerif.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+      </head>
       <body className="flex min-h-full flex-col bg-zinc-950 text-zinc-100">
         <SplashOverlay />
         <PwaRegister />
         <RoutePrefetcher />
-        <ProProvider>
-          {/* Skip link: kept off-screen (translated + hidden) until focused, so
-              it never conflicts with sticky header positioning or the sr-only
-              clip (which would fight focus:absolute at the same specificity). */}
-          <a
-            href="#main-content"
-            className="fixed left-4 top-4 z-50 -translate-y-24 rounded-md bg-amber-500 px-4 py-2 text-sm font-semibold text-zinc-950 opacity-0 shadow-lg transition-all duration-200 focus:translate-y-0 focus:opacity-100"
-          >
-            Skip to main content
-          </a>
-          <Header />
-          <MainShell>{children}</MainShell>
-          <Footer />
-        </ProProvider>
+        <ThemeProvider>
+          <ProProvider>
+            {/* Skip link: kept off-screen (translated + hidden) until focused, so
+                it never conflicts with sticky header positioning or the sr-only
+                clip (which would fight focus:absolute at the same specificity). */}
+            <a
+              href="#main-content"
+              className="fixed left-4 top-4 z-50 -translate-y-24 rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white opacity-0 shadow-lg transition-all duration-200 focus:translate-y-0 focus:opacity-100"
+            >
+              Skip to main content
+            </a>
+            <Header />
+            <MainShell>{children}</MainShell>
+            <Footer />
+          </ProProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

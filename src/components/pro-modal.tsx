@@ -6,7 +6,6 @@ import {
   CheckCircle2,
   Crown,
   ExternalLink,
-  FileText,
   Infinity as InfinityIcon,
   KeyRound,
   Loader2,
@@ -38,11 +37,6 @@ const PRO_FEATURES = [
     icon: InfinityIcon,
     title: "Unlimited repair cost estimates",
     text: `No daily limit — the free tier allows ${FREE_ESTIMATES_PER_DAY} per day.`,
-  },
-  {
-    icon: FileText,
-    title: "Print / Save-as-PDF mechanic reports",
-    text: "Professional, printable hand-off documents for your workshop.",
   },
 ];
 
@@ -189,7 +183,7 @@ export function ProModal({
             <ul className="w-full space-y-3 rounded-md border border-zinc-800 bg-zinc-950/60 p-4 text-left">
               {PRO_FEATURES.map((feature) => (
                 <li key={feature.title} className="flex items-start gap-2 text-sm text-zinc-300">
-                  <feature.icon className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" aria-hidden />
+                  <feature.icon className="mt-0.5 h-4 w-4 shrink-0 text-brand" aria-hidden />
                   <span>
                     <span className="font-medium text-zinc-100">{feature.title}.</span>{" "}
                     {feature.text}
@@ -228,7 +222,7 @@ export function ProModal({
       >
         <div className="flex items-center justify-between border-b border-zinc-800 px-5 py-4">
           <h2 id="pro-modal-title" className="flex items-center gap-2 text-sm font-semibold text-zinc-50">
-            <Crown className="h-4 w-4 text-amber-400" aria-hidden />
+            <Crown className="h-4 w-4 text-brand" aria-hidden />
             Garage Ghost Pro
           </h2>
           <button
@@ -236,7 +230,7 @@ export function ProModal({
             type="button"
             onClick={handleClose}
             aria-label="Close"
-            className="rounded-md p-1 text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
+            className="rounded-md p-1 text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-brand"
           >
             <X className="h-4 w-4" aria-hidden />
           </button>
@@ -247,8 +241,8 @@ export function ProModal({
             <div className="flex items-start gap-2 rounded-md border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-200">
               <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
               <p>
-                <span className="font-semibold">You&apos;re Pro.</span> Unlimited cost estimates and
-                PDF report export are unlocked.
+                <span className="font-semibold">You&apos;re Pro.</span> Unlimited cost estimates are
+                unlocked.
               </p>
             </div>
             {billingUrl && (
@@ -283,13 +277,12 @@ export function ProModal({
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
                 <span>
                   Your Pro license is no longer active. Renew your subscription to keep unlimited
-                  cost estimates and PDF report export, or enter a new license key below.
+                  cost estimates, or enter a new license key below.
                 </span>
               </p>
             )}
             <p className="text-sm leading-relaxed text-zinc-300">
-              Unlock the features drivers pay for most: unlimited repair cost estimates and
-              printable mechanic reports.
+              Unlock the feature drivers pay for most: unlimited repair cost estimates.
             </p>
 
             <div className="grid grid-cols-2 gap-3">
@@ -300,9 +293,9 @@ export function ProModal({
                   <span className="text-xs font-normal text-zinc-500">/mo</span>
                 </p>
               </div>
-              <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-3">
-                <p className="text-xs font-medium uppercase tracking-wide text-amber-300">
-                  Yearly <span className="ml-1 rounded bg-amber-500/15 px-1 py-0.5 text-[10px]">Save ~30%</span>
+              <div className="rounded-md border border-brand/40 bg-brand/5 p-3">
+                <p className="text-xs font-medium uppercase tracking-wide text-brand">
+                  Yearly <span className="ml-1 rounded bg-brand/15 px-1 py-0.5 text-[10px]">Save ~30%</span>
                 </p>
                 <p className="mt-1 text-lg font-bold text-zinc-50">
                   ${PRO_PRICE_ANNUAL.toFixed(2)}
@@ -314,7 +307,7 @@ export function ProModal({
             <ul className="space-y-2">
               {PRO_FEATURES.map((feature) => (
                 <li key={feature.title} className="flex items-start gap-2 text-sm text-zinc-300">
-                  <feature.icon className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" aria-hidden />
+                  <feature.icon className="mt-0.5 h-4 w-4 shrink-0 text-brand" aria-hidden />
                   <span>
                     <span className="font-medium text-zinc-100">{feature.title}.</span>{" "}
                     {feature.text}
@@ -373,7 +366,7 @@ export function ProModal({
                   onChange={(event) => setLicenseKey(event.target.value)}
                   placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
                   disabled={activating}
-                  className="w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 font-mono text-xs text-zinc-100 placeholder-zinc-600 transition-colors focus:border-amber-500 focus:outline-none"
+                  className="w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 font-mono text-xs text-zinc-100 placeholder-zinc-600 transition-colors focus:border-brand focus:outline-none"
                 />
                 <Button
                   type="submit"

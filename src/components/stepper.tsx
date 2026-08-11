@@ -53,7 +53,7 @@ export function Stepper({ current, active, onNavigate }: StepperProps) {
                   showCheck
                     ? "border-emerald-500/50 bg-emerald-500/15 text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.15)]"
                     : isActive
-                      ? "step-pulse border-amber-500 bg-amber-500 text-zinc-950 shadow-[0_0_16px_rgba(245,158,11,0.35)]"
+                      ? "step-pulse border-brand bg-brand text-white shadow-[0_0_16px_rgba(37,99,235,0.35)] dark:bg-blue-600"
                       : "border-zinc-700 bg-zinc-900 text-zinc-500"
                 )}
                 aria-hidden
@@ -63,7 +63,7 @@ export function Stepper({ current, active, onNavigate }: StepperProps) {
               <span
                 className={cn(
                   "hidden text-xs font-medium sm:block",
-                  isActive ? "text-amber-300" : reached ? "text-zinc-200" : "text-zinc-500"
+                  isActive ? "text-brand" : reached ? "text-zinc-200" : "text-zinc-500"
                 )}
               >
                 {STEP_META[step].label}
@@ -71,7 +71,7 @@ export function Stepper({ current, active, onNavigate }: StepperProps) {
               <span
                 className={cn(
                   "text-xs font-medium sm:hidden",
-                  isActive ? "text-amber-300" : reached ? "text-zinc-200" : "text-zinc-500"
+                  isActive ? "text-brand" : reached ? "text-zinc-200" : "text-zinc-500"
                 )}
               >
                 {STEP_META[step].shortLabel}
@@ -93,7 +93,7 @@ export function Stepper({ current, active, onNavigate }: StepperProps) {
                 <button
                   type="button"
                   onClick={() => onNavigate(step)}
-                  className="rounded-md focus-visible:outline-2 focus-visible:outline-amber-500"
+                  className="rounded-md focus-visible:outline-2 focus-visible:outline-brand"
                   aria-current={isActive ? "step" : undefined}
                 >
                   {button}

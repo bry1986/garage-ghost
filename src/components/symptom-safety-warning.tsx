@@ -21,9 +21,9 @@ export function SymptomSafetyWarning({ selectedChips }: SymptomSafetyWarningProp
   return (
     // role="status" already implies an aria-live="polite" announcement.
     <div role="status" className="error-in mt-3 flex items-start gap-2.5 rounded-md border border-red-500/40 bg-red-500/10 p-3">
-      <OctagonAlert className="mt-0.5 h-4 w-4 shrink-0 text-red-400" aria-hidden />
-      <p className="text-xs leading-relaxed text-red-200">
-        <span className="font-semibold text-red-300">
+      <OctagonAlert className="mt-0.5 h-4 w-4 shrink-0 text-red-600 dark:text-red-400" aria-hidden />
+      <p className="text-xs leading-relaxed text-red-800 dark:text-red-200">
+        <span className="font-semibold text-red-700 dark:text-red-300">
           Safety first — you selected: {dangerous.join(", ")}.
         </span>{" "}
         If this is happening right now, stop safely and contact roadside assistance or a

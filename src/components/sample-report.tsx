@@ -47,7 +47,7 @@ export function SampleReport() {
               className="flex items-center justify-between gap-3 rounded-md border border-zinc-800 bg-zinc-950/60 px-3 py-2 text-xs text-zinc-300"
             >
               <span>{cause.cause}</span>
-              <span className="shrink-0 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-300">
+              <span className="shrink-0 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-600 dark:text-amber-300">
                 {cause.likelihood}
               </span>
             </li>
@@ -87,7 +87,7 @@ export function SampleReport() {
       </div>
 
       <p className="mt-5 flex items-start gap-2 rounded-md border border-zinc-800 bg-zinc-950/60 p-3 text-[11px] leading-relaxed text-zinc-500">
-        <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-400" aria-hidden />
+        <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-600 dark:text-amber-400" aria-hidden />
         <span>
           Example for illustration only. Your report will be generated from your vehicle details and
           description by the AI analysis.

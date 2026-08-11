@@ -45,14 +45,14 @@ export function Logo({ size = "md", tone = "default", className }: LogoProps) {
     <span className={cn("gg-logo inline-flex items-center gap-2.5", className)}>
       <span
         className={cn(
-          "gg-mark relative inline-flex shrink-0 items-center justify-center rounded-xl border border-amber-400/50 bg-amber-500/10 shadow-[0_0_16px_rgba(245,158,11,0.22)]",
+          "gg-mark relative inline-flex shrink-0 items-center justify-center rounded-xl border border-brand/50 bg-brand/10 shadow-[0_0_16px_rgba(37,99,235,0.22)]",
           styles.mark
         )}
       >
         {/* Soft aura — flashes on entrance, then stays as a faint glow */}
         <span
           aria-hidden
-          className="gg-glow pointer-events-none absolute -inset-1.5 rounded-2xl bg-[radial-gradient(circle,rgba(251,191,36,0.5),transparent_65%)] blur-[6px]"
+          className="gg-glow pointer-events-none absolute -inset-1.5 rounded-2xl bg-[radial-gradient(circle,rgba(59,130,246,0.5),transparent_65%)] blur-[6px]"
         />
         <svg viewBox="0 0 48 48" fill="none" className="relative h-[62%] w-[62%]" aria-hidden>
           <defs>
@@ -64,8 +64,8 @@ export function Logo({ size = "md", tone = "default", className }: LogoProps) {
               y2="48"
               gradientUnits="userSpaceOnUse"
             >
-              <stop offset="0" stopColor="#fcd34d" />
-              <stop offset="1" stopColor="#f59e0b" />
+              <stop offset="0" stopColor="#60a5fa" />
+              <stop offset="1" stopColor="#2563eb" />
             </linearGradient>
             <linearGradient
               id={echoGradId}

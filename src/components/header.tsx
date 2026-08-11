@@ -102,7 +102,7 @@ export function Header() {
           ? "text-emerald-400 hover:bg-zinc-800/60"
           : licenseExpired
             ? "border border-red-500/40 bg-red-500/5 text-red-300 hover:border-red-400/60 hover:bg-red-500/10"
-            : "border border-amber-500/40 bg-amber-500/5 text-amber-300 hover:border-amber-400/60 hover:bg-amber-500/10"
+            : "border border-brand/40 bg-brand/10 text-brand hover:border-brand/60 hover:bg-brand/15"
       )}
     >
       {isPro ? (
@@ -142,7 +142,7 @@ export function Header() {
                       className={cn(
                         "relative rounded-md px-3 py-2 text-sm font-medium transition-colors",
                         active
-                          ? "bg-zinc-800 text-amber-400"
+                          ? "bg-zinc-800 text-brand"
                           : "text-zinc-300 hover:bg-zinc-800/60 hover:text-zinc-100"
                       )}
                     >
@@ -152,7 +152,7 @@ export function Header() {
                       <span
                         aria-hidden
                         className={cn(
-                          "absolute inset-x-2.5 -bottom-px h-px origin-left scale-x-0 rounded-full bg-gradient-to-r from-amber-400 via-amber-400/70 to-transparent transition-transform duration-200 ease-[var(--ease-out)]",
+                          "absolute inset-x-2.5 -bottom-px h-px origin-left scale-x-0 rounded-full bg-gradient-to-r from-brand via-brand/70 to-transparent transition-transform duration-200 ease-[var(--ease-out)]",
                           active && "scale-x-100"
                         )}
                       />
@@ -177,10 +177,10 @@ export function Header() {
         </div>
       </div>
 
-      {/* Amber hairline — a soft command-center light across the bottom edge */}
+      {/* Brand-blue hairline — a soft product light across the bottom edge */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-amber-500/25 to-transparent"
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-brand/25 to-transparent"
       />
 
       {/* Mobile drawer */}
@@ -218,7 +218,7 @@ export function Header() {
                 className={cn(
                   "rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
                   isActive("/")
-                    ? "bg-zinc-800 text-amber-400"
+                    ? "bg-zinc-800 text-brand"
                     : "text-zinc-300 hover:bg-zinc-800/60 hover:text-zinc-100"
                 )}
               >
@@ -233,7 +233,7 @@ export function Header() {
                   className={cn(
                     "rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
                     isActive(item.href)
-                      ? "bg-zinc-800 text-amber-400"
+                      ? "bg-zinc-800 text-brand"
                       : "text-zinc-300 hover:bg-zinc-800/60 hover:text-zinc-100"
                   )}
                 >

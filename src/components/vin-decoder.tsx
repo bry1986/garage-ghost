@@ -30,7 +30,7 @@ import {
 import { cn } from "@/lib/utils";
 
 const inputClasses =
-  "w-full rounded-lg border border-zinc-700/80 bg-zinc-900/70 px-3 py-2 font-mono text-sm text-zinc-100 placeholder-zinc-500 uppercase shadow-[inset_0_1px_0_rgba(255,255,255,0.02)] transition-[border-color,box-shadow,background-color] duration-150 hover:border-zinc-600 focus:border-amber-500 focus:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20";
+  "w-full rounded-lg border border-zinc-700/80 bg-zinc-900/70 px-3 py-2 font-mono text-sm text-zinc-100 placeholder-zinc-500 uppercase shadow-[inset_0_1px_0_rgba(255,255,255,0.02)] transition-[border-color,box-shadow,background-color] duration-150 hover:border-zinc-600 focus:border-brand focus:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-brand/20";
 
 /** One labeled segment of the decoded VIN (WMI / VDS / check / VIS). */
 function SegmentCard({
@@ -48,7 +48,7 @@ function SegmentCard({
     <div
       className={cn(
         "card-sunken p-3",
-        highlight && "border-amber-500/40 bg-amber-500/5"
+        highlight && "border-brand/40 bg-brand/5"
       )}
     >
       <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
@@ -203,7 +203,7 @@ export function VinDecoder() {
                 key={example.vin}
                 type="button"
                 onClick={() => handleExample(example.vin)}
-                className="inline-flex items-center gap-1.5 rounded-full border border-zinc-700/80 bg-zinc-900/70 px-3 py-1 font-mono text-[11px] text-zinc-300 transition-[transform,color,background-color,border-color] duration-150 hover:border-amber-500/60 hover:text-amber-300 active:scale-95"
+                className="inline-flex items-center gap-1.5 rounded-full border border-zinc-700/80 bg-zinc-900/70 px-3 py-1 font-mono text-[11px] text-zinc-300 transition-[transform,color,background-color,border-color] duration-150 hover:border-brand/60 hover:text-brand active:scale-95"
               >
                 {example.vin}
                 <span className="hidden font-sans text-zinc-500 sm:inline">· {example.label}</span>
@@ -295,8 +295,8 @@ export function VinDecoder() {
           <section aria-labelledby="nhtsa-heading" className="card-surface p-4 sm:p-6">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="flex items-center gap-3">
-                <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-amber-500/30 bg-amber-500/10">
-                  <Sparkles className="h-4.5 w-4.5 text-amber-400" aria-hidden />
+                <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-brand/30 bg-brand/10">
+                  <Sparkles className="h-4.5 w-4.5 text-brand" aria-hidden />
                 </span>
                 <div>
                   <h2 id="nhtsa-heading" className="font-display text-base font-bold tracking-tight text-zinc-50">
@@ -335,7 +335,7 @@ export function VinDecoder() {
             {nhtsaLoading && (
               <div className="mt-4 space-y-2" aria-hidden>
                 <div className="h-1 w-full overflow-hidden rounded-full bg-zinc-800">
-                  <div className="progress-sweep h-full w-1/3 rounded-full bg-amber-500/80" />
+                  <div className="progress-sweep h-full w-1/3 rounded-full bg-brand/80" />
                 </div>
                 <Skeleton className="h-4 w-2/3" />
                 <Skeleton className="h-4 w-1/2" />
@@ -362,7 +362,7 @@ export function VinDecoder() {
                     key={row.label}
                     className="flex items-start gap-2.5 rounded-lg border border-zinc-800 bg-zinc-950/60 px-3 py-2.5"
                   >
-                    <row.icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-400" aria-hidden />
+                    <row.icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-brand" aria-hidden />
                     <div className="min-w-0">
                       <dt className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
                         {row.label}

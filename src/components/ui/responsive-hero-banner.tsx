@@ -2,10 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { ArrowRight, FileText, Menu, X } from "lucide-react";
+import { Activity, CheckCircle2, Mail, Menu, X } from "lucide-react";
 import { Logo } from "@/components/logo";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { APP_NAME } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
@@ -14,11 +14,12 @@ interface NavLink {
   href: string;
 }
 
-/** Nav is carried by the hero on the landing page; the primary CTA covers Diagnose. */
+/** The landing hero carries its own nav (the global sticky header stays off "/"). */
 const NAV_LINKS: NavLink[] = [
-  { label: "VIN decoder", href: "/vin" },
-  { label: "History", href: "/history" },
-  { label: "Pricing", href: "/pricing" },
+  { href: "/diagnose", label: "Diagnose" },
+  { href: "/vin", label: "VIN decoder" },
+  { href: "/history", label: "History" },
+  { href: "/pricing", label: "Pricing" },
 ];
 
 /** Well-known OBD-II codes — the landing marquee, an on-brand stand-in for a logo strip. */
@@ -35,14 +36,19 @@ const DTC_CHIPS = [
   { code: "P0507", label: "Idle air too high" },
 ];
 
-const HERO_IMAGE =
-  "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=2400&q=80";
+/** Green-check trust row under the primary CTA. */
+const TRUST_POINTS = [
+  "No sign-up required",
+  "Results in under 30 seconds",
+  "No app download needed",
+];
 
 /**
- * Full-bleed cinematic hero for the landing page. Structure follows the
- * responsive-hero-banner template: layered background image, integrated glass
- * nav, badge → headline → description → CTAs, and a code marquee in place of
- * the partner-logo strip. All motion uses the shared entrance/energy curves.
+ * Light-first hero for the landing page, matching the product reference:
+ * a soft blue glow band, an integrated glass nav, a bold three-line
+ * headline, the free-diagnosis info pill, a blue pill CTA, and a
+ * green-check trust row. Everything is theme-token driven, so the dark
+ * variant is the same layout with inverted surfaces.
  */
 export function ResponsiveHeroBanner() {
   const pathname = usePathname();
@@ -89,42 +95,28 @@ export function ResponsiveHeroBanner() {
   const isActive = (href: string) => pathname === href;
 
   return (
-    <section className="relative isolate flex min-h-screen w-full flex-col overflow-hidden bg-zinc-950">
-      {/* Background — cinematic automotive shot, scrimmed for legibility */}
-      <Image
-        src={HERO_IMAGE}
-        alt=""
-        fill
-        priority
-        sizes="100vw"
-        quality={85}
-        className="object-cover"
-      />
+    <section className="relative isolate overflow-hidden">
+      {/* Blue glow vignette — mirrors the body's top light, strengthens it here */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 bg-gradient-to-b from-zinc-950/85 via-zinc-950/45 to-zinc-950"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_75%_55%_at_50%_-5%,rgb(37_99_235/0.1),transparent_65%)] dark:bg-[radial-gradient(ellipse_75%_55%_at_50%_-5%,rgb(59_130_246/0.12),transparent_65%)]"
       />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_75%_55%_at_50%_38%,rgba(9,9,11,0.35),transparent_70%)]"
-      />
-      <div aria-hidden className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-white/5" />
 
       {/* Integrated glass nav */}
       <header className="relative z-20">
-        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6">
-          <div className="flex items-center justify-between py-4 sm:py-5">
+        <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
+          <div className="flex h-16 items-center justify-between gap-3 sm:h-[4.5rem]">
             <Link
               href="/"
               aria-label={`${APP_NAME} home`}
-              className="group rounded-lg transition-opacity hover:opacity-85"
+              className="rounded-lg transition-opacity hover:opacity-85"
             >
-              <Logo size="lg" tone="hero" />
+              <Logo />
             </Link>
 
             <nav
               aria-label="Main navigation"
-              className="hidden items-center gap-1 rounded-full bg-white/5 p-1 ring-1 ring-white/10 backdrop-blur lg:flex"
+              className="hidden items-center gap-1 rounded-full border border-zinc-200/80 bg-white/70 p-1 backdrop-blur md:flex dark:border-white/10 dark:bg-white/5"
             >
               {NAV_LINKS.map((link) => (
                 <Link
@@ -134,90 +126,92 @@ export function ResponsiveHeroBanner() {
                   className={cn(
                     "rounded-full px-3.5 py-2 text-sm font-medium transition-colors",
                     isActive(link.href)
-                      ? "bg-white/10 text-white"
-                      : "text-white/70 hover:bg-white/5 hover:text-white"
+                      ? "bg-brand text-white"
+                      : "text-zinc-600 hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-white/5 dark:hover:text-white"
                   )}
                 >
                   {link.label}
                 </Link>
               ))}
-              <Link
-                href="/diagnose"
-                className="ml-1 inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-sm font-medium text-zinc-900 transition-colors hover:bg-white/90"
-              >
-                Diagnose now
-                <ArrowRight className="h-3.5 w-3.5" aria-hidden />
-              </Link>
             </nav>
 
-            <button
-              ref={menuButtonRef}
-              type="button"
-              onClick={() => setMobileMenuOpen(true)}
-              aria-label="Open navigation menu"
-              aria-expanded={mobileMenuOpen}
-              aria-controls="mobile-menu"
-              className="glass-chip inline-flex h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-white/10 lg:hidden"
-            >
-              <Menu className="h-5 w-5 text-white/90" aria-hidden />
-            </button>
+            <div className="flex items-center gap-2">
+              <ThemeToggle className="hidden md:inline-flex" />
+              <button
+                ref={menuButtonRef}
+                type="button"
+                onClick={() => setMobileMenuOpen(true)}
+                aria-label="Open navigation menu"
+                aria-expanded={mobileMenuOpen}
+                aria-controls="mobile-menu"
+                className="glass-chip inline-flex h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-zinc-200/60 md:hidden dark:hover:bg-white/10"
+              >
+                <Menu className="h-5 w-5 text-zinc-700 dark:text-white/90" aria-hidden />
+              </button>
+            </div>
           </div>
         </div>
       </header>
 
-      {/* Hero copy */}
-      <div className="relative z-10 flex flex-1 items-center justify-center px-4 pb-10 pt-14 sm:px-6 sm:pt-16">
-        <div className="mx-auto max-w-3xl text-center">
-          <div className="mb-6 inline-flex animate-fade-slide-in-1 items-center gap-3 rounded-full bg-white/10 px-2.5 py-2 ring-1 ring-white/15 backdrop-blur">
-            <span className="inline-flex items-center rounded-full bg-white px-2 py-0.5 text-xs font-semibold text-zinc-900">
-              New
-            </span>
-            <span className="text-sm font-medium text-white/90">
-              Free AI check-engine light triage — 100% on-device
-            </span>
-          </div>
+      {/* Hero copy — the reference layout: headline, sub, info pill, CTA, trust row */}
+      <div className="relative z-10 mx-auto w-full max-w-3xl px-4 pb-14 pt-14 text-center sm:px-6 sm:pt-20">
+        <h1 className="animate-fade-slide-in-1 font-display text-4xl font-extrabold leading-[1.06] tracking-tight text-zinc-950 sm:text-6xl lg:text-7xl dark:text-white">
+          Diagnose Car
+          <br />
+          Problems with AI
+          <br />
+          Precision
+        </h1>
 
-          <h1 className="animate-fade-slide-in-2 font-serif text-5xl leading-[1.04] tracking-tight text-white sm:text-6xl lg:text-7xl">
-            Decode your
-            <br className="hidden sm:block" />
-            warning lights
-          </h1>
+        <p className="mx-auto mt-6 max-w-xl animate-fade-slide-in-2 text-base leading-relaxed text-zinc-600 sm:text-lg dark:text-zinc-400">
+          Describe your car&apos;s symptoms, upload a photo of the warning light, or record the
+          engine sound. Our AI mechanic gives you an instant diagnostic report with repair cost
+          estimates — completely free.
+        </p>
 
-          <p className="mx-auto mt-6 max-w-2xl animate-fade-slide-in-3 text-base text-white/80 sm:text-lg">
-            Snap a photo of your dashboard or describe the symptom — Garage Ghost turns it into
-            clear, safety-first guidance, honest repair cost ballparks, and a printable report for
-            your mechanic. No install. No account.
-          </p>
+        {/* Info pill — envelope + free-diagnosis promise */}
+        <div className="mt-8 inline-flex animate-fade-slide-in-3 items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-medium text-blue-700 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-200">
+          <Mail className="h-4 w-4 shrink-0" aria-hidden />
+          Free diagnosis — no email or credit card needed. Your report is instant.
+        </div>
 
-          <div className="mt-10 flex animate-fade-slide-in-4 flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
-            <Link
-              href="/diagnose"
-              className="group inline-flex items-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-medium text-zinc-900 transition-colors hover:bg-white/90"
+        <div className="mt-8 flex animate-fade-slide-in-4 flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
+          <Link
+            href="/diagnose"
+            className="group inline-flex items-center gap-2 rounded-full bg-brand px-7 py-3.5 text-sm font-semibold text-white shadow-[0_10px_28px_-10px_rgba(37,99,235,0.55)] transition-[background-color,box-shadow] duration-200 hover:bg-brand-strong dark:bg-blue-600 dark:hover:bg-blue-500"
+          >
+            Start Free Diagnosis
+            <Activity
+              className="h-4 w-4 transition-transform duration-200 ease-out group-hover:scale-110"
+              aria-hidden
+            />
+          </Link>
+        </div>
+
+        {/* Trust row — green checks, exactly as the reference */}
+        <ul className="mt-9 flex animate-fade-slide-in-4 flex-wrap items-center justify-center gap-x-7 gap-y-3">
+          {TRUST_POINTS.map((point) => (
+            <li
+              key={point}
+              className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400"
             >
-              Diagnose now
-              <ArrowRight
-                className="h-4 w-4 transition-transform duration-200 ease-out group-hover:translate-x-0.5"
+              <CheckCircle2
+                className="h-4.5 w-4.5 text-emerald-600 dark:text-emerald-400"
                 aria-hidden
               />
-            </Link>
-            <a
-              href="#sample-report"
-              className="inline-flex items-center gap-2 rounded-full bg-white/10 px-5 py-3 text-sm font-medium text-white/90 ring-1 ring-white/15 backdrop-blur transition-colors hover:bg-white/15 hover:text-white"
-            >
-              <FileText className="h-4 w-4" aria-hidden />
-              See a sample report
-            </a>
-          </div>
-        </div>
+              {point}
+            </li>
+          ))}
+        </ul>
       </div>
 
       {/* Fault-code marquee — the landing's logo-strip stand-in */}
       <div className="relative z-10 pb-14">
         <div className="mx-auto max-w-5xl px-4 sm:px-6">
-          <p className="animate-fade-slide-in-1 text-center text-sm text-white/60">
+          <p className="text-center text-sm text-zinc-500 dark:text-zinc-400">
             Decodes the codes that matter most
           </p>
-          <div className="marquee marquee-mask mt-6 animate-fade-slide-in-2">
+          <div className="marquee marquee-mask mt-6">
             {/* The duplicated half exists for the seamless loop — keep it out
                 of the tab order and away from screen readers. */}
             <div className="marquee-track">
@@ -227,10 +221,10 @@ export function ResponsiveHeroBanner() {
                   href="/diagnose"
                   aria-hidden={index >= DTC_CHIPS.length ? true : undefined}
                   tabIndex={index >= DTC_CHIPS.length ? -1 : undefined}
-                  className="glass-chip mr-3 inline-flex items-center gap-2.5 rounded-full px-4 py-2 text-sm text-white/75 transition-colors hover:text-white"
+                  className="mr-3 inline-flex items-center gap-2.5 rounded-full border border-zinc-200/80 bg-white/80 px-4 py-2 text-sm text-zinc-600 transition-colors hover:border-brand/40 hover:text-zinc-950 dark:border-white/10 dark:bg-white/5 dark:text-zinc-300 dark:hover:text-white"
                 >
-                  <span className="font-mono text-xs font-semibold text-amber-300">{chip.code}</span>
-                  <span className="text-zinc-400">{chip.label}</span>
+                  <span className="font-mono text-xs font-semibold text-brand">{chip.code}</span>
+                  <span className="text-zinc-500 dark:text-zinc-400">{chip.label}</span>
                 </Link>
               ))}
             </div>
@@ -240,7 +234,7 @@ export function ResponsiveHeroBanner() {
 
       {/* Mobile menu */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
+        <div className="fixed inset-0 z-50 md:hidden">
           <button
             type="button"
             aria-label="Close navigation menu"
@@ -253,19 +247,24 @@ export function ResponsiveHeroBanner() {
             role="dialog"
             aria-modal="true"
             aria-label="Navigation menu"
-            className="drawer-in absolute inset-y-0 right-0 flex w-72 max-w-[85vw] flex-col border-l border-white/10 bg-zinc-950/95 backdrop-blur-xl"
+            className="drawer-in absolute inset-y-0 right-0 flex w-72 max-w-[85vw] flex-col border-l border-zinc-200 bg-white shadow-2xl dark:border-white/10 dark:bg-zinc-950"
           >
-            <div className="flex items-center justify-between border-b border-white/10 px-4 py-4">
-              <span className="font-display text-sm font-semibold text-white">Menu</span>
-              <button
-                ref={closeButtonRef}
-                type="button"
-                onClick={() => setMobileMenuOpen(false)}
-                aria-label="Close menu"
-                className="rounded-md p-1.5 text-zinc-400 transition-colors hover:bg-white/10 hover:text-white"
-              >
-                <X className="h-4 w-4" aria-hidden />
-              </button>
+            <div className="flex items-center justify-between border-b border-zinc-200 px-4 py-4 dark:border-white/10">
+              <span className="font-display text-sm font-semibold text-zinc-900 dark:text-white">
+                Menu
+              </span>
+              <div className="flex items-center gap-2">
+                <ThemeToggle />
+                <button
+                  ref={closeButtonRef}
+                  type="button"
+                  onClick={() => setMobileMenuOpen(false)}
+                  aria-label="Close menu"
+                  className="rounded-md p-1.5 text-zinc-500 transition-colors hover:bg-zinc-200/60 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-white/10 dark:hover:text-white"
+                >
+                  <X className="h-4 w-4" aria-hidden />
+                </button>
+              </div>
             </div>
             <nav aria-label="Mobile navigation" className="flex flex-1 flex-col gap-1 p-3">
               <Link
@@ -274,8 +273,8 @@ export function ResponsiveHeroBanner() {
                 className={cn(
                   "rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
                   isActive("/")
-                    ? "bg-white/10 text-white"
-                    : "text-zinc-300 hover:bg-white/10 hover:text-white"
+                    ? "bg-brand text-white"
+                    : "text-zinc-700 hover:bg-zinc-200/60 hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-white/10 dark:hover:text-white"
                 )}
               >
                 Home
@@ -289,22 +288,22 @@ export function ResponsiveHeroBanner() {
                   className={cn(
                     "rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
                     isActive(item.href)
-                      ? "bg-white/10 text-white"
-                      : "text-zinc-300 hover:bg-white/10 hover:text-white"
+                      ? "bg-brand text-white"
+                      : "text-zinc-700 hover:bg-zinc-200/60 hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-white/10 dark:hover:text-white"
                   )}
                 >
                   {item.label}
                 </Link>
               ))}
             </nav>
-            <div className="border-t border-white/10 p-3">
+            <div className="border-t border-zinc-200 p-3 dark:border-white/10">
               <Link
                 href="/diagnose"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-medium text-zinc-900 transition-colors hover:bg-white/90"
+                className="flex items-center justify-center gap-2 rounded-full bg-brand px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-strong dark:bg-blue-600 dark:hover:bg-blue-500"
               >
-                Diagnose now
-                <ArrowRight className="h-4 w-4" aria-hidden />
+                Start Free Diagnosis
+                <Activity className="h-4 w-4" aria-hidden />
               </Link>
             </div>
           </div>

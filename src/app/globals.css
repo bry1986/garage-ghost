@@ -1,9 +1,74 @@
 @import "tailwindcss";
 
+/* Theme switch — `.dark` on <html> follows the visitor's saved choice or
+   `prefers-color-scheme` (set by the FOUC guard + ThemeProvider). Light is the
+   default so no-JS and first paint render correctly. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* ------------------------------------------------------------------ */
-/* Brand tokens — graphite automotive command center                    */
+/* Brand tokens — light (default) / dark dual theme, blue brand          */
 /* ------------------------------------------------------------------ */
 :root {
+  /* Zinc scale is re-mapped to theme variables so the entire component tree
+     (which uses zinc-* utilities) flips automatically: dark zincs become
+     light surfaces, light zincs become dark text. */
+  --zinc-50: #101018;
+  --zinc-100: #1c1c26;
+  --zinc-200: #33333d;
+  --zinc-300: #4a4a55;
+  --zinc-400: #6b6b76;
+  --zinc-500: #8b8b96;
+  --zinc-600: #c3c3cb;
+  --zinc-700: #d9d9df;
+  --zinc-800: #e9e9ed;
+  --zinc-900: #f8f8f9;
+  --zinc-950: #ffffff;
+
+  --background: #f7f8fa;
+  --surface: #ffffff;
+  --surface-raised: #ffffff;
+  --surface-sunken: #f0f1f4;
+  --foreground: #18181b;
+  --muted: #6b6b76;
+
+  --brand: #2563eb; /* electric blue */
+  --brand-strong: #1d4ed8;
+  --brand-soft: rgb(37 99 235 / 0.1);
+
+  --danger: #dc2626;
+  --danger-soft: rgb(220 38 38 / 0.1);
+  --caution: #d97706;
+  --caution-soft: rgb(217 119 6 / 0.12);
+  --service: #2563eb;
+  --service-soft: rgb(37 99 235 / 0.1);
+  --success: #059669;
+  --success-soft: rgb(5 150 105 / 0.12);
+
+  --border: #e5e7eb;
+  --border-strong: #d1d5db;
+
+  --ring: #2563eb;
+
+  /* Motion — one shared set of premium curves. Never fork per-component. */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1); /* strong ease-out for UI */
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1); /* on-screen movement */
+  --ease-pop: cubic-bezier(0.34, 1.56, 0.64, 1); /* springy pops, rare only */
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1); /* iOS-like sheet curve */
+}
+
+.dark {
+  --zinc-50: #fafafa;
+  --zinc-100: #f4f4f5;
+  --zinc-200: #e4e4e7;
+  --zinc-300: #d4d4d8;
+  --zinc-400: #a1a1aa;
+  --zinc-500: #71717a;
+  --zinc-600: #52525b;
+  --zinc-700: #3f3f46;
+  --zinc-800: #27272a;
+  --zinc-900: #18181b;
+  --zinc-950: #09090b;
+
   --background: #09090b;
   --surface: #101013;
   --surface-raised: #16161a;
@@ -11,29 +76,23 @@
   --foreground: #fafafa;
   --muted: #a1a1aa;
 
-  --brand: #f59e0b; /* amber */
-  --brand-strong: #fbbf24;
-  --brand-soft: rgb(245 158 11 / 0.12);
+  --brand: #3b82f6;
+  --brand-strong: #60a5fa;
+  --brand-soft: rgb(59 130 246 / 0.14);
 
-  --danger: #ef4444;
-  --danger-soft: rgb(239 68 68 / 0.12);
-  --caution: #f59e0b;
-  --caution-soft: rgb(245 158 11 / 0.12);
-  --service: #3b82f6;
-  --service-soft: rgb(59 130 246 / 0.12);
-  --success: #10b981;
-  --success-soft: rgb(16 185 129 / 0.12);
+  --danger: #f87171;
+  --danger-soft: rgb(248 113 113 / 0.12);
+  --caution: #fbbf24;
+  --caution-soft: rgb(251 191 36 / 0.12);
+  --service: #60a5fa;
+  --service-soft: rgb(96 165 250 / 0.12);
+  --success: #34d399;
+  --success-soft: rgb(52 211 153 / 0.12);
 
   --border: #27272a;
   --border-strong: #3f3f46;
 
-  --ring: #f59e0b;
-
-  /* Motion — one shared set of premium curves. Never fork per-component. */
-  --ease-out: cubic-bezier(0.23, 1, 0.32, 1); /* strong ease-out for UI */
-  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1); /* on-screen movement */
-  --ease-pop: cubic-bezier(0.34, 1.56, 0.64, 1); /* springy pops, rare only */
-  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1); /* iOS-like sheet curve */
+  --ring: #60a5fa;
 }
 
 @theme inline {
@@ -51,6 +110,19 @@
   --color-service: var(--service);
   --color-success: var(--success);
 
+  /* Re-map the zinc scale onto theme variables (flips with .dark). */
+  --color-zinc-50: var(--zinc-50);
+  --color-zinc-100: var(--zinc-100);
+  --color-zinc-200: var(--zinc-200);
+  --color-zinc-300: var(--zinc-300);
+  --color-zinc-400: var(--zinc-400);
+  --color-zinc-500: var(--zinc-500);
+  --color-zinc-600: var(--zinc-600);
+  --color-zinc-700: var(--zinc-700);
+  --color-zinc-800: var(--zinc-800);
+  --color-zinc-900: var(--zinc-900);
+  --color-zinc-950: var(--zinc-950);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-display: var(--font-space-grotesk);
@@ -62,19 +134,25 @@ html {
 }
 
 body {
-  /* Layered depth: a faint amber command-center glow bleeding from the top
-     edge, plus a whisper-fine dot grid for surface texture. Both are static
-     paint (no attachment, no animation) so they never cost frames while
-     scrolling. */
+  /* Layered depth: a faint blue glow bleeding from the top edge, plus a
+     whisper-fine dot grid for surface texture. Both are static paint (no
+     attachment, no animation) so they never cost frames while scrolling. */
   background-color: var(--background);
   background-image:
-    radial-gradient(ellipse 55% 36% at 50% -6%, rgb(245 158 11 / 0.065), transparent 62%),
-    radial-gradient(rgb(255 255 255 / 0.03) 1px, transparent 1px);
+    radial-gradient(ellipse 55% 36% at 50% -6%, rgb(37 99 235 / 0.08), transparent 62%),
+    radial-gradient(rgb(0 0 0 / 0.025) 1px, transparent 1px);
   background-size: auto, 28px 28px;
   background-repeat: no-repeat, repeat;
   color: var(--foreground);
   font-family: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, sans-serif;
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+.dark body {
+  background-image:
+    radial-gradient(ellipse 55% 36% at 50% -6%, rgb(59 130 246 / 0.09), transparent 62%),
+    radial-gradient(rgb(255 255 255 / 0.03) 1px, transparent 1px);
 }
 
 /* Premium display type for headings */
@@ -103,7 +181,7 @@ select:disabled {
 }
 
 ::selection {
-  background-color: rgb(245 158 11 / 0.3);
+  background-color: rgb(37 99 235 / 0.3);
 }
 
 /* ------------------------------------------------------------------ */
@@ -117,25 +195,23 @@ select:disabled {
 }
 
 .card-surface {
-  background:
-    linear-gradient(180deg, rgb(255 255 255 / 0.028), transparent 42%),
-    var(--surface);
-  border: 1px solid rgb(39 39 42 / 0.9);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.04);
 }
 
 .card-surface-raised {
-  background:
-    linear-gradient(180deg, rgb(255 255 255 / 0.04), transparent 46%),
-    var(--surface-raised);
-  border: 1px solid rgb(39 39 42 / 0.9);
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  box-shadow: 0 2px 10px rgb(0 0 0 / 0.05);
 }
 
 .card-sunken {
   background: var(--surface-sunken);
-  border: 1px solid rgb(39 39 42 / 0.9);
+  border: 1px solid var(--border);
 }
 
-/* Soft card hover — lift + amber border glow. Gated to fine pointers so
+/* Soft card hover — lift + brand-blue border glow. Gated to fine pointers so
    touch devices never fire a false hover. transform/opacity only. */
 .card-lift {
   transition:
@@ -147,7 +223,7 @@ select:disabled {
 @media (hover: hover) and (pointer: fine) {
   .card-lift:hover {
     transform: translateY(-3px);
-    border-color: rgb(245 158 11 / 0.4);
+    border-color: rgb(37 99 235 / 0.4);
     box-shadow: 0 18px 44px -22px rgb(0 0 0 / 0.7);
   }
   .card-lift:active {
@@ -155,16 +231,16 @@ select:disabled {
   }
 }
 
-/* Featured / highlighted card — amber ring + soft glow. Static treatment
-   (no animation) so it reads as premium emphasis, not motion. */
+/* Featured / highlighted card — brand-blue ring + soft glow. Static
+   treatment (no animation) so it reads as premium emphasis, not motion. */
 .card-glow {
-  border-color: rgb(245 158 11 / 0.45);
+  border-color: rgb(37 99 235 / 0.45);
   box-shadow:
-    0 0 0 1px rgb(245 158 11 / 0.1),
-    0 24px 60px -28px rgb(245 158 11 / 0.22);
+    0 0 0 1px rgb(37 99 235 / 0.1),
+    0 24px 60px -28px rgb(37 99 235 / 0.22);
 }
 
-/* Section eyebrow — the app's uppercase amber label, with a gradient dash.
+/* Section eyebrow — the app's uppercase brand label, with a gradient dash.
    Pure presentation: use with an aria-label or a sr-only heading next to it. */
 .eyebrow {
   display: inline-flex;
@@ -285,7 +361,7 @@ select:disabled {
   background: linear-gradient(
     90deg,
     var(--surface-raised) 25%,
-    #1d1d22 37%,
+    var(--border-strong) 37%,
     var(--surface-raised) 63%
   );
   background-size: 400% 100%;
@@ -477,10 +553,10 @@ select:disabled {
 @keyframes step-pulse {
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgb(245 158 11 / 0);
+    box-shadow: 0 0 0 0 rgb(37 99 235 / 0);
   }
   50% {
-    box-shadow: 0 0 0 4px rgb(245 158 11 / 0.18);
+    box-shadow: 0 0 0 4px rgb(37 99 235 / 0.18);
   }
 }
 
@@ -499,14 +575,25 @@ select:disabled {
    Blur is cheap here (few large panels), so it stays off the hot paths. */
 @layer components {
   .glass-panel {
-    background: linear-gradient(180deg, rgb(255 255 255 / 0.06), rgb(255 255 255 / 0.02));
-    border: 1px solid rgb(255 255 255 / 0.09);
-    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.05);
+    background: linear-gradient(180deg, rgb(255 255 255 / 0.6), rgb(255 255 255 / 0.35));
+    border: 1px solid rgb(0 0 0 / 0.07);
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.05);
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
   }
 
+  .dark .glass-panel {
+    background: linear-gradient(180deg, rgb(255 255 255 / 0.06), rgb(255 255 255 / 0.02));
+    border: 1px solid rgb(255 255 255 / 0.09);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.05);
+  }
+
   .glass-chip {
+    background: rgb(255 255 255 / 0.6);
+    border: 1px solid rgb(0 0 0 / 0.08);
+  }
+
+  .dark .glass-chip {
     background: rgb(255 255 255 / 0.05);
     border: 1px solid rgb(255 255 255 / 0.1);
   }
@@ -760,15 +847,21 @@ select:disabled {
 
 @media print {
   @page {
-    margin: 1.4cm;
+    margin: 1.2cm;
   }
 
+  html,
   body {
     background: #fff !important;
   }
 
   body * {
     visibility: hidden;
+    /* The print report is absolutely positioned against the page, not against
+       any positioned ancestor (e.g. the relative history cards or layout
+       containers). Flatten every ancestor so the report always starts at the
+       top-left of the printed page and spans its full width. */
+    position: static !important;
   }
 
   .print-report,
@@ -777,50 +870,314 @@ select:disabled {
   }
 
   .print-report {
+    /* Higher specificity than `body *` (class vs element), so the absolute
+       positioning wins despite the flattening rule above. */
     display: block !important;
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
     background: #fff !important;
-    color: #111 !important;
-    font-size: 11pt;
-    line-height: 1.45;
+    color: #18181b !important;
+    font-size: 10.5pt;
+    line-height: 1.5;
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 
-  .print-report * {
-    background: transparent !important;
-    color: #111 !important;
+  /* ------------------- Header band ------------------- */
+  .print-report .pr-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    border-bottom: 2.5pt solid #2563eb;
+    padding-bottom: 10pt;
+    margin-bottom: 14pt;
   }
 
-  .print-report h1 {
-    font-size: 17pt;
-    margin: 0 0 2pt;
+  .print-report .pr-brand {
+    display: flex;
+    align-items: center;
+    gap: 9pt;
   }
 
-  .print-report h2 {
-    font-size: 12pt;
-    margin: 12pt 0 3pt;
-    border-bottom: 1px solid #ccc;
-    padding-bottom: 2pt;
+  .print-report .pr-brand-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30pt;
+    height: 30pt;
+    border-radius: 8pt;
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: #ffffff;
+    font-weight: 800;
+    font-size: 13pt;
+    letter-spacing: -0.02em;
   }
 
-  .print-report p {
-    margin: 4pt 0;
+  .print-report .pr-brand-name {
+    margin: 0;
+    font-size: 14pt;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    color: #18181b !important;
+    line-height: 1.1;
   }
 
-  .print-report ul {
-    margin: 4pt 0 4pt 16pt;
+  .print-report .pr-title {
+    margin: 2pt 0 0;
+    font-size: 10pt;
+    font-weight: 600;
+    color: #71717a !important;
+    letter-spacing: 0.02em;
+  }
+
+  .print-report .pr-meta {
+    margin: 2pt 0 0;
+    font-size: 9pt;
+    font-weight: 600;
+    color: #3f3f46 !important;
+    text-align: right;
+  }
+
+  .print-report .pr-meta-sub {
+    display: block;
+    margin-top: 2pt;
+    font-size: 8pt;
+    font-weight: 400;
+    color: #a1a1aa !important;
+  }
+
+  /* ------------------- Sections ------------------- */
+  .print-report .pr-section {
+    margin-top: 12pt;
+    page-break-inside: avoid;
+  }
+
+  /* Long AI-generated content (mechanic report) is allowed to break across
+     pages instead of being clipped by the avoid rule above. */
+  .print-report .pr-section-break-ok {
+    page-break-inside: auto;
+  }
+
+  .print-report .pr-section-label {
+    margin: 0 0 5pt;
+    font-size: 8pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: #1d4ed8 !important;
+    border-bottom: 0.75pt solid #e7e5e4;
+    padding-bottom: 3pt;
+  }
+
+  .print-report .pr-vehicle {
+    margin: 0;
+    font-size: 13pt;
+    font-weight: 700;
+    color: #18181b !important;
+  }
+
+  .print-report .pr-heading {
+    margin: 0 0 6pt;
+    font-size: 14pt;
+    font-weight: 800;
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+    color: #18181b !important;
+  }
+
+  .print-report .pr-summary {
+    margin: 0;
+    font-size: 10pt;
+    color: #3f3f46 !important;
+  }
+
+  /* ------------------- Metrics band ------------------- */
+  .print-report .pr-band {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0;
+    margin-top: 12pt;
+    border: 0.75pt solid #d4d4d8;
+    border-radius: 6pt;
+    overflow: hidden;
+    page-break-inside: avoid;
+  }
+
+  .print-report .pr-metric {
+    padding: 8pt 9pt;
+    border-right: 0.75pt solid #d4d4d8;
+    background: #fafafa;
+  }
+
+  .print-report .pr-metric:last-child {
+    border-right: none;
+  }
+
+  .print-report .pr-metric-label {
+    margin: 0 0 3pt;
+    font-size: 7pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: #71717a !important;
+  }
+
+  .print-report .pr-metric-value {
+    margin: 0;
+    font-size: 10.5pt;
+    font-weight: 700;
+    color: #18181b !important;
+  }
+
+  .print-report .pr-sev-critical {
+    color: #dc2626 !important;
+  }
+  .print-report .pr-sev-high {
+    color: #ea580c !important;
+  }
+  .print-report .pr-sev-medium {
+    color: #d97706 !important;
+  }
+
+  /* ------------------- Possible causes ------------------- */
+  .print-report .pr-list {
+    margin: 0;
     padding: 0;
+    list-style: none;
   }
 
-  .print-report pre {
+  .print-report .pr-cause {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8pt;
+    padding: 6pt 8pt;
+    margin-bottom: 4pt;
+    border: 0.75pt solid #e7e5e4;
+    border-left: 2.5pt solid #2563eb;
+    border-radius: 4pt;
+    background: #fafaf9;
+    font-size: 10pt;
+    color: #27272a !important;
+    page-break-inside: avoid;
+  }
+
+  .print-report .pr-chip {
+    flex-shrink: 0;
+    padding: 2pt 7pt;
+    border-radius: 999px;
+    background: #fef3c7;
+    color: #b45309 !important;
+    font-size: 7.5pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  /* ------------------- Ordered / bullet lists ------------------- */
+  .print-report .pr-ordered {
+    margin: 0;
+    padding-left: 16pt;
+    font-size: 10pt;
+    color: #3f3f46 !important;
+  }
+
+  .print-report .pr-ordered li {
+    margin-bottom: 3pt;
+  }
+
+  .print-report .pr-bullets {
+    margin: 0;
+    padding-left: 16pt;
+    font-size: 10pt;
+    color: #3f3f46 !important;
+  }
+
+  .print-report .pr-bullets li {
+    margin-bottom: 3pt;
+  }
+
+  .print-report .pr-note {
+    margin: 0;
+    font-size: 9.5pt;
+    font-style: italic;
+    color: #78716c !important;
+  }
+
+  /* ------------------- Cost table ------------------- */
+  .print-report .pr-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0;
+    font-size: 9.5pt;
+    page-break-inside: avoid;
+  }
+
+  .print-report .pr-table th {
+    text-align: left;
+    padding: 5pt 8pt;
+    border: 0.75pt solid #d4d4d8;
+    background: #f4f4f5;
+    color: #3f3f46 !important;
+    font-size: 7.5pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .print-report .pr-table td {
+    padding: 5pt 8pt;
+    border: 0.75pt solid #e7e5e4;
+    color: #27272a !important;
+  }
+
+  .print-report .pr-table td.pr-cost {
+    text-align: right;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  /* ------------------- Quote box ------------------- */
+  .print-report .pr-quote {
+    margin: 0;
+    padding: 7pt 10pt;
+    border: 0.75pt solid #e7e5e4;
+    border-left: 3pt solid #2563eb;
+    border-radius: 4pt;
+    background: #fafaf9;
+    font-size: 10pt;
+    font-style: italic;
+    color: #3f3f46 !important;
+  }
+
+  /* ------------------- Mechanic report ------------------- */
+  .print-report .pr-pre {
+    margin: 0;
     white-space: pre-wrap;
-    font-family: inherit;
-    margin: 4pt 0;
+    font-family: ui-monospace, "Cascadia Code", "Segoe UI Mono", Consolas, monospace;
+    font-size: 8.5pt;
+    line-height: 1.5;
+    color: #27272a !important;
   }
 
-  .print-report .print-muted {
-    color: #444 !important;
+  /* ------------------- Footer ------------------- */
+  .print-report .pr-footer {
+    margin-top: 16pt;
+    padding-top: 7pt;
+    border-top: 0.75pt solid #e7e5e4;
+  }
+
+  .print-report .pr-muted {
+    margin: 0;
+    font-size: 8pt;
+    color: #71717a !important;
+  }
+
+  .print-report .pr-muted + .pr-muted {
+    margin-top: 2pt;
   }
 }

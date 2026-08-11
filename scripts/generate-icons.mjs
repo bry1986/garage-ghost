@@ -1,6 +1,6 @@
 /**
  * Regenerates the PWA app icons and iOS launch splash screens with the new
- * GG monogram brand mark (echo G + front G in an amber badge), matching the
+ * GG monogram brand mark (echo G + front G in a blue badge), matching the
  * in-app <Logo /> component.
  *
  * Run (from the project root):  node scripts/generate-icons.mjs
@@ -31,16 +31,16 @@ const G_PATH = "M24 14 A12 12 0 1 0 36 26 L22 26";
 function defs() {
   return `
     <linearGradient id="frontG" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="48" y2="48">
-      <stop offset="0" stop-color="#fcd34d"/>
-      <stop offset="1" stop-color="#f59e0b"/>
+      <stop offset="0" stop-color="#60a5fa"/>
+      <stop offset="1" stop-color="#2563eb"/>
     </linearGradient>
     <linearGradient id="echoG" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="48" y2="48">
       <stop offset="0" stop-color="rgb(161,161,170)" stop-opacity="0.85"/>
       <stop offset="1" stop-color="rgb(113,113,122)" stop-opacity="0.55"/>
     </linearGradient>
     <radialGradient id="bgGlow" cx="0.5" cy="0" r="0.9">
-      <stop offset="0" stop-color="rgb(245,158,11)" stop-opacity="0.06"/>
-      <stop offset="1" stop-color="rgb(245,158,11)" stop-opacity="0"/>
+      <stop offset="0" stop-color="rgb(37,99,235)" stop-opacity="0.07"/>
+      <stop offset="1" stop-color="rgb(37,99,235)" stop-opacity="0"/>
     </radialGradient>`;
 }
 
@@ -51,7 +51,7 @@ function badge(ox, oy, B, aura = true) {
   const monoOy = oy + (B - 20.75 * k) / 2 - 8.25 * k;
   return `
     ${aura ? `<rect x="${ox - B * 0.15}" y="${oy - B * 0.15}" width="${B * 1.3}" height="${B * 1.3}" rx="${B * 0.4}" fill="url(#auraG)"/>` : ""}
-    <rect x="${ox}" y="${oy}" width="${B}" height="${B}" rx="${B * 0.3}" fill="rgb(245,158,11,0.10)" stroke="rgb(251,191,36,0.5)" stroke-width="${B * 0.028}"/>
+    <rect x="${ox}" y="${oy}" width="${B}" height="${B}" rx="${B * 0.3}" fill="rgb(37,99,235,0.12)" stroke="rgb(59,130,246,0.5)" stroke-width="${B * 0.028}"/>
     <g transform="translate(${monoOx}, ${monoOy}) scale(${k})">
       <path d="${G_PATH}" transform="translate(-4 -3)" stroke="url(#echoG)" stroke-width="5.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
       <path d="${G_PATH}" stroke="url(#frontG)" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
@@ -67,8 +67,8 @@ function iconSvg(S, maskable) {
   const auraDef = maskable
     ? ""
     : `<radialGradient id="auraG" cx="0.5" cy="0.5" r="0.5">
-         <stop offset="0" stop-color="rgb(251,191,36)" stop-opacity="0.45"/>
-         <stop offset="1" stop-color="rgb(251,191,36)" stop-opacity="0"/>
+         <stop offset="0" stop-color="rgb(59,130,246)" stop-opacity="0.45"/>
+         <stop offset="1" stop-color="rgb(59,130,246)" stop-opacity="0"/>
        </radialGradient>`;
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${S}" height="${S}" viewBox="0 0 ${S} ${S}">
     <defs>${defs()}${auraDef}</defs>
@@ -97,8 +97,8 @@ function splashSvg(w, h) {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
     <defs>${defs()}
       <radialGradient id="auraG" cx="0.5" cy="0.5" r="0.5">
-        <stop offset="0" stop-color="rgb(251,191,36)" stop-opacity="0.45"/>
-        <stop offset="1" stop-color="rgb(251,191,36)" stop-opacity="0"/>
+        <stop offset="0" stop-color="rgb(59,130,246)" stop-opacity="0.45"/>
+        <stop offset="1" stop-color="rgb(59,130,246)" stop-opacity="0"/>
       </radialGradient>
     </defs>
     <rect width="${w}" height="${h}" fill="#09090b"/>

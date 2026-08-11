@@ -4,8 +4,8 @@ import { cn } from "@/lib/utils";
 /**
  * Button — single source of truth for button styles in the app (was
  * previously duplicated as inline Tailwind strings across ~7 files).
- * Variants follow the automotive command-center system: amber primary,
- * zinc outline, ghost, red danger, emerald success.
+ * Variants follow the blue-brand product system: brand primary, zinc
+ * outline, ghost, red danger, emerald success.
  *
  * Motion discipline (animate skill):
  * - explicit property transitions only — never `transition-all`
@@ -17,12 +17,12 @@ export type ButtonSize = "sm" | "md" | "lg" | "full";
 
 const VARIANT_CLASSES: Record<ButtonVariant, string> = {
   primary:
-    "bg-amber-500 text-zinc-950 shadow-[0_1px_2px_rgba(0,0,0,0.35)] hover:bg-amber-400",
+    "bg-brand text-white shadow-[0_1px_2px_rgba(0,0,0,0.2)] hover:bg-brand-strong dark:bg-blue-600 dark:hover:bg-blue-500",
   outline:
-    "border border-zinc-700/80 text-zinc-200 hover:border-zinc-500 hover:text-white",
+    "border border-zinc-600 text-zinc-700 hover:border-zinc-400 hover:text-zinc-950 dark:border-zinc-700 dark:text-zinc-200 dark:hover:border-zinc-500 dark:hover:text-white",
   ghost: "text-zinc-300 hover:bg-zinc-800/60 hover:text-zinc-100",
   danger:
-    "border border-red-500/40 text-red-300 hover:border-red-400/60 hover:bg-red-500/10",
+    "border border-red-500/40 text-red-600 hover:border-red-400/60 hover:bg-red-500/10 dark:text-red-300",
   success: "bg-emerald-500 text-zinc-950 hover:bg-emerald-400",
 };
 
@@ -35,7 +35,7 @@ const SIZE_CLASSES: Record<ButtonSize, string> = {
 };
 
 const BASE_CLASSES =
-  "inline-flex items-center justify-center rounded-lg transition-[transform,color,background-color,border-color,box-shadow,opacity] duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 disabled:cursor-not-allowed disabled:opacity-60 active:scale-[0.97]";
+  "inline-flex items-center justify-center rounded-lg transition-[transform,color,background-color,border-color,box-shadow,opacity] duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-60 active:scale-[0.97]";
 
 interface ButtonStyleOptions {
   variant?: ButtonVariant;

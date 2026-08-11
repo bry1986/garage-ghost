@@ -52,7 +52,7 @@ export function Disclosure({
         aria-controls={regionId}
         aria-label={buttonLabel}
         onClick={() => setOpen((prev) => !prev)}
-        className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-zinc-800/50 focus-visible:outline-2 focus-visible:outline-amber-500"
+        className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-zinc-800/50 focus-visible:outline-2 focus-visible:outline-brand"
       >
         <span id={titleId} className="flex items-center gap-2 text-sm font-semibold text-zinc-200">
           {icon}

@@ -68,10 +68,14 @@ const REPORT_INCLUDES = [
   { icon: FileText, text: "A copyable, printable hand-off" },
 ];
 
+/** Brand-blue icon tile — used consistently across the landing sections. */
+const iconTileClass =
+  "flex h-10 w-10 items-center justify-center rounded-lg bg-brand/10 text-brand ring-1 ring-inset ring-brand/20 transition-colors duration-200 group-hover:bg-brand/15";
+
 export default function HomePage() {
   return (
     <div className="overflow-x-clip">
-      {/* ------------------------------------------------ Hero — full-bleed, own nav */}
+      {/* ------------------------------------------------ Hero — own nav */}
       <ResponsiveHeroBanner />
 
       {/* Rest of the page — back inside the standard container */}
@@ -89,7 +93,7 @@ export default function HomePage() {
             </div>
             <h2
               id="how-it-works-heading"
-              className="mt-3 text-center font-serif text-4xl tracking-tight text-white sm:text-5xl"
+              className="mt-3 text-center font-display text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:text-5xl"
             >
               Three steps to a safer next move
             </h2>
@@ -99,11 +103,11 @@ export default function HomePage() {
                   key={step.title}
                   className="glass-panel card-lift group rounded-2xl p-6 text-center"
                 >
-                  <span className="font-serif text-4xl text-amber-400/80" aria-hidden>
+                  <span className="font-display text-4xl font-extrabold text-brand/70" aria-hidden>
                     0{index + 1}
                   </span>
-                  <span className="mt-5 flex h-12 w-12 items-center justify-center rounded-full bg-white/10 ring-1 ring-white/15 transition-colors duration-200 group-hover:bg-amber-500/20">
-                    <step.icon className="h-5 w-5 text-amber-400" aria-hidden />
+                  <span className={cn(iconTileClass, "mx-auto mt-5")}>
+                    <step.icon className="h-5 w-5" aria-hidden />
                   </span>
                   <h3 className="mt-4 text-base font-semibold text-zinc-100">{step.title}</h3>
                   <p className="mt-2 text-sm leading-relaxed text-zinc-400">{step.text}</p>
@@ -117,9 +121,9 @@ export default function HomePage() {
         <Reveal stagger className="mt-24">
           <section aria-label="What you get" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {/* Featured cell — the safety promise, with the real risk levels */}
-            <div className="card-glow glass-panel relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-500/15 via-transparent to-transparent p-6 sm:col-span-2">
-              <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/10 ring-1 ring-white/15">
-                <ShieldCheck className="h-5 w-5 text-amber-400" aria-hidden />
+            <div className="card-glow glass-panel relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand/15 via-transparent to-transparent p-6 sm:col-span-2">
+              <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand/10 text-brand ring-1 ring-inset ring-brand/20">
+                <ShieldCheck className="h-5 w-5" aria-hidden />
               </span>
               <h2 className="mt-3 text-sm font-semibold text-zinc-50">Safety comes first</h2>
               <p className="mt-1.5 max-w-lg text-sm leading-relaxed text-zinc-300">
@@ -142,12 +146,9 @@ export default function HomePage() {
             </div>
 
             {VALUE_ITEMS.map((item) => (
-              <div
-                key={item.title}
-                className="glass-panel card-lift group rounded-2xl p-5"
-              >
-                <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/10 ring-1 ring-white/15 transition-colors duration-200 group-hover:bg-amber-500/20">
-                  <item.icon className="h-5 w-5 text-amber-400" aria-hidden />
+              <div key={item.title} className="glass-panel card-lift group rounded-2xl p-5">
+                <span className={iconTileClass}>
+                  <item.icon className="h-5 w-5" aria-hidden />
                 </span>
                 <h2 className="mt-3 text-sm font-semibold text-zinc-100">{item.title}</h2>
                 <p className="mt-1.5 text-sm leading-relaxed text-zinc-400">{item.text}</p>
@@ -157,13 +158,17 @@ export default function HomePage() {
         </Reveal>
 
         {/* ------------------------------------------------ Sample report (split) */}
-        <section id="sample-report" aria-labelledby="sample-report-heading" className="mt-24 scroll-mt-24">
+        <section
+          id="sample-report"
+          aria-labelledby="sample-report-heading"
+          className="mt-24 scroll-mt-24"
+        >
           <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-14">
             <div>
               <p className="eyebrow">A real output</p>
               <h2
                 id="sample-report-heading"
-                className="mt-3 font-serif text-4xl tracking-tight text-white sm:text-5xl"
+                className="mt-3 font-display text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:text-5xl"
               >
                 See what a report looks like
               </h2>
@@ -175,7 +180,7 @@ export default function HomePage() {
                 {REPORT_INCLUDES.map((item) => (
                   <li key={item.text} className="flex items-center gap-3 text-sm text-zinc-300">
                     <span className="glass-chip flex h-8 w-8 shrink-0 items-center justify-center rounded-lg">
-                      <item.icon className="h-4 w-4 text-amber-400" aria-hidden />
+                      <item.icon className="h-4 w-4 text-brand" aria-hidden />
                     </span>
                     {item.text}
                   </li>
@@ -196,17 +201,14 @@ export default function HomePage() {
             </div>
             <h2
               id="tools-heading"
-              className="mt-3 text-center font-serif text-4xl tracking-tight text-white sm:text-5xl"
+              className="mt-3 text-center font-display text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:text-5xl"
             >
               A free tool, no sign-up
             </h2>
             <div className="mx-auto mt-12 grid max-w-xl gap-5">
-              <Link
-                href="/vin"
-                className="glass-panel card-lift group block rounded-2xl p-6"
-              >
-                <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/10 ring-1 ring-white/15 transition-colors duration-200 group-hover:bg-amber-500/20">
-                  <ScanSearch className="h-5 w-5 text-amber-400" aria-hidden />
+              <Link href="/vin" className="glass-panel card-lift group block rounded-2xl p-6">
+                <span className={iconTileClass}>
+                  <ScanSearch className="h-5 w-5" aria-hidden />
                 </span>
                 <h3 className="mt-3 flex items-center gap-1.5 text-sm font-semibold text-zinc-100">
                   Decode a VIN
@@ -229,10 +231,12 @@ export default function HomePage() {
           <section className="glass-panel relative overflow-hidden rounded-2xl p-8 text-center sm:p-14">
             <div
               aria-hidden
-              className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(245,158,11,0.12),transparent_60%)]"
+              className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgb(37_99_235/0.12),transparent_60%)]"
             />
-            <Wrench className="mx-auto h-8 w-8 text-amber-400" aria-hidden />
-            <h2 className="mt-4 font-serif text-4xl tracking-tight text-white sm:text-5xl">
+            <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-brand/10 text-brand ring-1 ring-inset ring-brand/20">
+              <Wrench className="h-6 w-6" aria-hidden />
+            </span>
+            <h2 className="mt-4 font-display text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
               Your car is trying to tell you something.
             </h2>
             <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-zinc-300 sm:text-base">
@@ -247,7 +251,10 @@ export default function HomePage() {
                   aria-hidden
                 />
               </Link>
-              <Link href="/diagnose" className={cn(buttonClassNames({ variant: "outline", size: "lg" }), "group")}>
+              <Link
+                href="/diagnose"
+                className={cn(buttonClassNames({ variant: "outline", size: "lg" }), "group")}
+              >
                 <ScanSearch
                   className="h-4 w-4 transition-transform duration-200 ease-out group-hover:-translate-y-0.5"
                   aria-hidden

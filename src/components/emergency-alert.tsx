@@ -10,13 +10,13 @@ export function EmergencyAlert() {
     >
       <div className="flex items-start gap-3">
         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-500/15">
-          <OctagonAlert className="h-5 w-5 text-red-400" aria-hidden />
+          <OctagonAlert className="h-5 w-5 text-red-600 dark:text-red-400" aria-hidden />
         </span>
         <div>
-          <h2 className="font-display text-sm font-bold uppercase tracking-wide text-red-300">
+          <h2 className="font-display text-sm font-bold uppercase tracking-wide text-red-600 dark:text-red-300">
             Stop safely
           </h2>
-          <p className="mt-1 text-sm leading-relaxed text-red-100/90">{EMERGENCY_MESSAGE}</p>
+          <p className="mt-1 text-sm leading-relaxed text-red-800 dark:text-red-100/90">{EMERGENCY_MESSAGE}</p>
         </div>
       </div>
     </section>

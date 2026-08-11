@@ -29,12 +29,11 @@ interface PricingCardData {
 const FREE_FEATURES = [
   "Unlimited diagnoses, follow-up questions and DTC code lookups",
   `${FREE_ESTIMATES_PER_DAY} repair cost estimates per day`,
-  "Copyable mechanic-ready report",
+  "Copyable mechanic-ready report with free PDF download",
 ];
 
 const PRO_FEATURES = [
   "Unlimited repair cost estimates",
-  "Print / Save-as-PDF mechanic reports",
   "Saved reports & maintenance history on this device",
   "Saved vehicle profiles for faster checks",
 ];
@@ -86,12 +85,12 @@ export function PricingCards() {
           key={card.plan}
           className={
             card.highlighted
-              ? "card-glow relative flex flex-col rounded-xl border bg-amber-500/5 p-6"
+              ? "card-glow relative flex flex-col rounded-xl border bg-brand/5 p-6"
               : "relative flex flex-col rounded-xl border border-zinc-800 bg-zinc-900 p-6"
           }
         >
           {card.highlighted && (
-            <span className="absolute -top-2.5 left-5 rounded-full bg-amber-500 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-zinc-950">
+            <span className="absolute -top-2.5 left-5 rounded-full bg-brand px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white dark:bg-blue-600">
               Best value
             </span>
           )}
@@ -117,7 +116,7 @@ export function PricingCards() {
                 {card.free ? (
                   <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-zinc-500" aria-hidden />
                 ) : (
-                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" aria-hidden />
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-brand" aria-hidden />
                 )}
                 <span>{feature}</span>
               </li>

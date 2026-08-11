@@ -85,20 +85,23 @@ export interface RiskMeta {
 export const RISK_META: Record<RiskLevel, RiskMeta> = {
   STOP_NOW: {
     label: "STOP NOW",
-    badgeClasses: "bg-red-500/15 text-red-400 ring-red-500/40",
-    leftAccent: "bg-red-500/70",
+    badgeClasses:
+      "bg-red-500/15 text-red-600 ring-red-500/40 dark:bg-red-500/15 dark:text-red-400 dark:ring-red-500/40",
+    leftAccent: "bg-red-600/70 dark:bg-red-500/70",
     description: "Stop safely as soon as possible and call for professional help.",
   },
   DRIVE_CAREFULLY: {
     label: "DRIVE CAREFULLY",
-    badgeClasses: "bg-amber-500/15 text-amber-400 ring-amber-500/40",
-    leftAccent: "bg-amber-500/70",
+    badgeClasses:
+      "bg-amber-500/15 text-amber-600 ring-amber-500/40 dark:bg-amber-500/15 dark:text-amber-400 dark:ring-amber-500/40",
+    leftAccent: "bg-amber-600/70 dark:bg-amber-500/70",
     description: "Drive with care and have the vehicle checked soon.",
   },
   BOOK_SERVICE: {
     label: "BOOK SERVICE",
-    badgeClasses: "bg-sky-500/15 text-sky-400 ring-sky-500/40",
-    leftAccent: "bg-sky-500/70",
+    badgeClasses:
+      "bg-sky-500/15 text-sky-600 ring-sky-500/40 dark:bg-sky-500/15 dark:text-sky-400 dark:ring-sky-500/40",
+    leftAccent: "bg-sky-600/70 dark:bg-sky-500/70",
     description: "Schedule an inspection with a qualified workshop.",
   },
 };
