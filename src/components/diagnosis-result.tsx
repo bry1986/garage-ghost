@@ -138,7 +138,7 @@ function SectionHeading({
 }) {
   return (
     <div className="flex items-center gap-2.5">
-      <span className="font-mono text-[10px] font-bold tracking-[0.2em] text-zinc-600">
+      <span className="font-mono text-[10px] font-bold tracking-[0.2em] text-zinc-400 dark:text-zinc-500">
         {index}
       </span>
       <span

@@ -111,7 +111,7 @@ export function Logo({ size = "md", tone = "default", className }: LogoProps) {
       <span className="flex flex-col items-start leading-none">
         <span
           className={cn(
-            "gg-wordmark font-display font-extrabold tracking-tight",
+            "gg-wordmark font-display font-bold tracking-tight",
             styles.wordmark,
             wordmarkClass
           )}

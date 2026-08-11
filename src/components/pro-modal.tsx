@@ -392,7 +392,7 @@ export function ProModal({
                 </p>
               )}
               {!checkoutConfigured && (
-                <p className="mt-2 text-[10px] leading-relaxed text-zinc-600">
+                <p className="mt-2 text-[10px] leading-relaxed text-zinc-400 dark:text-zinc-500">
                   You can test activation once a Lemon Squeezy product with license keys is
                   configured. See the README for the one-time setup.
                 </p>

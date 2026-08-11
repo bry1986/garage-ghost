@@ -127,7 +127,7 @@ export function ResponsiveHeroBanner() {
                     "rounded-full px-3.5 py-2 text-sm font-medium transition-colors",
                     isActive(link.href)
                       ? "bg-brand text-white"
-                      : "text-zinc-600 hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-white/5 dark:hover:text-white"
+                      : "text-zinc-500 hover:text-zinc-100 dark:text-zinc-300 dark:hover:bg-white/5 dark:hover:text-white"
                   )}
                 >
                   {link.label}
@@ -146,7 +146,7 @@ export function ResponsiveHeroBanner() {
                 aria-controls="mobile-menu"
                 className="glass-chip inline-flex h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-zinc-200/60 md:hidden dark:hover:bg-white/10"
               >
-                <Menu className="h-5 w-5 text-zinc-700 dark:text-white/90" aria-hidden />
+                <Menu className="h-5 w-5 text-zinc-500 dark:text-white/90" aria-hidden />
               </button>
             </div>
           </div>
@@ -155,7 +155,7 @@ export function ResponsiveHeroBanner() {
 
       {/* Hero copy — the reference layout: headline, sub, info pill, CTA, trust row */}
       <div className="relative z-10 mx-auto w-full max-w-3xl px-4 pb-14 pt-14 text-center sm:px-6 sm:pt-20">
-        <h1 className="animate-fade-slide-in-1 font-display text-4xl font-extrabold leading-[1.06] tracking-tight text-zinc-950 sm:text-6xl lg:text-7xl dark:text-white">
+        <h1 className="animate-fade-slide-in-1 font-display text-4xl font-bold leading-[1.06] tracking-tight text-zinc-50 sm:text-6xl lg:text-7xl dark:text-white">
           Diagnose Car
           <br />
           Problems with AI
@@ -163,7 +163,7 @@ export function ResponsiveHeroBanner() {
           Precision
         </h1>
 
-        <p className="mx-auto mt-6 max-w-xl animate-fade-slide-in-2 text-base leading-relaxed text-zinc-600 sm:text-lg dark:text-zinc-400">
+        <p className="mx-auto mt-6 max-w-xl animate-fade-slide-in-2 text-base leading-relaxed text-zinc-400 sm:text-lg dark:text-zinc-400">
           Describe your car&apos;s symptoms, upload a photo of the warning light, or record the
           engine sound. Our AI mechanic gives you an instant diagnostic report with repair cost
           estimates — completely free.
@@ -193,7 +193,7 @@ export function ResponsiveHeroBanner() {
           {TRUST_POINTS.map((point) => (
             <li
               key={point}
-              className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400"
+              className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400"
             >
               <CheckCircle2
                 className="h-4.5 w-4.5 text-emerald-600 dark:text-emerald-400"
@@ -221,7 +221,7 @@ export function ResponsiveHeroBanner() {
                   href={`/diagnose?dtc=${chip.code}`}
                   aria-hidden={index >= DTC_CHIPS.length ? true : undefined}
                   tabIndex={index >= DTC_CHIPS.length ? -1 : undefined}
-                  className="mr-3 inline-flex items-center gap-2.5 rounded-full border border-zinc-200/80 bg-white/80 px-4 py-2 text-sm text-zinc-600 transition-colors hover:border-brand/40 hover:text-zinc-950 dark:border-white/10 dark:bg-white/5 dark:text-zinc-300 dark:hover:text-white"
+                  className="mr-3 inline-flex items-center gap-2.5 rounded-full border border-zinc-200/80 bg-white/80 px-4 py-2 text-sm text-zinc-500 transition-colors hover:border-brand/40 hover:text-zinc-100 dark:border-white/10 dark:bg-white/5 dark:text-zinc-300 dark:hover:text-white"
                 >
                   <span className="font-mono text-xs font-semibold text-brand">{chip.code}</span>
                   <span className="text-zinc-500 dark:text-zinc-400">{chip.label}</span>
@@ -250,7 +250,7 @@ export function ResponsiveHeroBanner() {
             className="drawer-in absolute inset-y-0 right-0 flex w-72 max-w-[85vw] flex-col border-l border-zinc-200 bg-white shadow-2xl dark:border-white/10 dark:bg-zinc-950"
           >
             <div className="flex items-center justify-between border-b border-zinc-200 px-4 py-4 dark:border-white/10">
-              <span className="font-display text-sm font-semibold text-zinc-900 dark:text-white">
+              <span className="font-display text-sm font-semibold text-zinc-50 dark:text-white">
                 Menu
               </span>
               <div className="flex items-center gap-2">
@@ -260,7 +260,7 @@ export function ResponsiveHeroBanner() {
                   type="button"
                   onClick={() => setMobileMenuOpen(false)}
                   aria-label="Close menu"
-                  className="rounded-md p-1.5 text-zinc-500 transition-colors hover:bg-zinc-200/60 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-white/10 dark:hover:text-white"
+                  className="rounded-md p-1.5 text-zinc-500 transition-colors hover:bg-zinc-200/60 hover:text-zinc-100 dark:text-zinc-400 dark:hover:bg-white/10 dark:hover:text-white"
                 >
                   <X className="h-4 w-4" aria-hidden />
                 </button>
@@ -274,7 +274,7 @@ export function ResponsiveHeroBanner() {
                   "rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
                   isActive("/")
                     ? "bg-brand text-white"
-                    : "text-zinc-700 hover:bg-zinc-200/60 hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-white/10 dark:hover:text-white"
+                    : "text-zinc-500 hover:bg-zinc-200/60 hover:text-zinc-100 dark:text-zinc-300 dark:hover:bg-white/10 dark:hover:text-white"
                 )}
               >
                 Home
@@ -289,7 +289,7 @@ export function ResponsiveHeroBanner() {
                     "rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
                     isActive(item.href)
                       ? "bg-brand text-white"
-                      : "text-zinc-700 hover:bg-zinc-200/60 hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-white/10 dark:hover:text-white"
+                      : "text-zinc-500 hover:bg-zinc-200/60 hover:text-zinc-100 dark:text-zinc-300 dark:hover:bg-white/10 dark:hover:text-white"
                   )}
                 >
                   {item.label}

@@ -145,7 +145,7 @@ export function ObdIiLookup() {
           diagnosis and analyze them with AI.
         </p>
       )}
-      <p className="mt-2 text-xs text-zinc-600">
+      <p className="mt-2 text-xs text-zinc-400 dark:text-zinc-500">
         A stored code points at the system a fault was recorded in — it is not a diagnosis. Always
         confirm with a qualified workshop scan when in doubt.
       </p>

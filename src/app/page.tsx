@@ -103,7 +103,7 @@ export default function HomePage() {
                   key={step.title}
                   className="glass-panel card-lift group rounded-2xl p-6 text-center"
                 >
-                  <span className="font-display text-4xl font-extrabold text-brand/70" aria-hidden>
+                  <span className="font-display text-4xl font-bold text-brand/70" aria-hidden>
                     0{index + 1}
                   </span>
                   <span className={cn(iconTileClass, "mx-auto mt-5")}>

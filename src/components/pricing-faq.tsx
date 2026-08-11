@@ -81,7 +81,7 @@ export function PricingFaq() {
           </Disclosure>
         ))}
       </div>
-      <p className="mt-4 text-center text-[11px] leading-relaxed text-zinc-600">
+      <p className="mt-4 text-center text-[11px] leading-relaxed text-zinc-400 dark:text-zinc-500">
         AI analysis uses Puter&apos;s user-pays model — see the{" "}
         <a
           href={PUTER_DEVELOPER_URL}
