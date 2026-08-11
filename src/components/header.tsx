@@ -99,9 +99,9 @@ export function Header() {
       className={cn(
         "inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium transition-colors",
         isPro
-          ? "text-emerald-400 hover:bg-zinc-800/60"
+          ? "text-emerald-600 hover:bg-zinc-800/60 dark:text-emerald-400"
           : licenseExpired
-            ? "border border-red-500/40 bg-red-500/5 text-red-300 hover:border-red-400/60 hover:bg-red-500/10"
+            ? "border border-red-500/40 bg-red-500/5 text-red-600 hover:border-red-400/60 hover:bg-red-500/10 dark:text-red-300"
             : "border border-brand/40 bg-brand/10 text-brand hover:border-brand/60 hover:bg-brand/15"
       )}
     >
