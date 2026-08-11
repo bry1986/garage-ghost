@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Fingerprint } from "lucide-react";
+import { ObdIiLookup } from "@/components/obd-ii-lookup";
 import { VinDecoder } from "@/components/vin-decoder";
 
 export const metadata: Metadata = {
@@ -26,6 +27,7 @@ export default function VinPage() {
         </p>
       </div>
       <VinDecoder />
+      <ObdIiLookup />
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { HistoryList } from "@/components/history-list";
+import { SavedVehicles } from "@/components/saved-vehicles";
 
 export const metadata: Metadata = {
   title: "History",
@@ -18,6 +19,7 @@ export default function HistoryPage() {
         </p>
       </div>
       <HistoryList />
+      <SavedVehicles />
     </div>
   );
 }

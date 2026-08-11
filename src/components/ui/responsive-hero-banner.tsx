@@ -218,7 +218,7 @@ export function ResponsiveHeroBanner() {
               {[...DTC_CHIPS, ...DTC_CHIPS].map((chip, index) => (
                 <Link
                   key={`${chip.code}-${index}`}
-                  href="/diagnose"
+                  href={`/diagnose?dtc=${chip.code}`}
                   aria-hidden={index >= DTC_CHIPS.length ? true : undefined}
                   tabIndex={index >= DTC_CHIPS.length ? -1 : undefined}
                   className="mr-3 inline-flex items-center gap-2.5 rounded-full border border-zinc-200/80 bg-white/80 px-4 py-2 text-sm text-zinc-600 transition-colors hover:border-brand/40 hover:text-zinc-950 dark:border-white/10 dark:bg-white/5 dark:text-zinc-300 dark:hover:text-white"

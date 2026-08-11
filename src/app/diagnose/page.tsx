@@ -1,28 +1,26 @@
 import type { Metadata } from "next";
-import { ShieldCheck } from "lucide-react";
+import { Stethoscope } from "lucide-react";
 import { EmergencyAlert } from "@/components/emergency-alert";
 import { VehicleDiagnosisForm } from "@/components/vehicle-diagnosis-form";
 
 export const metadata: Metadata = {
-  title: "Diagnose",
+  title: "New Diagnosis",
   description:
-    "Enter your vehicle details and symptoms to receive safety-first educational guidance.",
+    "Describe your car's problem and receive safety-first educational guidance with repair cost estimates.",
 };
 
 export default function DiagnosePage() {
   return (
-    <div className="space-y-6">
-      <div className="rise-in">
-        <div className="inline-flex items-center gap-2 rounded-full border border-brand/30 bg-brand/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-brand">
-          <ShieldCheck className="h-3.5 w-3.5" aria-hidden />
-          Free · No account needed
-        </div>
+    <div className="mx-auto max-w-2xl space-y-6">
+      <div className="rise-in text-center">
+        <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-sky-100 text-sky-600 ring-1 ring-inset ring-sky-200 dark:bg-sky-500/15 dark:text-sky-300 dark:ring-sky-500/30">
+          <Stethoscope className="h-7 w-7" aria-hidden />
+        </span>
         <h1 className="mt-4 font-display text-2xl font-bold tracking-tight text-zinc-50 sm:text-3xl">
-          Diagnose a warning
+          New Diagnosis
         </h1>
         <p className="mt-1.5 text-sm text-zinc-400">
-          Enter your vehicle details and describe what you notice. You will receive educational
-          guidance and safe next steps.
+          Describe your car&apos;s problem — it&apos;s free!
         </p>
       </div>
       <EmergencyAlert />

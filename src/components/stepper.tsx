@@ -1,19 +1,16 @@
 "use client";
 
-import { Check, Car, ClipboardList, Gauge } from "lucide-react";
+import { Car, Check, ClipboardList, ImageIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type DiagnosisStep = "vehicle" | "symptoms" | "assessment";
 
 const STEP_ORDER: DiagnosisStep[] = ["vehicle", "symptoms", "assessment"];
 
-const STEP_META: Record<
-  DiagnosisStep,
-  { label: string; shortLabel: string; icon: typeof Car }
-> = {
-  vehicle: { label: "Vehicle", shortLabel: "Vehicle", icon: Car },
-  symptoms: { label: "Symptoms", shortLabel: "Symptoms", icon: ClipboardList },
-  assessment: { label: "Assessment", shortLabel: "Assessment", icon: Gauge },
+const STEP_META: Record<DiagnosisStep, { label: string; icon: typeof Car }> = {
+  vehicle: { label: "Vehicle", icon: Car },
+  symptoms: { label: "Problem", icon: ClipboardList },
+  assessment: { label: "Media", icon: ImageIcon },
 };
 
 interface StepperProps {
@@ -62,19 +59,11 @@ export function Stepper({ current, active, onNavigate }: StepperProps) {
               </span>
               <span
                 className={cn(
-                  "hidden text-xs font-medium sm:block",
+                  "text-xs font-medium",
                   isActive ? "text-brand" : reached ? "text-zinc-200" : "text-zinc-500"
                 )}
               >
                 {STEP_META[step].label}
-              </span>
-              <span
-                className={cn(
-                  "text-xs font-medium sm:hidden",
-                  isActive ? "text-brand" : reached ? "text-zinc-200" : "text-zinc-500"
-                )}
-              >
-                {STEP_META[step].shortLabel}
               </span>
             </span>
           );

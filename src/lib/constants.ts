@@ -6,6 +6,80 @@ export const PUTER_DEVELOPER_URL = "https://developer.puter.com";
 
 export const FUEL_TYPES = ["Petrol", "Diesel", "Hybrid", "EV", "Other"] as const;
 
+/**
+ * Car makes offered in the diagnosis form's Make dropdown (reference flow:
+ * Vehicle details). Sorted alphabetically.
+ */
+export const CAR_MAKES = [
+  "Abarth",
+  "Alfa Romeo",
+  "Aston Martin",
+  "Audi",
+  "Bentley",
+  "BMW",
+  "BYD",
+  "Cadillac",
+  "Chevrolet",
+  "Chrysler",
+  "Citroën",
+  "Cupra",
+  "Dacia",
+  "Dodge",
+  "DS Automobiles",
+  "Ferrari",
+  "Fiat",
+  "Ford",
+  "Genesis",
+  "GMC",
+  "Honda",
+  "Hyundai",
+  "Infiniti",
+  "Isuzu",
+  "Jaguar",
+  "Jeep",
+  "Kia",
+  "Lamborghini",
+  "Land Rover",
+  "Lexus",
+  "Lincoln",
+  "Lotus",
+  "Maserati",
+  "Mazda",
+  "McLaren",
+  "Mercedes-Benz",
+  "MG",
+  "Mini",
+  "Mitsubishi",
+  "Nissan",
+  "Opel",
+  "Peugeot",
+  "Polestar",
+  "Porsche",
+  "Renault",
+  "Rolls-Royce",
+  "Seat",
+  "Skoda",
+  "Smart",
+  "Subaru",
+  "Suzuki",
+  "Tesla",
+  "Toyota",
+  "Vauxhall",
+  "Volkswagen",
+  "Volvo",
+] as const;
+
+/** Oldest model year offered in the diagnosis form's Year dropdown. */
+export const CAR_YEAR_MIN = 1980;
+
+/** Model years for the Year dropdown, newest first. */
+export const MODEL_YEARS: string[] = (() => {
+  const current = new Date().getFullYear() + 1;
+  const years: string[] = [];
+  for (let year = current; year >= CAR_YEAR_MIN; year--) years.push(String(year));
+  return years;
+})();
+
 export const LANGUAGES: ResponseLanguage[] = ["English", "German", "French", "Arabic"];
 
 export const RISK_LEVELS: RiskLevel[] = ["STOP_NOW", "DRIVE_CAREFULLY", "BOOK_SERVICE"];
