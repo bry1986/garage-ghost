@@ -35,7 +35,7 @@ const WHAT_YOU_BUY = [
 
 export default function PricingPage() {
   return (
-    <div className="mx-auto max-w-3xl space-y-12">
+    <div className="mx-auto max-w-4xl space-y-12">
       <header className="text-center">
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl border border-amber-500/40 bg-amber-500/10">
           <Crown className="h-6 w-6 text-amber-400" aria-hidden />
@@ -44,12 +44,28 @@ export default function PricingPage() {
           Garage Ghost Pro
         </h1>
         <p className="mx-auto mt-2 max-w-xl text-sm leading-relaxed text-zinc-400">
-          The features drivers pay for most — unlimited repair cost estimates and printable
-          mechanic reports — plus saved reports and vehicle profiles that make each check faster.
+          Flexible plans for drivers who want unlimited repair cost estimates and printable
+          mechanic reports — with saved reports and vehicle profiles that make each check faster.
         </p>
       </header>
 
-      <PricingCards />
+      {/* Three price tiers — Free $0, Monthly $5.99, Yearly $49.99 */}
+      <section aria-labelledby="pricing-heading" className="scroll-mt-24">
+        <div className="text-center">
+          <h2
+            id="pricing-heading"
+            className="font-display text-2xl font-bold tracking-tight text-zinc-50 sm:text-3xl"
+          >
+            The features drivers pay for most
+          </h2>
+          <p className="mx-auto mt-2 max-w-xl text-sm text-zinc-400">
+            Unlimited repair cost estimates and printable mechanic reports for the workshop.
+          </p>
+        </div>
+        <div className="mt-8">
+          <PricingCards />
+        </div>
+      </section>
 
       <section aria-labelledby="what-you-buy-heading">
         <h2 id="what-you-buy-heading" className="font-display text-xl font-bold text-zinc-50">

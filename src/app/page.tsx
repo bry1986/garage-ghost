@@ -13,7 +13,6 @@ import {
 } from "lucide-react";
 import { buttonClassNames } from "@/components/ui/button";
 import { EmergencyAlert } from "@/components/emergency-alert";
-import { ProPricingSection } from "@/components/pro-pricing";
 import { Reveal } from "@/components/reveal";
 import { SampleReport } from "@/components/sample-report";
 import { ResponsiveHeroBanner } from "@/components/ui/responsive-hero-banner";
@@ -188,11 +187,6 @@ export default function HomePage() {
             </div>
           </div>
         </section>
-
-        {/* ------------------------------------------------ Pro teaser */}
-        <Reveal className="mt-24">
-          <ProPricingSection />
-        </Reveal>
 
         {/* ------------------------------------------------ Free tools strip */}
         <Reveal stagger className="mt-24">

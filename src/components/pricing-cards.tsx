@@ -1,10 +1,12 @@
 "use client";
 
-import { Check, Crown, ExternalLink } from "lucide-react";
+import Link from "next/link";
+import { Check, CheckCircle2, Crown, ExternalLink } from "lucide-react";
 import { Button, buttonClassNames } from "@/components/ui/button";
 import { usePro } from "@/components/pro-provider";
 import { cn } from "@/lib/utils";
 import {
+  FREE_ESTIMATES_PER_DAY,
   getAnnualCheckoutUrl,
   getMonthlyCheckoutUrl,
   PRO_PRICE_ANNUAL,
@@ -18,25 +20,44 @@ interface PricingCardData {
   note: string;
   href: string;
   cta: string;
+  features: string[];
+  /** Free tier: gray checks and an in-app CTA instead of checkout. */
+  free?: boolean;
   highlighted?: boolean;
 }
+
+const FREE_FEATURES = [
+  "Unlimited diagnoses, follow-up questions and DTC code lookups",
+  `${FREE_ESTIMATES_PER_DAY} repair cost estimates per day`,
+  "Copyable mechanic-ready report",
+];
+
+const PRO_FEATURES = [
+  "Unlimited repair cost estimates",
+  "Print / Save-as-PDF mechanic reports",
+  "Saved reports & maintenance history on this device",
+  "Saved vehicle profiles for faster checks",
+];
 
 export function PricingCards() {
   const { isPro, openModal } = usePro();
   const monthlyUrl = getMonthlyCheckoutUrl();
   const annualUrl = getAnnualCheckoutUrl();
 
-  const features = [
-    "Unlimited repair cost estimates",
-    "Print / Save-as-PDF mechanic reports",
-    "Saved reports & maintenance history on this device",
-    "Saved vehicle profiles for faster checks",
-  ];
-
   // What yearly saves vs paying monthly for a full year.
   const annualSavings = PRO_PRICE_MONTHLY * 12 - PRO_PRICE_ANNUAL;
 
   const cards: PricingCardData[] = [
+    {
+      plan: "Free",
+      price: "$0",
+      period: "forever",
+      note: "Everything you need for occasional checks.",
+      href: "/diagnose",
+      cta: "Start free",
+      features: FREE_FEATURES,
+      free: true,
+    },
     {
       plan: "Monthly",
       price: `$${PRO_PRICE_MONTHLY.toFixed(2)}`,
@@ -44,6 +65,7 @@ export function PricingCards() {
       note: "Flexible, cancel anytime.",
       href: monthlyUrl,
       cta: "Get Pro monthly",
+      features: PRO_FEATURES,
     },
     {
       plan: "Yearly",
@@ -52,12 +74,13 @@ export function PricingCards() {
       note: "Two months free vs monthly.",
       href: annualUrl,
       cta: "Get Pro yearly",
+      features: PRO_FEATURES,
       highlighted: true,
     },
   ];
 
   return (
-    <div className="grid gap-5 sm:grid-cols-2">
+    <div className="grid gap-5 lg:grid-cols-3">
       {cards.map((card) => (
         <div
           key={card.plan}
@@ -89,26 +112,35 @@ export function PricingCards() {
           )}
 
           <ul className="mt-5 flex-1 space-y-2.5">
-            {features.map((feature) => (
+            {card.features.map((feature) => (
               <li key={feature} className="flex items-start gap-2 text-sm text-zinc-300">
-                <Check className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" aria-hidden />
+                {card.free ? (
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-zinc-500" aria-hidden />
+                ) : (
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" aria-hidden />
+                )}
                 <span>{feature}</span>
               </li>
             ))}
           </ul>
 
-          <p className="mt-4 text-[11px] leading-relaxed text-zinc-500">
-            After checkout you receive a license key by email — enter it in the app to unlock this
-            browser.
-          </p>
+          {card.free ? (
+            <p className="mt-4 text-[11px] leading-relaxed text-zinc-500">
+              No account, no credit card — your reports stay in this browser.
+            </p>
+          ) : (
+            <p className="mt-4 text-[11px] leading-relaxed text-zinc-500">
+              After checkout you receive a license key by email — enter it in the app to unlock
+              this browser.
+            </p>
+          )}
 
-          {isPro ? (
-            <Button
-              type="button"
-              onClick={openModal}
-              variant="outline"
-              className="mt-4"
-            >
+          {card.free ? (
+            <Link href={card.href} className={cn("mt-4", buttonClassNames({ variant: "outline" }))}>
+              {card.cta}
+            </Link>
+          ) : isPro ? (
+            <Button type="button" onClick={openModal} variant="outline" className="mt-4">
               <Crown className="h-4 w-4" aria-hidden />
               Manage Pro
             </Button>
