@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { ArrowRight, FileText, Menu, Wrench, X } from "lucide-react";
+import { ArrowRight, FileText, Menu, X } from "lucide-react";
+import { Logo } from "@/components/logo";
 import { APP_NAME } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
@@ -116,14 +117,9 @@ export function ResponsiveHeroBanner() {
             <Link
               href="/"
               aria-label={`${APP_NAME} home`}
-              className="group flex items-center gap-2.5 rounded-lg transition-opacity hover:opacity-85"
+              className="group rounded-lg transition-opacity hover:opacity-85"
             >
-              <span className="glass-chip flex h-9 w-9 items-center justify-center rounded-lg transition-colors duration-200 group-hover:bg-white/10">
-                <Wrench className="h-4 w-4 text-amber-400" aria-hidden />
-              </span>
-              <span className="font-display text-base font-semibold tracking-tight text-white">
-                {APP_NAME}
-              </span>
+              <Logo size="lg" tone="hero" />
             </Link>
 
             <nav

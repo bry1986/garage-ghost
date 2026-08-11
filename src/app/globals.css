@@ -577,8 +577,135 @@ select:disabled {
   }
 }
 
+/* ------------------------------------------------------------------ */
+/* GG monogram logo — one-shot showstopper entrance, settles static     */
+/* ------------------------------------------------------------------ */
+/* Base styles are the FINAL state, so reduced-motion (animation:none)
+   and post-entrance look identical — and so hover can override the
+   glow after the entrance finishes (backwards fill only). */
+
+/* Ghost echo G — the "double" in GG. */
+.gg-g-echo {
+  opacity: 0.45;
+  animation: gg-echo-in 0.6s var(--ease-out) 0.08s backwards;
+}
+
+@keyframes gg-echo-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 0.45;
+  }
+}
+
+/* Front G — stroke-drawn in. dasharray 140 overshoots the ~70-unit path
+   length (270° arc + bar) so the draw covers the whole stroke cleanly. */
+.gg-g-front {
+  stroke-dasharray: 140;
+  stroke-dashoffset: 0;
+  animation: gg-draw 0.55s var(--ease-out) 0.3s backwards;
+}
+
+@keyframes gg-draw {
+  from {
+    stroke-dashoffset: 140;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Soft aura — flashes, then settles to a faint glow. */
+.gg-glow {
+  opacity: 0.5;
+  transition: opacity 0.2s var(--ease-out);
+  animation: gg-glow-burst 0.9s var(--ease-out) 0.45s backwards;
+}
+
+@keyframes gg-glow-burst {
+  0% {
+    opacity: 0;
+  }
+  35% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.5;
+  }
+}
+
+/* Shimmer band — one light sweep across the badge, then gone. */
+.gg-shimmer-band {
+  opacity: 0;
+  animation: gg-shimmer-sweep 0.7s var(--ease-in-out) 0.9s both;
+}
+
+@keyframes gg-shimmer-sweep {
+  0% {
+    opacity: 0;
+    transform: translateX(-120%);
+  }
+  25% {
+    opacity: 1;
+  }
+  75% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(320%);
+  }
+}
+
+/* Wordmark + subtext rise in a beat after the draw. */
+.gg-wordmark {
+  animation: gg-text-in 0.5s var(--ease-out) 0.4s backwards;
+}
+
+.gg-subtext {
+  animation: gg-text-in 0.5s var(--ease-out) 0.55s backwards;
+}
+
+@keyframes gg-text-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Hover — quick pop + brighter aura. Gated to fine pointers so touch
+   never fires a false hover. */
+@media (hover: hover) and (pointer: fine) {
+  .gg-mark {
+    transition: transform 0.2s var(--ease-out);
+  }
+  .gg-mark:hover {
+    transform: scale(1.05);
+  }
+  .gg-mark:hover .gg-glow {
+    opacity: 0.9;
+  }
+}
+
 /* Respect reduced motion everywhere */
 @media (prefers-reduced-motion: reduce) {
+  .gg-g-echo,
+  .gg-g-front,
+  .gg-glow,
+  .gg-shimmer-band,
+  .gg-wordmark,
+  .gg-subtext {
+    animation: none;
+  }
+  .gg-mark {
+    transition: none;
+    transform: none;
+  }
   html {
     scroll-behavior: auto;
   }

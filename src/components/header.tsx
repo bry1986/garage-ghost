@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { AlertTriangle, CheckCircle2, Crown, Menu, Wrench, X } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Crown, Menu, X } from "lucide-react";
+import { Logo } from "@/components/logo";
 import { usePro } from "@/components/pro-provider";
 import { APP_NAME } from "@/lib/constants";
 import { cn } from "@/lib/utils";
@@ -121,15 +122,10 @@ export function Header() {
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 sm:px-6">
         <Link
           href="/"
-          className="group flex items-center gap-2 rounded-md transition-opacity hover:opacity-80"
+          className="group flex items-center rounded-md transition-opacity hover:opacity-80"
           aria-label={`${APP_NAME} home`}
         >
-          <span className="flex h-8 w-8 items-center justify-center rounded-md border border-amber-500/40 bg-amber-500/10 shadow-[0_0_14px_rgba(245,158,11,0.15)] transition-[background-color,box-shadow] duration-200 group-hover:bg-amber-500/20 group-hover:shadow-[0_0_20px_rgba(245,158,11,0.3)]">
-            <Wrench className="h-4 w-4 text-amber-400" aria-hidden />
-          </span>
-          <span className="font-display text-sm font-semibold tracking-tight text-zinc-100">
-            {APP_NAME}
-          </span>
+          <Logo />
         </Link>
 
         {/* Desktop nav */}
