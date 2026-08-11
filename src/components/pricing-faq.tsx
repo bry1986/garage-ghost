@@ -1,15 +1,33 @@
 import { CircleHelp } from "lucide-react";
 import { Disclosure } from "@/components/ui/disclosure";
 import { PUTER_DEVELOPER_URL } from "@/lib/constants";
+import { FREE_ESTIMATES_PER_DAY, PRO_PRICE_ANNUAL, PRO_PRICE_MONTHLY } from "@/lib/pro";
+
+/** What yearly saves vs paying monthly for a full year (mirrors pricing-cards). */
+const ANNUAL_SAVINGS = PRO_PRICE_MONTHLY * 12 - PRO_PRICE_ANNUAL;
 
 const FAQ_ITEMS = [
   {
+    question: "What's the difference between Free, Monthly and Yearly?",
+    answer: [
+      `Free costs nothing, forever: unlimited diagnoses, follow-up questions and DTC code lookups, ${FREE_ESTIMATES_PER_DAY} repair cost estimates per day, and a copyable mechanic-ready report.`,
+      `Monthly ($${PRO_PRICE_MONTHLY.toFixed(2)}/month) and Yearly ($${PRO_PRICE_ANNUAL.toFixed(2)}/year) are the same Pro plan — unlimited estimates, PDF reports, saved reports and vehicle profiles. Yearly bills once a year and saves $${ANNUAL_SAVINGS.toFixed(2)} compared with paying month to month.`,
+      "Start on Free with nothing to set up and no credit card, then upgrade only if you need unlimited estimates and printable reports.",
+    ],
+  },
+  {
     question: "What exactly does Pro include?",
     answer: [
-      "Unlimited repair cost estimates (the free tier allows 3 per day).",
+      `Unlimited repair cost estimates (the free tier allows ${FREE_ESTIMATES_PER_DAY} per day).`,
       "Print / Save-as-PDF mechanic reports.",
       "Saved reports & maintenance history on this device.",
       "Saved vehicle profiles for faster checks.",
+    ],
+  },
+  {
+    question: "Can I cancel or switch between Monthly and Yearly?",
+    answer: [
+      "Yes. Both plans are billed by Lemon Squeezy and can be cancelled anytime from the billing portal — you keep Pro until the end of the paid period. Monthly renews month to month; Yearly renews once a year, so cancel before renewal to avoid the next charge. To switch between the two, cancel the current plan and check out with the other one.",
     ],
   },
   {
