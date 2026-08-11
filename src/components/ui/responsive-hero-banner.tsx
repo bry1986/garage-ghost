@@ -16,7 +16,6 @@ interface NavLink {
 /** Nav is carried by the hero on the landing page; the primary CTA covers Diagnose. */
 const NAV_LINKS: NavLink[] = [
   { label: "VIN decoder", href: "/vin" },
-  { label: "Workshops", href: "/workshops" },
   { label: "History", href: "/history" },
   { label: "Pricing", href: "/pricing" },
 ];

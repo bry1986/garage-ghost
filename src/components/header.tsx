@@ -11,7 +11,6 @@ import { cn } from "@/lib/utils";
 const NAV_ITEMS = [
   { href: "/diagnose", label: "Diagnose" },
   { href: "/vin", label: "VIN decoder" },
-  { href: "/workshops", label: "Workshops" },
   { href: "/history", label: "History" },
   { href: "/pricing", label: "Pricing" },
 ];

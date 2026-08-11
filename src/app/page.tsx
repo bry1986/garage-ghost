@@ -198,9 +198,9 @@ export default function HomePage() {
               id="tools-heading"
               className="mt-3 text-center font-serif text-4xl tracking-tight text-white sm:text-5xl"
             >
-              More free tools, no sign-up
+              A free tool, no sign-up
             </h2>
-            <div className="mx-auto mt-12 grid max-w-3xl gap-5 sm:grid-cols-2">
+            <div className="mx-auto mt-12 grid max-w-xl gap-5">
               <Link
                 href="/vin"
                 className="glass-panel card-lift group block rounded-2xl p-6"
@@ -218,25 +218,6 @@ export default function HomePage() {
                 <p className="mt-1.5 text-sm leading-relaxed text-zinc-400">
                   Validate a 17-character VIN and read its structure instantly — with optional NHTSA
                   vehicle details.
-                </p>
-              </Link>
-              <Link
-                href="/workshops"
-                className="glass-panel card-lift group block rounded-2xl p-6"
-              >
-                <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/10 ring-1 ring-white/15 transition-colors duration-200 group-hover:bg-amber-500/20">
-                  <Wrench className="h-5 w-5 text-amber-400" aria-hidden />
-                </span>
-                <h3 className="mt-3 flex items-center gap-1.5 text-sm font-semibold text-zinc-100">
-                  Find a workshop
-                  <ArrowRight
-                    className="h-3.5 w-3.5 text-zinc-500 transition-transform duration-200 ease-out group-hover:translate-x-0.5"
-                    aria-hidden
-                  />
-                </h3>
-                <p className="mt-1.5 text-sm leading-relaxed text-zinc-400">
-                  Car-repair workshops near you, with distance and directions — from free
-                  OpenStreetMap data.
                 </p>
               </Link>
             </div>
