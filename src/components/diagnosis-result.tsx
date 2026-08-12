@@ -37,9 +37,14 @@ import {
   formatCostRange,
   type RepairCostEstimateResult,
 } from "@/lib/costs";
-import { askFollowUp, describePuterError } from "@/lib/diagnosis";
+import { askFollowUp, describePuterError, FOLLOW_UP_RETRY_LABEL } from "@/lib/diagnosis";
 import { usePro } from "@/components/pro-provider";
-import { consumeEstimate, FREE_ESTIMATES_PER_DAY, getRemainingEstimateCount } from "@/lib/pro";
+import {
+  consumeEstimate,
+  FREE_ESTIMATES_PER_DAY,
+  shouldConsumeEstimate,
+  shouldLockEstimates,
+} from "@/lib/pro";
 import { cn } from "@/lib/utils";
 import type {
   Confidence,
@@ -296,23 +301,34 @@ export function DiagnosisResult({
     [result, symptoms]
   );
 
-  const { isPro, openModal } = usePro();
+  const { isPro, openModal, validating } = usePro();
 
   // Free tier: each freshly generated result that shows cost estimates counts
-  // toward the 3/day allowance. Pro users, emergency results, and re-opened
-  // reports (consumeQuota=false) are never counted or locked.
+  // toward the 3/day allowance. Pro users, emergency results, re-opened
+  // reports (consumeQuota=false), and results generated while a stored license
+  // is still being validated are never counted or locked.
   const quotaBumped = useRef(false);
   useEffect(() => {
-    if (!consumeQuota || quotaBumped.current || isPro || costs.isEmergency) return;
+    const shouldTrack = shouldConsumeEstimate({
+      consumeQuota,
+      isPro,
+      validating,
+      isEmergency: costs.isEmergency,
+    });
+    if (quotaBumped.current || !shouldTrack) return;
     quotaBumped.current = true;
     consumeEstimate();
-  }, [consumeQuota, isPro, costs.isEmergency]);
+  }, [consumeQuota, isPro, validating, costs.isEmergency]);
 
   // Free users see numbers on their first 3 generated results each day, then a
   // locked state with an upgrade prompt. Emergencies always show the safety
   // message, and already-generated reports are always shown in full.
-  const estimatesLocked =
-    consumeQuota && !isPro && !costs.isEmergency && getRemainingEstimateCount() <= 0;
+  const estimatesLocked = shouldLockEstimates({
+    consumeQuota,
+    isPro,
+    validating,
+    isEmergency: costs.isEmergency,
+  });
 
   useEffect(() => {
     return () => {
@@ -356,7 +372,7 @@ export function DiagnosisResult({
       setFollowUpInput("");
     } catch (cause) {
       console.error("Garage Ghost follow-up failed:", cause);
-      setFollowUpError(describePuterError(cause));
+      setFollowUpError(describePuterError(cause, FOLLOW_UP_RETRY_LABEL));
     } finally {
       setFollowUpLoading(false);
     }
@@ -615,7 +631,7 @@ export function DiagnosisResult({
                       ) : (
                         <>
                           <Zap className="h-4 w-4" aria-hidden />
-                          Ask the AI Mechanic
+                          {FOLLOW_UP_RETRY_LABEL}
                         </>
                       )}
                     </Button>

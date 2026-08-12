@@ -848,7 +848,9 @@ export function VehicleDiagnosisForm() {
             result={output.result}
             source={output.source}
             vehicleLabel={vehicleLabel}
-            imageNote={imageNote}
+            // Only claim the photo was included when it actually reached the
+            // analysis — the image→text retry path drops it (imageIncluded=false).
+            imageNote={imageNote && output.imageIncluded}
             vehicle={lastVehicle ?? undefined}
             symptoms={symptoms.trim()}
             language={language}

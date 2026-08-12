@@ -305,3 +305,31 @@ export function consumeEstimate(): { remaining: number } {
 export function isEstimateLocked(): boolean {
   return getRemainingEstimateCount() <= 0;
 }
+
+// ---------------------------------------------------------------------------
+// Estimate policy (free-tier quota + license-validation window)
+// ---------------------------------------------------------------------------
+
+export interface EstimateTrackingContext {
+  /** Fresh results only — re-opened reports never count or lock. */
+  consumeQuota: boolean;
+  isPro: boolean;
+  /** True while a stored license is being re-validated on load. Never count
+   *  or lock during that window so a Pro user cannot burn a free slot while
+   *  their license is still being confirmed. */
+  validating: boolean;
+  /** STOP_NOW results show no numbers and never count. */
+  isEmergency: boolean;
+}
+
+/** True when a freshly generated result should consume a free-estimate slot. */
+export function shouldConsumeEstimate(context: EstimateTrackingContext): boolean {
+  return (
+    context.consumeQuota && !context.isPro && !context.validating && !context.isEmergency
+  );
+}
+
+/** True when cost estimates must be hidden behind the Pro upgrade prompt. */
+export function shouldLockEstimates(context: EstimateTrackingContext): boolean {
+  return shouldConsumeEstimate(context) && getRemainingEstimateCount() <= 0;
+}

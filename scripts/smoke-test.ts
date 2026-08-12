@@ -24,12 +24,15 @@ const store = new Map<string, string>();
 process.env.NEXT_PUBLIC_DEMO_MODE = "true";
 
 import {
+  ANALYSIS_TIMEOUT_MESSAGE,
   DiagnosisTimeoutError,
+  FOLLOW_UP_RETRY_LABEL,
   askFollowUp,
   buildChatMessages,
   buildFollowUpSystemPrompt,
   buildFollowUpUserPrompt,
   buildSystemPrompt,
+  buildTimeoutMessage,
   buildUserPrompt,
   buildVisionPrompt,
   describePuterError,
@@ -55,6 +58,8 @@ import {
   isCheckoutConfigured,
   isEstimateLocked,
   saveProState,
+  shouldConsumeEstimate,
+  shouldLockEstimates,
   todayKey,
   validateLicense,
 } from "../src/lib/pro";
@@ -129,6 +134,7 @@ async function main() {
   assert.ok(
     ["STOP_NOW", "DRIVE_CAREFULLY", "BOOK_SERVICE"].includes(out.result.riskLevel)
   );
+  assert.strictEqual(out.imageIncluded, false, "demo results never claim photo analysis");
   console.log("ok: demo mode returns a labeled demo result");
 
   // 7. STOP_NOW escalation from dangerous symptom chips
@@ -140,6 +146,20 @@ async function main() {
   });
   assert.strictEqual(dangerous.result.riskLevel, "STOP_NOW");
   console.log("ok: smoke chip escalates to STOP_NOW");
+
+  // 7b. Demo escalation matches DANGEROUS_SYMPTOM_CHIPS (hard braking included)
+  const hardBraking = await runDiagnosis({
+    vehicle: { brand: "Toyota", model: "Yaris", year: "2015" },
+    symptoms: "Brake pedal feels hard and the car pulls to one side",
+    symptomChips: ["Hard braking"],
+    language: "English",
+  });
+  assert.strictEqual(
+    hardBraking.result.riskLevel,
+    "STOP_NOW",
+    "hard braking chip escalates to STOP_NOW in demo mode"
+  );
+  console.log("ok: hard braking chip escalates via DANGEROUS_SYMPTOM_CHIPS");
 
   // 8. Storage round-trip
   clearHistory();
@@ -178,6 +198,44 @@ async function main() {
   );
   assert.strictEqual(getHistory().length, 0, "entries with invalid riskLevel must be filtered");
   console.log("ok: malformed localStorage data handled safely");
+
+  // 9b. Stored history with a non-string confidence is filtered — it would
+  // crash the report render (confidence.charAt on a number)
+  const validConfidenceEntry = {
+    id: "c-valid",
+    createdAt: Date.now(),
+    source: "demo" as const,
+    vehicle: { brand: "Audi", model: "A3", year: "2017" },
+    language: "English" as const,
+    symptoms: "s",
+    result: {
+      detectedWarning: "x",
+      confidence: "medium",
+      riskLevel: "BOOK_SERVICE",
+      summary: "s",
+      mechanicReport: "m",
+    },
+  };
+  store.set("garage-ghost:history:v1", JSON.stringify([validConfidenceEntry]));
+  assert.strictEqual(getHistory().length, 1, "entries with a valid confidence are kept");
+  store.set(
+    "garage-ghost:history:v1",
+    JSON.stringify([
+      validConfidenceEntry,
+      {
+        ...validConfidenceEntry,
+        id: "c-bad",
+        result: { ...validConfidenceEntry.result, confidence: 5 },
+      },
+    ])
+  );
+  assert.strictEqual(
+    getHistory().length,
+    1,
+    "entries with a non-string confidence are filtered"
+  );
+  store.delete("garage-ghost:history:v1");
+  console.log("ok: stored history filters non-string confidence values");
 
   // 10. Timeout guard: settles when the promise wins
   const fast = await withTimeout(Promise.resolve("done"), 500, "never");
@@ -581,6 +639,76 @@ async function main() {
   assert.strictEqual(deriveLicenseStatus(true, true), "active");
   assert.strictEqual(deriveLicenseStatus(true, false), "expired");
   console.log("ok: license status derives as active/expired/null");
+
+  // 43. Timeout messages carry the retry CTA of the UI they were raised in
+  assert.ok(ANALYSIS_TIMEOUT_MESSAGE.includes("Analyze safely"));
+  assert.ok(buildTimeoutMessage(FOLLOW_UP_RETRY_LABEL).includes(FOLLOW_UP_RETRY_LABEL));
+  assert.ok(
+    describePuterError(new DiagnosisTimeoutError(ANALYSIS_TIMEOUT_MESSAGE)).includes(
+      "Analyze safely"
+    ),
+    "form timeout errors name the form's submit button"
+  );
+  assert.ok(
+    describePuterError(new DiagnosisTimeoutError(buildTimeoutMessage(FOLLOW_UP_RETRY_LABEL))).includes(
+      FOLLOW_UP_RETRY_LABEL
+    ),
+    "follow-up timeout errors name the follow-up button"
+  );
+  assert.ok(
+    describePuterError("request timed out", FOLLOW_UP_RETRY_LABEL).includes(FOLLOW_UP_RETRY_LABEL),
+    "string timeouts honor the passed retry CTA"
+  );
+  console.log("ok: timeout messages name the retry button of the current UI");
+
+  // 44. Estimate quota policy: never count or lock for Pro users, emergencies,
+  // re-opened reports, or while the stored license is still validating
+  const freeFresh = { consumeQuota: true, isPro: false, validating: false, isEmergency: false };
+  assert.strictEqual(shouldConsumeEstimate(freeFresh), true);
+  assert.strictEqual(
+    shouldConsumeEstimate({ ...freeFresh, isPro: true }),
+    false,
+    "Pro users never consume free slots"
+  );
+  assert.strictEqual(
+    shouldConsumeEstimate({ ...freeFresh, validating: true }),
+    false,
+    "no consumption while the license is validating"
+  );
+  assert.strictEqual(
+    shouldConsumeEstimate({ ...freeFresh, isEmergency: true }),
+    false,
+    "emergencies never consume"
+  );
+  assert.strictEqual(
+    shouldConsumeEstimate({ ...freeFresh, consumeQuota: false }),
+    false,
+    "re-opened reports never consume"
+  );
+  store.delete("garage-ghost:quota:v1");
+  assert.strictEqual(shouldLockEstimates(freeFresh), false, "fresh quota is not locked");
+  store.set("garage-ghost:quota:v1", JSON.stringify({ date: todayKey(), count: 3 }));
+  assert.strictEqual(shouldLockEstimates(freeFresh), true, "exhausted quota is locked");
+  assert.strictEqual(
+    shouldLockEstimates({ ...freeFresh, isPro: true }),
+    false,
+    "Pro never locks, even at zero remaining"
+  );
+  assert.strictEqual(
+    shouldLockEstimates({ ...freeFresh, validating: true }),
+    false,
+    "no locking while the license is validating"
+  );
+  store.delete("garage-ghost:quota:v1");
+  console.log("ok: estimate quota policy respects Pro, emergencies and license validation");
+
+  // 45. Demo mode never claims an attached photo was analyzed
+  const withPhoto = await runDiagnosis({
+    ...DEMO_INPUT,
+    image: { name: "light.png", size: 1, type: "image/png" } as unknown as File,
+  });
+  assert.strictEqual(withPhoto.imageIncluded, false, "demo results never include a photo");
+  console.log("ok: demo results never claim photo analysis");
 
   console.log("\nAll smoke tests passed ✅");
 }

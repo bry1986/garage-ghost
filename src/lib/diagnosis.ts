@@ -5,6 +5,7 @@ import {
   ANALYSIS_TIMEOUT_HINT_MS,
   ANALYSIS_TIMEOUT_MS,
   CONFIDENCE_LEVELS,
+  DANGEROUS_SYMPTOM_CHIPS,
   DEFAULT_MODEL,
   FALLBACK_MODELS,
   RISK_LEVELS,
@@ -45,6 +46,12 @@ export interface DiagnosisInput {
 export interface DiagnosisOutput {
   result: DiagnosticResult;
   source: DiagnosisSource;
+  /**
+   * True when an attached photo was actually sent with the analysis. False
+   * when no photo was attached, when the photo path failed and analysis
+   * retried text-only, or in demo mode (photos are never analyzed locally).
+   */
+  imageIncluded: boolean;
 }
 
 export function buildSystemPrompt(language: ResponseLanguage): string {
@@ -284,8 +291,16 @@ export class DiagnosisTimeoutError extends Error {
   }
 }
 
-export const ANALYSIS_TIMEOUT_MESSAGE =
-  "The AI request took too long and was cancelled. It may still be waiting for a Puter sign-in that never completed, or the service may be slow. Close any leftover window and click \u201cAnalyze safely\u201d to try again.";
+/** The retry button a user can click after a timed-out analysis (differs per UI). */
+export const FOLLOW_UP_RETRY_LABEL = "Ask the AI Mechanic";
+
+/** Build the timeout message with the retry action that exists in the current UI. */
+export function buildTimeoutMessage(retryAction: string): string {
+  return `The AI request took too long and was cancelled. It may still be waiting for a Puter sign-in that never completed, or the service may be slow. Close any leftover window and click \u201c${retryAction}\u201d to try again.`;
+}
+
+/** Timeout message used on the diagnosis form (the submit button is “Analyze safely”). */
+export const ANALYSIS_TIMEOUT_MESSAGE = buildTimeoutMessage("Analyze safely");
 
 /**
  * Rejects with a `DiagnosisTimeoutError` if `promise` does not settle within
@@ -356,11 +371,15 @@ export function isImageRelatedError(error: unknown): boolean {
   return /image|vision|media|file|input\[0\]/i.test(lower);
 }
 
-export function describePuterError(error: unknown): string {
+export function describePuterError(error: unknown, retryAction = "Analyze safely"): string {
   const message = toReadableError(error).trim();
   const lower = message.toLowerCase();
-  if (error instanceof DiagnosisTimeoutError || /timed out|took too long/i.test(lower)) {
-    return ANALYSIS_TIMEOUT_MESSAGE;
+  if (error instanceof DiagnosisTimeoutError) {
+    // The error message already carries the retry CTA for the UI it was raised in.
+    return error.message;
+  }
+  if (/timed out|took too long/i.test(lower)) {
+    return buildTimeoutMessage(retryAction);
   }
   if (/sign\s?in|auth|login|token|cancell?ed/i.test(lower)) {
     return "Puter sign-in was cancelled or is required. Please try again and complete the Puter sign-in dialog.";
@@ -396,17 +415,14 @@ export function isDemoMode(): boolean {
  */
 async function chatWithFallback(
   request: (model: string) => Promise<ChatResponse>,
-  onStatus?: (status: string) => void
+  onStatus?: (status: string) => void,
+  timeoutMessage: string = ANALYSIS_TIMEOUT_MESSAGE
 ): Promise<string> {
   const attempts = [DEFAULT_MODEL, ...FALLBACK_MODELS];
   let lastError: unknown = new Error("No AI model could be used.");
   for (const model of attempts) {
     try {
-      const response = await withTimeout(
-        request(model),
-        ANALYSIS_TIMEOUT_MS,
-        ANALYSIS_TIMEOUT_MESSAGE
-      );
+      const response = await withTimeout(request(model), ANALYSIS_TIMEOUT_MS, timeoutMessage);
       return extractResponseText(response);
     } catch (error) {
       lastError = error;
@@ -439,7 +455,8 @@ export async function runDiagnosis(
 
   if (isDemoMode()) {
     await delay(900);
-    return { result: buildDemoResult(input), source: "demo" };
+    // Demo mode never analyzes photos, so imageIncluded is always false.
+    return { result: buildDemoResult(input), source: "demo", imageIncluded: false };
   }
 
   onStatus?.("Preparing your vehicle report…");
@@ -453,6 +470,10 @@ export async function runDiagnosis(
   const clearHint = scheduleStuckHint(onStatus);
   try {
     let text: string;
+    // Tracks whether the attached photo actually reached the analysis; set to
+    // false when the image path fails and we retry text-only so the result
+    // never claims a photo was included when it wasn't.
+    let imageIncluded = Boolean(input.image);
     try {
       text = await chatWithFallback((model) => {
         const options: ChatOptions = {
@@ -477,6 +498,7 @@ export async function runDiagnosis(
       // blocks a user who wrote a full symptom description. Auth, quota,
       // network and model errors are not image-specific and surface as-is.
       if (input.image && isImageRelatedError(error) && !isModelRelatedError(error)) {
+        imageIncluded = false;
         console.error("Garage Ghost: image analysis failed, retrying without the photo:", error);
         onStatus?.("The photo could not be analyzed — retrying with your written description…");
         text = await chatWithFallback(
@@ -492,7 +514,7 @@ export async function runDiagnosis(
         throw error;
       }
     }
-    return { result: parseDiagnosticJson(text), source: "puter" };
+    return { result: parseDiagnosticJson(text), source: "puter", imageIncluded };
   } finally {
     clearHint();
   }
@@ -589,7 +611,9 @@ export async function askFollowUp(
             max_tokens: 600,
           }
         ),
-      onStatus
+      onStatus,
+      // The follow-up box has its own submit button — name it in the timeout error.
+      buildTimeoutMessage(FOLLOW_UP_RETRY_LABEL)
     );
   } finally {
     clearHint();
@@ -601,10 +625,9 @@ export async function askFollowUp(
 // ---------------------------------------------------------------------------
 
 function buildDemoResult(input: DiagnosisInput): DiagnosticResult {
+  // Single source of truth: the same list that drives the form's red warning.
   const stopNow = input.symptomChips.some((chip) =>
-    ["Smoke", "Fuel smell", "Overheating", "Steering issue", "Strange electrical smell"].includes(
-      chip
-    )
+    (DANGEROUS_SYMPTOM_CHIPS as readonly string[]).includes(chip)
   );
   const riskLevel: RiskLevel = stopNow ? "STOP_NOW" : "BOOK_SERVICE";
   const vehicleLabel = [input.vehicle.brand, input.vehicle.model, input.vehicle.year]

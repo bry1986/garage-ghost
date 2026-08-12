@@ -31,7 +31,8 @@ function isSavedDiagnosis(value: unknown): value is SavedDiagnosis {
   return (
     typeof resultRecord.riskLevel === "string" &&
     RISK_LEVELS.includes(resultRecord.riskLevel as RiskLevel) &&
-    (typeof confidence !== "string" || CONFIDENCE_LEVELS.includes(confidence as Confidence)) &&
+    typeof confidence === "string" &&
+    CONFIDENCE_LEVELS.includes(confidence as Confidence) &&
     typeof resultRecord.summary === "string" &&
     typeof resultRecord.mechanicReport === "string"
   );
