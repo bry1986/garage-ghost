@@ -19,6 +19,7 @@ const NAV_LINKS: NavLink[] = [
   { href: "/diagnose", label: "Diagnose" },
   { href: "/vin", label: "VIN decoder" },
   { href: "/history", label: "History" },
+  { href: "/faq", label: "FAQ" },
 ];
 
 /** Well-known OBD-II codes — the landing marquee, an on-brand stand-in for a logo strip. */

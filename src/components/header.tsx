@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { href: "/diagnose", label: "Diagnose" },
   { href: "/vin", label: "VIN decoder" },
   { href: "/history", label: "History" },
+  { href: "/faq", label: "FAQ" },
 ];
 
 export function Header() {

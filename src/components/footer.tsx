@@ -61,6 +61,14 @@ export function Footer() {
                   Diagnose a warning
                 </Link>
               </li>
+              <li>
+                <Link
+                  href="/faq"
+                  className="text-sm text-zinc-400 underline-offset-2 transition-colors hover:text-brand hover:underline"
+                >
+                  FAQ
+                </Link>
+              </li>
             </ul>
           </div>
         </div>
