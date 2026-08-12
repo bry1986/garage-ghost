@@ -46,24 +46,6 @@ import {
 import { COST_DISCLAIMER, estimateRepairCosts, formatCostRange } from "../src/lib/costs";
 import { listDtcCodes, lookupDtc, normalizeDtcCode } from "../src/lib/dtc";
 import {
-  activateLicense,
-  clearProState,
-  consumeEstimate,
-  deactivateLicense,
-  deriveLicenseStatus,
-  getBillingPortalUrl,
-  getDeviceId,
-  getProState,
-  getRemainingEstimateCount,
-  isCheckoutConfigured,
-  isEstimateLocked,
-  saveProState,
-  shouldConsumeEstimate,
-  shouldLockEstimates,
-  todayKey,
-  validateLicense,
-} from "../src/lib/pro";
-import {
   clearHistory,
   deleteDiagnosis,
   deleteProfile,
@@ -147,7 +129,7 @@ async function main() {
   assert.strictEqual(dangerous.result.riskLevel, "STOP_NOW");
   console.log("ok: smoke chip escalates to STOP_NOW");
 
-  // 7b. Demo escalation matches DANGEROUS_SYMPTOM_CHIPS (hard braking included)
+  // 8. Demo escalation matches DANGEROUS_SYMPTOM_CHIPS (hard braking included)
   const hardBraking = await runDiagnosis({
     vehicle: { brand: "Toyota", model: "Yaris", year: "2015" },
     symptoms: "Brake pedal feels hard and the car pulls to one side",
@@ -161,7 +143,7 @@ async function main() {
   );
   console.log("ok: hard braking chip escalates via DANGEROUS_SYMPTOM_CHIPS");
 
-  // 8. Storage round-trip
+  // 9. Storage round-trip
   clearHistory();
   assert.strictEqual(getHistory().length, 0);
   const entry = {
@@ -182,7 +164,7 @@ async function main() {
   assert.strictEqual(getHistory().length, 0);
   console.log("ok: storage save/delete/clear round-trip");
 
-  // 9. Malformed localStorage data is handled safely
+  // 10. Malformed localStorage data is handled safely
   store.set("garage-ghost:history:v1", "this is { not json");
   assert.deepStrictEqual(getHistory(), []);
   store.set(
@@ -199,7 +181,7 @@ async function main() {
   assert.strictEqual(getHistory().length, 0, "entries with invalid riskLevel must be filtered");
   console.log("ok: malformed localStorage data handled safely");
 
-  // 9b. Stored history with a non-string confidence is filtered — it would
+  // 11. Stored history with a non-string confidence is filtered — it would
   // crash the report render (confidence.charAt on a number)
   const validConfidenceEntry = {
     id: "c-valid",
@@ -237,12 +219,12 @@ async function main() {
   store.delete("garage-ghost:history:v1");
   console.log("ok: stored history filters non-string confidence values");
 
-  // 10. Timeout guard: settles when the promise wins
+  // 12. Timeout guard: settles when the promise wins
   const fast = await withTimeout(Promise.resolve("done"), 500, "never");
   assert.strictEqual(fast, "done");
   console.log("ok: withTimeout resolves when the promise settles in time");
 
-  // 11. Timeout guard: rejects with a clear error when the deadline passes
+  // 13. Timeout guard: rejects with a clear error when the deadline passes
   await assert.rejects(
     withTimeout(
       new Promise((resolve) => setTimeout(() => resolve("late"), 500)),
@@ -253,11 +235,11 @@ async function main() {
   );
   console.log("ok: withTimeout rejects with DiagnosisTimeoutError on deadline");
 
-  // 12. describePuterError explains timeouts clearly
+  // 14. describePuterError explains timeouts clearly
   assert.ok(describePuterError(new DiagnosisTimeoutError("took too long")).includes("took too long"));
   console.log("ok: describePuterError explains the timeout in plain language");
 
-  // 13. Plain-object errors (Puter shape) must not become "[object Object]"
+  // 15. Plain-object errors (Puter shape) must not become "[object Object]"
   assert.strictEqual(toReadableError({ message: "Insufficient quota" }), "Insufficient quota");
   assert.ok(
     describePuterError({ message: "Insufficient quota" }).includes("usage or credit limit"),
@@ -265,7 +247,7 @@ async function main() {
   );
   console.log("ok: plain-object errors are read via their message property");
 
-  // 14. Nested error shapes and error codes
+  // 16. Nested error shapes and error codes
   assert.strictEqual(
     toReadableError({ error: { message: "Model not found" } }),
     "Model not found"
@@ -273,13 +255,13 @@ async function main() {
   assert.ok(describePuterError({ code: "auth_token_missing" }).includes("sign-in"));
   console.log("ok: nested errors and errorCode-only errors are handled");
 
-  // 15. Unreadable rejections fall back to a friendly message, never "[object Object]"
+  // 17. Unreadable rejections fall back to a friendly message, never "[object Object]"
   const generic = describePuterError({});
   assert.ok(!generic.includes("[object Object]"), "UI must never show [object Object]");
   assert.ok(generic.includes("Something went wrong"));
   console.log("ok: unreadable rejections get a friendly fallback message");
 
-  // 16. Chat messages must NOT carry an `images` field (the API rejects it:
+  // 18. Chat messages must NOT carry an `images` field (the API rejects it:
   // 400 Unknown parameter 'input[0].images')
   const chatMessages = buildChatMessages(DEMO_INPUT);
   assert.strictEqual(chatMessages.length, 2);
@@ -289,7 +271,7 @@ async function main() {
   assert.strictEqual(chatMessages[1].content, buildUserPrompt(DEMO_INPUT));
   console.log("ok: chat messages omit the rejected images field");
 
-  // 17. Rate-limit errors get a clear message
+  // 19. Rate-limit errors get a clear message
   assert.ok(
     describePuterError({ message: "429 Too Many Requests - rate limit exceeded" }).includes(
       "rate-limiting"
@@ -297,7 +279,7 @@ async function main() {
   );
   console.log("ok: rate-limit errors are explained clearly");
 
-  // 18. Model-not-found errors are recognized as model-related
+  // 20. Model-not-found errors are recognized as model-related
   assert.ok(isModelRelatedError("Model not found: gpt-5.6-luna"));
   assert.ok(isModelRelatedError({ error: { message: "unknown model" } }));
   assert.ok(!isModelRelatedError("Insufficient quota"));
@@ -307,7 +289,7 @@ async function main() {
   );
   console.log("ok: model-not-found errors are detected and explained");
 
-  // 19. Non-English responses: French prose around a fenced JSON block
+  // 21. Non-English responses: French prose around a fenced JSON block
   const frenchWrapped =
     "Voici le résultat :\n```json\n" +
     JSON.stringify({
@@ -327,7 +309,7 @@ async function main() {
   assert.strictEqual(frenchParsed.summary, "Résumé en français.");
   console.log("ok: French prose around fenced JSON parses");
 
-  // 20. Arabic text inside JSON values (RTL script)
+  // 22. Arabic text inside JSON values (RTL script)
   const arabicParsed = parseDiagnosticJson(
     JSON.stringify({
       detectedWarning: "مشكلة محتملة",
@@ -345,7 +327,7 @@ async function main() {
   assert.strictEqual(arabicParsed.detectedWarning, "مشكلة محتملة");
   console.log("ok: Arabic text inside JSON parses");
 
-  // 21. Truncation repair: valid JSON followed by prose with a stray brace
+  // 23. Truncation repair: valid JSON followed by prose with a stray brace
   const truncated =
     JSON.stringify({
       detectedWarning: "Possible concern",
@@ -363,14 +345,14 @@ async function main() {
   assert.strictEqual(repaired.riskLevel, "STOP_NOW");
   console.log("ok: truncated responses with stray braces are repaired");
 
-  // 22. Valid JSON with the wrong shape keeps its precise error
+  // 24. Valid JSON with the wrong shape keeps its precise error
   assert.throws(
     () => parseDiagnosticJson('{"riskLevel":"BOOK_SERVICE","summary":"x"}'),
     /missing required fields/
   );
   console.log("ok: wrong-shape JSON reports the precise error, not a parse error");
 
-  // 23. DTC lookup: exact match, normalization, unknown/empty handling
+  // 25. DTC lookup: exact match, normalization, unknown/empty handling
   const misfire = lookupDtc("P0300");
   assert.ok(misfire, "P0300 must exist");
   assert.strictEqual(misfire.code, "P0300");
@@ -385,7 +367,7 @@ async function main() {
   assert.strictEqual(new Set(listDtcCodes()).size, listDtcCodes().length, "codes must be unique");
   console.log("ok: DTC lookup matches, normalizes, and handles unknown codes");
 
-  // 24. Vision prompt (image path) embeds the safety system prompt + vehicle data
+  // 26. Vision prompt (image path) embeds the safety system prompt + vehicle data
   const vision = buildVisionPrompt(DEMO_INPUT);
   assert.ok(vision.includes("Garage Ghost"));
   assert.ok(vision.includes("Return JSON only"));
@@ -393,7 +375,7 @@ async function main() {
   assert.ok(vision.includes("loss of power above 2500 RPM"));
   console.log("ok: vision prompt embeds system rules and vehicle context");
 
-  // 25. Vehicle profile storage round-trip + malformed-data safety
+  // 27. Vehicle profile storage round-trip + malformed-data safety
   getProfiles()
     .map((p) => p.id)
     .forEach((id) => deleteProfile(id));
@@ -416,7 +398,7 @@ async function main() {
   deleteProfile("profile-1");
   console.log("ok: vehicle profiles save, validate, and delete safely");
 
-  // 26. Follow-up prompts carry context and the question
+  // 28. Follow-up prompts carry context and the question
   const followUpInput = {
     vehicle: { brand: "Audi", model: "A3", year: "2017", fuelType: "Diesel" },
     symptoms: "Orange engine light and loss of power above 2500 RPM",
@@ -435,7 +417,7 @@ async function main() {
   assert.ok(followUpAnswer.includes("It vibrates more when cold"));
   console.log("ok: follow-up prompts and demo-mode answer work");
 
-  // 27. Image-specific errors are recognized so the app can retry text-only
+  // 29. Image-specific errors are recognized so the app can retry text-only
   assert.ok(isImageRelatedError("400 Unknown parameter: 'input[0].images'"));
   assert.ok(isImageRelatedError({ message: "The image format is not supported" }));
   assert.ok(isImageRelatedError("vision model requires an image URL"));
@@ -444,7 +426,7 @@ async function main() {
   assert.ok(!isImageRelatedError("Model not found"));
   console.log("ok: image-related errors are detected for the text-only retry");
 
-  // 28. Repair cost estimates match typical causes (keyword → range)
+  // 30. Repair cost estimates match typical causes (keyword → range)
   const costs = estimateRepairCosts({
     detectedWarning: "Check engine light",
     summary: "Possible misfire",
@@ -459,7 +441,7 @@ async function main() {
   assert.strictEqual(costs.currency, "USD");
   console.log("ok: repair cost estimates match known causes");
 
-  // 29. DTC codes inside symptoms drive the estimate (P0300 → ignition)
+  // 31. DTC codes inside symptoms drive the estimate (P0300 → ignition)
   const dtcCosts = estimateRepairCosts({
     detectedWarning: "Possible concern",
     summary: "",
@@ -482,7 +464,7 @@ async function main() {
   );
   console.log("ok: DTC codes and ABS causes drive cost estimates");
 
-  // 30. STOP_NOW suppresses numeric estimates (safety first)
+  // 32. STOP_NOW suppresses numeric estimates (safety first)
   const emergency = estimateRepairCosts({
     detectedWarning: "Smoke from the bonnet",
     summary: "",
@@ -493,7 +475,7 @@ async function main() {
   assert.strictEqual(emergency.estimates.length, 0, "no numeric estimate in an emergency");
   console.log("ok: emergency results show no cost estimate");
 
-  // 31. Unknown issues fall back to a broad generic range
+  // 33. Unknown issues fall back to a broad generic range
   const fallback = estimateRepairCosts({
     detectedWarning: "Unusual clicking sound",
     summary: "",
@@ -505,142 +487,13 @@ async function main() {
   assert.ok(fallback.estimates[0].min > 0);
   console.log("ok: unmatched issues get a broad generic estimate");
 
-  // 32. Range formatter + disclaimer
+  // 34. Range formatter + disclaimer
   assert.strictEqual(formatCostRange({ label: "x", min: 150, max: 600 }), "$150–$600");
   assert.strictEqual(formatCostRange({ label: "x", min: 1000, max: 2500 }), "$1,000–$2,500");
   assert.ok(COST_DISCLAIMER.includes("written quote"));
   console.log("ok: cost ranges format as USD and carry a disclaimer");
 
-  // 33. Pro: local date key is YYYY-MM-DD in local time
-  assert.strictEqual(todayKey(new Date(2026, 7, 7)), "2026-08-07");
-  assert.strictEqual(todayKey(new Date(2026, 0, 3)), "2026-01-03");
-  console.log("ok: todayKey formats local dates as YYYY-MM-DD");
-
-  // 34. Pro: license state persists and malformed data is ignored
-  clearProState();
-  assert.strictEqual(getProState(), null, "no stored license initially");
-  saveProState({ licenseKey: "abc-123", instanceId: "inst-1", activatedAt: 1 });
-  assert.strictEqual(getProState()?.licenseKey, "abc-123");
-  store.set("garage-ghost:pro:v1", "{broken json");
-  assert.strictEqual(getProState(), null, "malformed license storage is ignored");
-  store.set("garage-ghost:pro:v1", JSON.stringify({ licenseKey: "" }));
-  assert.strictEqual(getProState(), null, "empty license key is not a valid state");
-  clearProState();
-  console.log("ok: license state persists, validates shape, and clears");
-
-  // 35. Pro: device id is stable per device
-  const deviceA = getDeviceId();
-  const deviceB = getDeviceId();
-  assert.strictEqual(deviceA, deviceB, "device id must be stable across calls");
-  assert.ok(deviceA.length > 0);
-  console.log("ok: device id is stable and persisted");
-
-  // 36. Pro: activation calls the License API and persists state
-  const fetchLog: Array<{ url: string; body: unknown }> = [];
-  const stubFetch = (url: string, init?: RequestInit): Promise<Response> => {
-    const body = JSON.parse(String(init?.body ?? "{}")) as Record<string, string>;
-    fetchLog.push({ url, body });
-    const respond = (data: Record<string, unknown>, status = 200) =>
-      Promise.resolve(
-        new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json" } })
-      );
-    if (url.endsWith("/licenses/activate")) {
-      return respond({ activated: true, instance: { id: "inst-9", name: body.instance_name } });
-    }
-    if (url.endsWith("/licenses/validate")) {
-      return respond({ valid: true, license_key: { status: "active" } });
-    }
-    if (url.endsWith("/licenses/deactivate")) {
-      return respond({ deactivated: true });
-    }
-    return respond({ error: "not found" }, 404);
-  };
-  (globalThis as Record<string, unknown>).fetch = stubFetch as unknown as typeof fetch;
-
-  const activated = await activateLicense("key-1234");
-  assert.strictEqual(activated.licenseKey, "key-1234");
-  assert.strictEqual(activated.instanceId, "inst-9");
-  assert.strictEqual(fetchLog[0].url, "https://api.lemonsqueezy.com/v1/licenses/activate");
-  assert.strictEqual((fetchLog[0].body as Record<string, string>).license_key, "key-1234");
-  assert.strictEqual(getProState()?.licenseKey, "key-1234", "activation persists Pro state");
-  console.log("ok: license activation calls the API and persists state");
-
-  // 37. Pro: empty or invalid keys are rejected with a readable error
-  await assert.rejects(() => activateLicense("   "), /Enter your license key/);
-  (globalThis as Record<string, unknown>).fetch = (async () =>
-    new Response(JSON.stringify({ error: "The license key is expired." }), {
-      status: 400,
-      headers: { "Content-Type": "application/json" },
-    })) as unknown as typeof fetch;
-  await assert.rejects(() => activateLicense("expired-key"), /expired/);
-  console.log("ok: invalid license keys are rejected with the API error message");
-
-  // 38. Pro: validation keeps Pro for active licenses, clears for expired ones
-  (globalThis as Record<string, unknown>).fetch = stubFetch as unknown as typeof fetch;
-  const active = await validateLicense({ licenseKey: "key-1234", instanceId: "inst-9", activatedAt: 1 });
-  assert.strictEqual(active, true);
-  assert.strictEqual(getProState()?.licenseKey, "key-1234", "active license keeps stored state");
-
-  (globalThis as Record<string, unknown>).fetch = (async () =>
-    new Response(JSON.stringify({ valid: true, license_key: { status: "expired" } }), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    })) as unknown as typeof fetch;
-  const expired = await validateLicense({ licenseKey: "key-1234", instanceId: "inst-9", activatedAt: 1 });
-  assert.strictEqual(expired, false, "expired subscription loses Pro");
-  assert.strictEqual(getProState(), null, "expired license clears stored state");
-
-  // Transient network failure must NOT yank Pro
-  (globalThis as Record<string, unknown>).fetch = (async () => {
-    throw new Error("network down");
-  }) as unknown as typeof fetch;
-  saveProState({ licenseKey: "key-1234", instanceId: "inst-9", activatedAt: 1 });
-  const transient = await validateLicense({ licenseKey: "key-1234", instanceId: "inst-9", activatedAt: 1 });
-  assert.strictEqual(transient, true, "transient errors keep stored Pro");
-  assert.ok(getProState(), "stored state survives a transient validation failure");
-  clearProState();
-  console.log("ok: validation keeps Pro for active licenses and clears expired ones");
-
-  // 39. Pro: deactivation calls the API and clears local state
-  (globalThis as Record<string, unknown>).fetch = stubFetch as unknown as typeof fetch;
-  saveProState({ licenseKey: "key-1234", instanceId: "inst-9", activatedAt: 1 });
-  await deactivateLicense();
-  assert.strictEqual(getProState(), null, "deactivation clears local state");
-  console.log("ok: license deactivation clears local Pro state");
-
-  // 40. Pro: free-tier estimate quota caps at 3 per day and resets daily
-  store.delete("garage-ghost:quota:v1");
-  assert.strictEqual(getRemainingEstimateCount(), 3);
-  const first = consumeEstimate();
-  assert.strictEqual(first.remaining, 2);
-  consumeEstimate();
-  consumeEstimate();
-  assert.strictEqual(getRemainingEstimateCount(), 0, "quota is exhausted after 3 uses");
-  assert.strictEqual(isEstimateLocked(), true);
-  const afterLocked = consumeEstimate();
-  assert.strictEqual(afterLocked.remaining, 0, "locked state never goes negative");
-  store.set(
-    "garage-ghost:quota:v1",
-    JSON.stringify({ date: todayKey(new Date(2026, 7, 6)), count: 3 })
-  );
-  assert.strictEqual(getRemainingEstimateCount(), 3, "a new day resets the allowance");
-  store.set("garage-ghost:quota:v1", "{broken json");
-  assert.strictEqual(getRemainingEstimateCount(), 3, "malformed quota storage resets safely");
-  console.log("ok: estimate quota caps at 3/day, resets daily, and survives malformed storage");
-
-  // 41. Pro: checkout env defaults are safe when unset
-  assert.strictEqual(isCheckoutConfigured(), false, "no checkout URLs configured in tests");
-  assert.strictEqual(getBillingPortalUrl(), "", "no billing URL without a store slug");
-  console.log("ok: unset checkout env vars degrade gracefully");
-
-  // 42. Pro: license status derivation for the header badge
-  assert.strictEqual(deriveLicenseStatus(false, true), null, "no stored license → no status");
-  assert.strictEqual(deriveLicenseStatus(false, false), null, "no stored license → no status");
-  assert.strictEqual(deriveLicenseStatus(true, true), "active");
-  assert.strictEqual(deriveLicenseStatus(true, false), "expired");
-  console.log("ok: license status derives as active/expired/null");
-
-  // 43. Timeout messages carry the retry CTA of the UI they were raised in
+  // 35. Timeout messages carry the retry CTA of the UI they were raised in
   assert.ok(ANALYSIS_TIMEOUT_MESSAGE.includes("Analyze safely"));
   assert.ok(buildTimeoutMessage(FOLLOW_UP_RETRY_LABEL).includes(FOLLOW_UP_RETRY_LABEL));
   assert.ok(
@@ -661,48 +514,7 @@ async function main() {
   );
   console.log("ok: timeout messages name the retry button of the current UI");
 
-  // 44. Estimate quota policy: never count or lock for Pro users, emergencies,
-  // re-opened reports, or while the stored license is still validating
-  const freeFresh = { consumeQuota: true, isPro: false, validating: false, isEmergency: false };
-  assert.strictEqual(shouldConsumeEstimate(freeFresh), true);
-  assert.strictEqual(
-    shouldConsumeEstimate({ ...freeFresh, isPro: true }),
-    false,
-    "Pro users never consume free slots"
-  );
-  assert.strictEqual(
-    shouldConsumeEstimate({ ...freeFresh, validating: true }),
-    false,
-    "no consumption while the license is validating"
-  );
-  assert.strictEqual(
-    shouldConsumeEstimate({ ...freeFresh, isEmergency: true }),
-    false,
-    "emergencies never consume"
-  );
-  assert.strictEqual(
-    shouldConsumeEstimate({ ...freeFresh, consumeQuota: false }),
-    false,
-    "re-opened reports never consume"
-  );
-  store.delete("garage-ghost:quota:v1");
-  assert.strictEqual(shouldLockEstimates(freeFresh), false, "fresh quota is not locked");
-  store.set("garage-ghost:quota:v1", JSON.stringify({ date: todayKey(), count: 3 }));
-  assert.strictEqual(shouldLockEstimates(freeFresh), true, "exhausted quota is locked");
-  assert.strictEqual(
-    shouldLockEstimates({ ...freeFresh, isPro: true }),
-    false,
-    "Pro never locks, even at zero remaining"
-  );
-  assert.strictEqual(
-    shouldLockEstimates({ ...freeFresh, validating: true }),
-    false,
-    "no locking while the license is validating"
-  );
-  store.delete("garage-ghost:quota:v1");
-  console.log("ok: estimate quota policy respects Pro, emergencies and license validation");
-
-  // 45. Demo mode never claims an attached photo was analyzed
+  // 36. Demo mode never claims an attached photo was analyzed
   const withPhoto = await runDiagnosis({
     ...DEMO_INPUT,
     image: { name: "light.png", size: 1, type: "image/png" } as unknown as File,

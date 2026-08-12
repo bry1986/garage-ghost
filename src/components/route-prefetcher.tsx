@@ -8,13 +8,13 @@ import { useEffect } from "react";
  * even when the corresponding nav links are hidden inside the mobile drawer.
  *
  * Next.js only prefetches `<Link>` targets that are in the viewport, so at
- * phone widths `/history` and `/pricing` are never prefetched — their chunks
- * only load on first visit to the route. With this prefetcher running in the
- * root layout, the chunks are fetched right after load (and again once the
- * service worker is controlling the page), so those routes hydrate fully
- * offline without the user ever having opened them.
+ * phone widths `/history` is never prefetched — its chunks only load on first
+ * visit to the route. With this prefetcher running in the root layout, the
+ * chunks are fetched right after load (and again once the service worker is
+ * controlling the page), so those routes hydrate fully offline without the
+ * user ever having opened them.
  */
-const ROUTES_TO_PREFETCH = ["/diagnose", "/vin", "/history", "/pricing"] as const;
+const ROUTES_TO_PREFETCH = ["/diagnose", "/vin", "/history"] as const;
 
 export function RoutePrefetcher() {
   const router = useRouter();

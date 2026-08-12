@@ -3,9 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { AlertTriangle, CheckCircle2, Crown, Menu, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { Logo } from "@/components/logo";
-import { usePro } from "@/components/pro-provider";
 import { APP_NAME } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
@@ -13,13 +12,10 @@ const NAV_ITEMS = [
   { href: "/diagnose", label: "Diagnose" },
   { href: "/vin", label: "VIN decoder" },
   { href: "/history", label: "History" },
-  { href: "/pricing", label: "Pricing" },
 ];
 
 export function Header() {
   const pathname = usePathname();
-  const { isPro, licenseStatus, validating, openModal } = usePro();
-  const licenseExpired = !isPro && licenseStatus === "expired";
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   // Close the mobile drawer on route change and lock scroll while open.
@@ -68,55 +64,6 @@ export function Header() {
 
   const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
 
-  const proLabel = validating
-    ? "Pro…"
-    : isPro
-      ? "Pro"
-      : licenseExpired
-        ? "Pro expired"
-        : "Go Pro";
-
-  const proTitle = validating
-    ? "Checking license…"
-    : isPro
-      ? "Pro license active"
-      : licenseExpired
-        ? "Your Pro license has expired — click to renew"
-        : "Upgrade to Pro";
-
-  const proAria = isPro
-    ? "Open Pro settings — license active"
-    : licenseExpired
-      ? "Renew Pro — license expired"
-      : "Upgrade to Pro";
-
-  const ProBadge = (
-    <button
-      type="button"
-      onClick={openModal}
-      title={proTitle}
-      aria-label={proAria}
-      className={cn(
-        "inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-        isPro
-          ? "text-emerald-600 hover:bg-zinc-800/60 dark:text-emerald-400"
-          : licenseExpired
-            ? "border border-red-500/40 bg-red-500/5 text-red-600 hover:border-red-400/60 hover:bg-red-500/10 dark:text-red-300"
-            : "border border-brand/40 bg-brand/10 text-brand hover:border-brand/60 hover:bg-brand/15"
-      )}
-    >
-      {isPro ? (
-        <CheckCircle2 className="h-4 w-4" aria-hidden />
-      ) : licenseExpired ? (
-        <AlertTriangle className="h-4 w-4" aria-hidden />
-      ) : (
-        <Crown className="h-4 w-4" aria-hidden />
-      )}
-      {proLabel}
-      {isPro && <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" aria-hidden />}
-    </button>
-  );
-
   return (
     <header className="sticky top-0 z-40 border-b border-zinc-800 bg-zinc-950/90 backdrop-blur">
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 sm:px-6">
@@ -162,8 +109,7 @@ export function Header() {
               })}
             </ul>
           </nav>
-          <div className="hidden md:block">{ProBadge}</div>
-          {/* Mobile: menu + compact Pro trigger */}
+          {/* Mobile: menu trigger */}
           <button
             ref={menuButtonRef}
             type="button"
@@ -241,7 +187,6 @@ export function Header() {
                 </Link>
               ))}
             </nav>
-            <div className="border-t border-zinc-800 p-3">{ProBadge}</div>
           </div>
         </div>
       )}

@@ -16,7 +16,7 @@ const LEGAL_CONTENT: Record<
     body: [
       `${APP_NAME} is designed to be privacy-first: your vehicle details, symptoms and reports are stored only in this browser (localStorage) on your device. They are never uploaded to our servers.`,
       "When you run an AI analysis, your description and optional photo are sent to Puter, whose user-pays model powers the analysis. No API key is used or stored by this app. See Puter's own privacy policy for how they handle data.",
-      "Payments are processed by Lemon Squeezy; we only receive the license-key activation status in your browser. Clearing your browser data removes all locally stored history and licenses.",
+      "Clearing your browser data removes all locally stored history.",
     ],
   },
   terms: {
@@ -25,15 +25,14 @@ const LEGAL_CONTENT: Record<
     body: [
       `${APP_NAME} provides general educational guidance about vehicle warning lights and symptoms. It is not a diagnosis, not a professional inspection, and not a substitute for a qualified mechanic, workshop, or roadside assistance.`,
       "Never work on airbags, brakes, steering, fuel systems, high-voltage EV components, or on a vehicle that is not safely supported. If you see a red warning light, smoke, a fuel smell, overheating, or loss of braking or steering, stop safely and call for professional help.",
-      "By using this service you accept that results may be incomplete or inaccurate, and you use them at your own risk. The free tier is provided as-is; Pro purchases are managed by Lemon Squeezy under their terms.",
+      "By using this service you accept that results may be incomplete or inaccurate, and you use them at your own risk. The service is provided as-is and is completely free of charge.",
     ],
   },
   refunds: {
     title: "Refunds",
     updated: "August 2026",
     body: [
-      "Pro subscriptions and license keys are sold through Lemon Squeezy. Refund requests are handled by Lemon Squeezy in line with their refund policy.",
-      `If you have a problem with a Pro purchase, contact us via the Contact page within 14 days of purchase and we will help resolve it — including processing a refund through Lemon Squeezy where appropriate.`,
+      `${APP_NAME} is completely free to use. There are no purchases, subscriptions, or license keys, so there is nothing to refund.`,
     ],
   },
   contact: {

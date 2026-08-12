@@ -14,7 +14,6 @@ import {
   CircleDollarSign,
   Clipboard,
   Clock,
-  Crown,
   Download,
   HelpCircle,
   Info,
@@ -38,13 +37,6 @@ import {
   type RepairCostEstimateResult,
 } from "@/lib/costs";
 import { askFollowUp, describePuterError, FOLLOW_UP_RETRY_LABEL } from "@/lib/diagnosis";
-import { usePro } from "@/components/pro-provider";
-import {
-  consumeEstimate,
-  FREE_ESTIMATES_PER_DAY,
-  shouldConsumeEstimate,
-  shouldLockEstimates,
-} from "@/lib/pro";
 import { cn } from "@/lib/utils";
 import type {
   Confidence,
@@ -66,12 +58,6 @@ interface DiagnosisResultProps {
   language?: ResponseLanguage;
   /** Called when the user clicks "Start another assessment". */
   onRestart?: () => void;
-  /**
-   * False when viewing a report that was already generated (e.g. from history):
-   * the report is always shown in full and does not count toward the free
-   * 3-estimates-per-day allowance. Only freshly generated results consume quota.
-   */
-  consumeQuota?: boolean;
 }
 
 interface FollowUpItem {
@@ -194,14 +180,11 @@ function MetricBox({
 function buildReportText(
   result: DiagnosticResult,
   vehicleLabel: string,
-  costs: RepairCostEstimateResult,
-  estimatesLocked: boolean
+  costs: RepairCostEstimateResult
 ): string {
   const costLines = costs.isEmergency
     ? ["- Not estimated — emergency situation. Stop safely and request a written quote from a workshop."]
-    : estimatesLocked
-      ? ["- Repair cost estimates are a Pro feature — upgrade to see them here."]
-      : costs.estimates.map((item) => `- ${item.label}: ${formatCostRange(item)}`);
+    : costs.estimates.map((item) => `- ${item.label}: ${formatCostRange(item)}`);
 
   const lines: string[] = [
     "Garage Ghost — Mechanic-ready report",
@@ -276,7 +259,6 @@ export function DiagnosisResult({
   symptoms,
   language = "English",
   onRestart,
-  consumeQuota = true,
 }: DiagnosisResultProps) {
   const [copied, setCopied] = useState(false);
   const [copyError, setCopyError] = useState<string | null>(null);
@@ -301,35 +283,6 @@ export function DiagnosisResult({
     [result, symptoms]
   );
 
-  const { isPro, openModal, validating } = usePro();
-
-  // Free tier: each freshly generated result that shows cost estimates counts
-  // toward the 3/day allowance. Pro users, emergency results, re-opened
-  // reports (consumeQuota=false), and results generated while a stored license
-  // is still being validated are never counted or locked.
-  const quotaBumped = useRef(false);
-  useEffect(() => {
-    const shouldTrack = shouldConsumeEstimate({
-      consumeQuota,
-      isPro,
-      validating,
-      isEmergency: costs.isEmergency,
-    });
-    if (quotaBumped.current || !shouldTrack) return;
-    quotaBumped.current = true;
-    consumeEstimate();
-  }, [consumeQuota, isPro, validating, costs.isEmergency]);
-
-  // Free users see numbers on their first 3 generated results each day, then a
-  // locked state with an upgrade prompt. Emergencies always show the safety
-  // message, and already-generated reports are always shown in full.
-  const estimatesLocked = shouldLockEstimates({
-    consumeQuota,
-    isPro,
-    validating,
-    isEmergency: costs.isEmergency,
-  });
-
   useEffect(() => {
     return () => {
       if (copyTimer.current) clearTimeout(copyTimer.current);
@@ -337,7 +290,7 @@ export function DiagnosisResult({
   }, []);
 
   const handleCopy = async () => {
-    const text = buildReportText(result, vehicleLabel, costs, estimatesLocked);
+    const text = buildReportText(result, vehicleLabel, costs);
     try {
       await navigator.clipboard.writeText(text);
       setCopyError(null);
@@ -411,9 +364,7 @@ export function DiagnosisResult({
   // Combined ballpark across every matched job, e.g. "$180–$2,200".
   const costRangeText = costs.isEmergency
     ? "Not estimated"
-    : estimatesLocked
-      ? "Pro feature"
-      : `$${Math.min(...costs.estimates.map((item) => item.min)).toLocaleString("en-US")}–$${Math.max(...costs.estimates.map((item) => item.max)).toLocaleString("en-US")}`;
+    : `$${Math.min(...costs.estimates.map((item) => item.min)).toLocaleString("en-US")}–$${Math.max(...costs.estimates.map((item) => item.max)).toLocaleString("en-US")}`;
 
   return (
     <>
@@ -506,21 +457,9 @@ export function DiagnosisResult({
                   tileClass="bg-sky-500/15 text-sky-700 dark:text-sky-400"
                   label="Est. cost"
                   value={costRangeText}
-                  valueClass={
-                    costs.isEmergency
-                      ? "text-red-400"
-                      : estimatesLocked
-                        ? "text-amber-600 dark:text-amber-400"
-                        : "text-zinc-100"
-                  }
-                  note={
-                    costs.isEmergency
-                      ? "Stop safely first"
-                      : estimatesLocked
-                        ? "Upgrade for unlimited estimates"
-                        : undefined
-                  }
-                  noteClass={costs.isEmergency ? "text-red-400" : "text-amber-600 dark:text-amber-400"}
+                  valueClass={costs.isEmergency ? "text-red-400" : "text-zinc-100"}
+                  note={costs.isEmergency ? "Stop safely first" : undefined}
+                  noteClass={costs.isEmergency ? "text-red-400" : undefined}
                 />
                 <MetricBox
                   icon={<ShieldAlert className="h-4 w-4" aria-hidden />}
@@ -726,22 +665,6 @@ export function DiagnosisResult({
                           </span>
                         </p>
                       </div>
-                    ) : estimatesLocked ? (
-                      <div className="mt-3 flex-1 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3">
-                        <p className="flex items-start gap-2 text-sm text-amber-700 dark:text-amber-200">
-                          <Crown className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-                          <span>
-                            <span className="font-semibold">
-                              You&apos;ve used your free estimates for today.
-                            </span>{" "}
-                            Upgrade to Pro for unlimited repair cost estimates.
-                          </span>
-                        </p>
-                        <Button type="button" onClick={openModal} size="sm" className="mt-3">
-                          <Crown className="h-3.5 w-3.5" aria-hidden />
-                          Go Pro
-                        </Button>
-                      </div>
                     ) : (
                       <>
                         <ul className="mt-3 flex-1 space-y-2">
@@ -763,18 +686,6 @@ export function DiagnosisResult({
                           </p>
                         )}
                         <p className="mt-2 text-xs text-zinc-500">{COST_DISCLAIMER}</p>
-                        {!isPro && consumeQuota && (
-                          <p className="mt-1 text-xs text-zinc-500">
-                            Free plan: {FREE_ESTIMATES_PER_DAY} estimates per day ·{" "}
-                            <button
-                              type="button"
-                              onClick={openModal}
-                              className="font-medium text-amber-600 underline-offset-2 hover:underline dark:text-amber-400"
-                            >
-                              Go Pro for unlimited
-                            </button>
-                          </p>
-                        )}
                       </>
                     )}
                   </div>
@@ -979,8 +890,6 @@ export function DiagnosisResult({
             <p className="pr-note">
               Not estimated — emergency situation. Stop safely first, then request a written quote.
             </p>
-          ) : estimatesLocked ? (
-            <p className="pr-note">Repair cost estimates are a Pro feature.</p>
           ) : costs.estimates.length > 0 ? (
             <table className="pr-table">
               <thead>

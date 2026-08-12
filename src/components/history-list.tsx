@@ -219,7 +219,6 @@ export function HistoryList() {
                         imageNote={false}
                         symptoms={item.symptoms}
                         language={item.language}
-                        consumeQuota={false}
                       />
                     </div>
                   )}
