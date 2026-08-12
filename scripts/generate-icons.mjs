@@ -1,13 +1,16 @@
 /**
- * Regenerates the PWA app icons and iOS launch splash screens with the new
- * GG monogram brand mark (echo G + front G in a blue badge), matching the
- * in-app <Logo /> component.
+ * Regenerates the PWA app icons, iOS launch splash screens, and the browser
+ * favicon with the GG monogram brand mark (echo G + front G in a blue badge),
+ * matching the in-app <Logo /> component.
  *
  * Run (from the project root):  node scripts/generate-icons.mjs
  *
  * Output (same filenames the manifest/sw.js already reference):
  *   public/icons/icon-192.png, icon-512.png, icon-maskable-512.png,
- *   apple-touch-icon.png, and public/icons/splash/*.png
+ *   apple-touch-icon.png, public/icons/splash/*.png,
+ *   and src/app/favicon.ico (16/32/48 multi-size ICO, replacing the stock
+ *   Create-Next-App placeholder so direct /favicon.ico requests return the
+ *   brand mark).
  *
  * Notes:
  * - Splash text falls back to Segoe UI/Arial when Space Grotesk is not
@@ -18,6 +21,7 @@
  */
 import sharp from "sharp";
 import path from "node:path";
+import { writeFile } from "node:fs/promises";
 
 const OUT_DIR = path.join(process.cwd(), "public", "icons");
 const SPLASH_DIR = path.join(OUT_DIR, "splash");
@@ -116,6 +120,54 @@ async function render(svg, file) {
   console.log(`  ${path.basename(file)}  ${meta.width}x${meta.height}`);
 }
 
+// ---------------------------------------------------------------------------
+// Browser favicon — classic multi-size ICO (16/32/48) with PNG-compressed
+// entries (supported by every modern browser and Windows Vista+). Serves the
+// GG badge to legacy browsers and direct /favicon.ico requests.
+// ---------------------------------------------------------------------------
+function packIco(pngs, sizes) {
+  if (pngs.length !== sizes.length) {
+    throw new Error(`packIco: ${pngs.length} PNGs but ${sizes.length} sizes`);
+  }
+  const count = pngs.length;
+  const headerSize = 6;
+  const entrySize = 16;
+  const entries = [];
+  const datas = [];
+  let offset = headerSize + count * entrySize;
+  for (let i = 0; i < count; i++) {
+    const data = pngs[i];
+    const entry = Buffer.alloc(entrySize);
+    entry.writeUInt8(sizes[i] >= 256 ? 0 : sizes[i], 0); // width (0 = 256)
+    entry.writeUInt8(sizes[i] >= 256 ? 0 : sizes[i], 1); // height
+    entry.writeUInt8(0, 2); // palette entries (unused for PNG)
+    entry.writeUInt8(0, 3); // reserved
+    entry.writeUInt16LE(1, 4); // color planes
+    entry.writeUInt16LE(32, 6); // bits per pixel
+    entry.writeUInt32LE(data.length, 8); // bytes in resource
+    entry.writeUInt32LE(offset, 12); // image data offset
+    offset += data.length;
+    entries.push(entry);
+    datas.push(data);
+  }
+  const header = Buffer.alloc(headerSize);
+  header.writeUInt16LE(0, 0); // reserved
+  header.writeUInt16LE(1, 2); // type: 1 = icon
+  header.writeUInt16LE(count, 4); // image count
+  return Buffer.concat([header, ...entries, ...datas]);
+}
+
+async function renderFavicon() {
+  const sizes = [16, 32, 48];
+  const pngs = [];
+  for (const s of sizes) {
+    pngs.push(await sharp(Buffer.from(iconSvg(s, false))).png().toBuffer());
+  }
+  const ico = packIco(pngs, sizes);
+  await writeFile(path.join(process.cwd(), "src", "app", "favicon.ico"), ico);
+  console.log("  favicon.ico  (16/32/48 ICO)");
+}
+
 async function main() {
   console.log("Regenerating app icons…");
   const icons = [
@@ -149,7 +201,10 @@ async function main() {
     await render(splashSvg(w, h), path.join(SPLASH_DIR, file));
   }
 
-  console.log("Done — all icons and splash screens regenerated.");
+  console.log("Regenerating browser favicon…");
+  await renderFavicon();
+
+  console.log("Done — all icons, splash screens, and favicon regenerated.");
 }
 
 main().catch((err) => {
