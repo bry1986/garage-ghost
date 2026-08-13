@@ -14,7 +14,7 @@ import { useEffect } from "react";
  * worker is controlling the page), so those routes hydrate fully offline
  * without the user ever having opened them.
  */
-const ROUTES_TO_PREFETCH = ["/diagnose", "/vin", "/history", "/faq"] as const;
+const ROUTES_TO_PREFETCH = ["/diagnose", "/vin", "/history", "/faq", "/obd-codes"] as const;
 
 export function RoutePrefetcher() {
   const router = useRouter();

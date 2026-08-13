@@ -560,3 +560,38 @@ export function lookupDtc(input: string): DtcEntry | null {
 export function listDtcCodes(): string[] {
   return DTC_DB.map((entry) => entry.code);
 }
+
+/** All known entries (data layer for the /obd-codes hub + sitemap). */
+export function listDtcEntries(): DtcEntry[] {
+  return DTC_DB;
+}
+
+/**
+ * Codes genuinely related to the given one, for cross-linking. Prefers the
+ * same system family (e.g. P0420 → P0430, P0300 → P0301–P0304); when that is
+ * too small, widens to the same first-three-character family (e.g. P01xx).
+ */
+export function relatedDtcCodes(code: string): string[] {
+  const entry = lookupDtc(code);
+  if (!entry) return [];
+
+  const candidates = listDtcEntries();
+  const sameSystem = candidates
+    .filter((item) => item.code !== code && item.system === entry.system)
+    .map((item) => item.code);
+  if (sameSystem.length >= 3) return sameSystem.slice(0, 4);
+
+  // Tighter than a system match: same subsystem digit, e.g. P0300 → P0301–P0304.
+  const sameSubsystem = candidates
+    .filter((item) => item.code !== code && item.code.slice(0, 4) === entry.code.slice(0, 4))
+    .map((item) => item.code);
+  if (sameSubsystem.length > 0) return sameSubsystem.slice(0, 4);
+
+  // Widest fallback: the three-character family (e.g. P01xx). Capped smaller
+  // than before so cross-links stay visibly relevant.
+  const prefix = entry.code.slice(0, 3);
+  const widened = candidates
+    .filter((item) => item.code !== code && (item.code.startsWith(prefix) || item.system === entry.system))
+    .map((item) => item.code);
+  return [...new Set(widened)].slice(0, 5);
+}

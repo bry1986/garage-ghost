@@ -6,6 +6,7 @@
  * Estimates are educational ballparks only — never a quote.
  */
 import type { RiskLevel } from "@/types/diagnostic";
+import type { DtcEntry } from "@/lib/dtc";
 
 export type CostCurrency = "USD";
 
@@ -300,6 +301,23 @@ export function estimateRepairCosts(input: CostEstimateInput): RepairCostEstimat
     isEmergency: false,
     currency: "USD",
   };
+}
+
+/**
+ * Cost estimate for a known OBD-II code. Same mapping the DTC pages use:
+ * high-urgency codes read as DRIVE_CAREFULLY (never STOP_NOW — a stored code
+ * alone is not an emergency), and the code itself feeds keyword matching so
+ * code-specific rules (p0420, p0300, …) hit. Single source of truth for the
+ * OBD lookup card, the /obd-codes hub and every /obd-codes/[code] page.
+ */
+export function estimateDtcCosts(entry: DtcEntry): RepairCostEstimateResult {
+  return estimateRepairCosts({
+    detectedWarning: entry.description,
+    summary: entry.advice,
+    possibleCauses: entry.possibleCauses.map((cause) => ({ cause })),
+    riskLevel: entry.urgency === "high" ? "DRIVE_CAREFULLY" : "BOOK_SERVICE",
+    symptoms: entry.code,
+  });
 }
 
 /** Format an estimate as a USD range, e.g. "$150–$600". */

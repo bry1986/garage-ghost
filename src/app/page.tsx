@@ -7,6 +7,7 @@ import {
   Globe2,
   Lock,
   MessageSquareText,
+  ScanLine,
   ScanSearch,
   ShieldCheck,
   Wrench,
@@ -205,7 +206,7 @@ export default function HomePage() {
             >
               A free tool, no sign-up
             </h2>
-            <div className="mx-auto mt-12 grid max-w-xl gap-5">
+            <div className="mx-auto mt-12 grid max-w-3xl gap-5 sm:grid-cols-2">
               <Link href="/vin" className="glass-panel card-lift group block rounded-2xl p-6">
                 <span className={iconTileClass}>
                   <ScanSearch className="h-5 w-5" aria-hidden />
@@ -220,6 +221,22 @@ export default function HomePage() {
                 <p className="mt-1.5 text-sm leading-relaxed text-zinc-400">
                   Validate a 17-character VIN and read its structure instantly — with optional NHTSA
                   vehicle details.
+                </p>
+              </Link>
+              <Link href="/obd-codes" className="glass-panel card-lift group block rounded-2xl p-6">
+                <span className={iconTileClass}>
+                  <ScanLine className="h-5 w-5" aria-hidden />
+                </span>
+                <h3 className="mt-3 flex items-center gap-1.5 text-sm font-semibold text-zinc-100">
+                  Look up an OBD-II code
+                  <ArrowRight
+                    className="h-3.5 w-3.5 text-zinc-500 transition-transform duration-200 ease-out group-hover:translate-x-0.5"
+                    aria-hidden
+                  />
+                </h3>
+                <p className="mt-1.5 text-sm leading-relaxed text-zinc-400">
+                  Plain-English meanings, causes and repair costs for the most common fault codes —
+                  free and works offline.
                 </p>
               </Link>
             </div>

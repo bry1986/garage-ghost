@@ -4,7 +4,7 @@ import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { ArrowRight, ScanLine, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { estimateRepairCosts, formatCostRange } from "@/lib/costs";
+import { estimateDtcCosts, formatCostRange } from "@/lib/costs";
 import { lookupDtc, type DtcEntry } from "@/lib/dtc";
 import { cn } from "@/lib/utils";
 
@@ -39,13 +39,7 @@ export function ObdIiLookup() {
   // FIXD-style ballpark cost for the DTC card (derived during render, not a hook).
   const dtcCostLine = dtcResult
     ? (() => {
-        const costs = estimateRepairCosts({
-          detectedWarning: dtcResult.description,
-          summary: dtcResult.advice,
-          possibleCauses: dtcResult.possibleCauses.map((cause) => ({ cause })),
-          riskLevel: dtcResult.urgency === "high" ? "DRIVE_CAREFULLY" : "BOOK_SERVICE",
-        });
-        const top = costs.estimates[0];
+        const top = estimateDtcCosts(dtcResult).estimates[0];
         return top ? `${top.label}: ${formatCostRange(top)}` : null;
       })()
     : null;
@@ -130,13 +124,22 @@ export function ObdIiLookup() {
               — rough ballpark, varies by vehicle, region and workshop.
             </p>
           )}
-          <Link
-            href={`/diagnose?dtc=${encodeURIComponent(dtcResult.code)}`}
-            className="mt-3 inline-flex items-center gap-1.5 rounded-md border border-zinc-700 px-3 py-1.5 text-xs font-medium text-zinc-200 transition-colors hover:border-brand/60 hover:text-brand"
-          >
-            Analyze this code in a diagnosis
-            <ArrowRight className="h-3.5 w-3.5" aria-hidden />
-          </Link>
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <Link
+              href={`/diagnose?dtc=${encodeURIComponent(dtcResult.code)}`}
+              className="inline-flex items-center gap-1.5 rounded-md border border-zinc-700 px-3 py-1.5 text-xs font-medium text-zinc-200 transition-colors hover:border-brand/60 hover:text-brand"
+            >
+              Analyze this code in a diagnosis
+              <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+            </Link>
+            <Link
+              href={`/obd-codes/${encodeURIComponent(dtcResult.code)}`}
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-brand transition-colors hover:text-brand-strong"
+            >
+              Full {dtcResult.code} guide
+              <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+            </Link>
+          </div>
         </div>
       )}
       {dtcSearched && !dtcResult && !dtcError && (
@@ -148,6 +151,15 @@ export function ObdIiLookup() {
       <p className="mt-2 text-xs text-zinc-400 dark:text-zinc-500">
         A stored code points at the system a fault was recorded in — it is not a diagnosis. Always
         confirm with a qualified workshop scan when in doubt.
+      </p>
+      <p className="mt-2">
+        <Link
+          href="/obd-codes"
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-brand underline-offset-2 transition-colors hover:text-brand-strong hover:underline"
+        >
+          Browse all OBD-II code meanings
+          <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+        </Link>
       </p>
     </section>
   );
