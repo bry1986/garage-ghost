@@ -57,9 +57,14 @@ export function SavedVehicles() {
               className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-zinc-700/60 bg-zinc-900/40 px-3 py-2.5"
             >
               <div className="min-w-0">
-                <p className="truncate text-sm font-medium text-zinc-100">{profile.label}</p>
+                {/* Saved names are user data — never machine-translated. */}
+                <p className="truncate text-sm font-medium text-zinc-100" data-skip-translate>
+                  {profile.label}
+                </p>
                 {profile.vehicle.mileage && (
-                  <p className="mt-0.5 text-xs text-zinc-500">{profile.vehicle.mileage}</p>
+                  <p className="mt-0.5 text-xs text-zinc-500" data-skip-translate>
+                    {profile.vehicle.mileage}
+                  </p>
                 )}
               </div>
               <div className="flex shrink-0 items-center gap-2">

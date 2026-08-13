@@ -172,7 +172,10 @@ export function HistoryList() {
                     <div className="min-w-0">
                       <h3 className="flex items-center gap-2 font-display text-sm font-semibold text-zinc-100">
                         <CarFront className="h-4 w-4 shrink-0 text-zinc-500" aria-hidden />
-                        <span className="truncate">{vehicleLabel}</span>
+                        {/* Vehicle names are user data — never machine-translated. */}
+                        <span className="truncate" data-skip-translate>
+                          {vehicleLabel}
+                        </span>
                       </h3>
                       <p className="mt-0.5 text-xs text-zinc-500">{formatDate(item.createdAt)}</p>
                     </div>
@@ -185,7 +188,10 @@ export function HistoryList() {
                       {riskMeta.label}
                     </span>
                   </div>
-                  <p className="mt-2 line-clamp-2 text-sm text-zinc-400">{item.result.summary}</p>
+                  {/* AI summary — never machine-translated. */}
+                  <p className="mt-2 line-clamp-2 text-sm text-zinc-400" data-skip-translate>
+                    {item.result.summary}
+                  </p>
                   <div className="mt-3 flex flex-wrap gap-2">
                     <Button
                       type="button"

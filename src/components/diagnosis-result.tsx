@@ -368,8 +368,11 @@ export function DiagnosisResult({
 
   return (
     <>
+      {/* AI-generated reports are never machine-translated (the report is already
+          authored in the chosen response language — see lib/translate.ts). */}
       <section
         aria-labelledby="diagnosis-result-heading"
+        data-skip-translate
         className={cn(
           // STOP_NOW results are never animated — the urgency must read instantly.
           riskLevel !== "STOP_NOW" && "result-rise"
