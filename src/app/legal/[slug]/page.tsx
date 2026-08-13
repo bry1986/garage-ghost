@@ -8,10 +8,12 @@ interface LegalPageProps {
 
 const LEGAL_CONTENT: Record<
   string,
-  { title: string; updated: string; body: string[] }
+  { title: string; description: string; updated: string; body: string[] }
 > = {
   privacy: {
     title: "Privacy",
+    description:
+      "How Garage Ghost handles your data — everything stays in your browser; only your diagnosis input is sent to Puter for analysis.",
     updated: "August 2026",
     body: [
       `${APP_NAME} is designed to be privacy-first: your vehicle details, symptoms and reports are stored only in this browser (localStorage) on your device. They are never uploaded to our servers.`,
@@ -21,6 +23,8 @@ const LEGAL_CONTENT: Record<
   },
   terms: {
     title: "Terms",
+    description:
+      "The terms of using Garage Ghost — educational guidance about warning lights and symptoms, not a professional diagnosis.",
     updated: "August 2026",
     body: [
       `${APP_NAME} provides general educational guidance about vehicle warning lights and symptoms. It is not a diagnosis, not a professional inspection, and not a substitute for a qualified mechanic, workshop, or roadside assistance.`,
@@ -30,6 +34,8 @@ const LEGAL_CONTENT: Record<
   },
   refunds: {
     title: "Refunds",
+    description:
+      "Garage Ghost is completely free — there are no purchases, subscriptions, or license keys, so there is nothing to refund.",
     updated: "August 2026",
     body: [
       `${APP_NAME} is completely free to use. There are no purchases, subscriptions, or license keys, so there is nothing to refund.`,
@@ -37,6 +43,7 @@ const LEGAL_CONTENT: Record<
   },
   contact: {
     title: "Contact",
+    description: "Questions, feedback, or suggestions about Garage Ghost? Reach out anytime.",
     updated: "August 2026",
     body: [
       `Questions, feedback or refund requests? Reach out and we will get back to you.`,
@@ -53,7 +60,11 @@ export async function generateMetadata({ params }: LegalPageProps): Promise<Meta
   const { slug } = await params;
   const page = LEGAL_CONTENT[slug];
   if (!page) return { title: "Not found" };
-  return { title: page.title };
+  return {
+    title: page.title,
+    description: page.description,
+    alternates: { canonical: `/legal/${slug}` },
+  };
 }
 
 export default async function LegalPage({ params }: LegalPageProps) {

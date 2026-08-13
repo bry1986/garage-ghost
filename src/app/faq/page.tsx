@@ -7,6 +7,7 @@ export const metadata: Metadata = {
   title: "FAQ",
   description:
     "Answers about Garage Ghost — is it really free, is your data private, why the AI step uses Puter, and how the diagnosis works.",
+  alternates: { canonical: "/faq" },
 };
 
 interface FaqEntry {

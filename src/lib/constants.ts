@@ -2,6 +2,13 @@ import type { Confidence, ResponseLanguage, RiskLevel } from "@/types/diagnostic
 
 export const APP_NAME = "Garage Ghost";
 export const APP_TAGLINE = "Understand the warning. Choose the safe next step.";
+
+/**
+ * Canonical production URL. Used by metadata (canonical/OG/Twitter), the
+ * sitemap and robots.txt — change in ONE place if the domain ever moves.
+ */
+export const SITE_URL = "https://garage-ghost.vercel.app";
+
 export const PUTER_DEVELOPER_URL = "https://developer.puter.com";
 
 export const FUEL_TYPES = ["Petrol", "Diesel", "Hybrid", "EV", "Other"] as const;

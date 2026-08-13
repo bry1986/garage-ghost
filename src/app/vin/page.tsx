@@ -7,6 +7,7 @@ export const metadata: Metadata = {
   title: "VIN decoder",
   description:
     "Validate a 17-character VIN's check digit, decode its structure, and look up vehicle details via the free NHTSA database.",
+  alternates: { canonical: "/vin" },
 };
 
 export default function VinPage() {

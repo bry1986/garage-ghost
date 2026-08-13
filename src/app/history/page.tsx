@@ -5,6 +5,7 @@ import { SavedVehicles } from "@/components/saved-vehicles";
 export const metadata: Metadata = {
   title: "History",
   description: "Your saved local diagnosis history.",
+  alternates: { canonical: "/history" },
 };
 
 export default function HistoryPage() {

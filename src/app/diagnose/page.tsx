@@ -7,6 +7,7 @@ export const metadata: Metadata = {
   title: "New Diagnosis",
   description:
     "Describe your car's problem and receive safety-first educational guidance with repair cost estimates.",
+  alternates: { canonical: "/diagnose" },
 };
 
 export default function DiagnosePage() {

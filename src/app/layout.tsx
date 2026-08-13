@@ -9,7 +9,10 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { PwaRegister } from "@/components/pwa-register";
 import { RoutePrefetcher } from "@/components/route-prefetcher";
 import { SplashOverlay } from "@/components/splash-overlay";
-import { APP_NAME, APP_TAGLINE } from "@/lib/constants";
+import { APP_NAME, APP_TAGLINE, SITE_URL } from "@/lib/constants";
+
+const SITE_DESCRIPTION =
+  "Safety-first educational AI triage for vehicle warning lights and symptoms. Understand the warning. Choose the safe next step.";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -35,13 +38,44 @@ const instrumentSerif = Instrument_Serif({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
     default: `${APP_NAME} — ${APP_TAGLINE}`,
     template: `%s — ${APP_NAME}`,
   },
-  description:
-    "Safety-first educational AI triage for vehicle warning lights and symptoms. Understand the warning. Choose the safe next step.",
+  description: SITE_DESCRIPTION,
   applicationName: APP_NAME,
+  /* Default canonical for the homepage. Every other route overrides this
+     via its own page-level `alternates.canonical` (page metadata wins over
+     layout) — keep new routes covered or they silently canonicalize here. */
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    type: "website",
+    siteName: APP_NAME,
+    title: {
+      default: `${APP_NAME} — ${APP_TAGLINE}`,
+      template: `%s — ${APP_NAME}`,
+    },
+    description: SITE_DESCRIPTION,
+    url: SITE_URL,
+    locale: "en_US",
+    images: [
+      {
+        url: "/opengraph-image",
+        width: 1200,
+        height: 630,
+        alt: `${APP_NAME} — ${APP_TAGLINE}`,
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${APP_NAME} — ${APP_TAGLINE}`,
+    description: SITE_DESCRIPTION,
+    images: ["/opengraph-image"],
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
@@ -157,6 +191,32 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@graph": [
+                {
+                  "@type": "WebSite",
+                  name: APP_NAME,
+                  url: SITE_URL,
+                  description: SITE_DESCRIPTION,
+                  inLanguage: "en",
+                },
+                {
+                  "@type": "Organization",
+                  name: APP_NAME,
+                  url: SITE_URL,
+                  description: SITE_DESCRIPTION,
+                  logo: `${SITE_URL}/icons/icon-512.png`,
+                },
+              ],
+            })
+              .replace(/</g, "\\u003c")
+              .replace(/>/g, "\\u003e"),
+          }}
+        />
       </head>
       <body className="flex min-h-full flex-col bg-zinc-950 text-zinc-100">
         <SplashOverlay />
