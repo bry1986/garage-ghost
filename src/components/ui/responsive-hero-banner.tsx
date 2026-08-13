@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { Activity, CheckCircle2, Mail, Menu, X } from "lucide-react";
 import { Logo } from "@/components/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { TranslateButton } from "@/components/translate-button";
 import { APP_NAME } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
@@ -137,6 +138,7 @@ export function ResponsiveHeroBanner() {
 
             <div className="flex items-center gap-2">
               <ThemeToggle className="hidden md:inline-flex" />
+              <TranslateButton variant="hero" />
               <button
                 ref={menuButtonRef}
                 type="button"

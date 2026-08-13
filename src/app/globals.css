@@ -1167,3 +1167,65 @@ select:disabled {
     margin-top: 2pt;
   }
 }
+
+/* ------------------------------------------------------------------ */
+/* Google Website Translator — styled to match the app's pill buttons   */
+/* ------------------------------------------------------------------ */
+
+/* The widget overlay covers the whole pill, so clicking anywhere on the
+   control (icon or label) opens Google's language dropdown. */
+.translate-widget {
+  position: absolute;
+  inset: 0;
+}
+
+.translate-widget .goog-te-gadget {
+  height: 100%;
+  font-family: inherit;
+  font-size: 0;
+  line-height: 0;
+}
+
+.translate-widget .goog-te-gadget-simple {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  background: transparent !important;
+  border: 0 !important;
+  padding: 0 !important;
+  cursor: pointer;
+}
+
+/* Hide the widget's own "Select Language" text — our label replaces it.
+   The dropdown arrow is an image, so font-size: 0 keeps it visible. */
+.translate-widget .goog-te-gadget-simple .goog-te-menu-value span {
+  font-size: 0;
+  line-height: 0;
+}
+
+/* Google injects a full-width top banner — we render our own control. */
+.goog-te-banner-frame,
+.goog-te-balloon-frame,
+#goog-gt-tt {
+  display: none !important;
+}
+
+body {
+  top: 0 !important;
+}
+
+/* The language menu must layer above the sticky header (z-40) and drawer. */
+.goog-te-menu-frame {
+  z-index: 10001 !important;
+}
+
+/* Google scales the page font down after translating — restore readability. */
+html.translated-ltr body,
+html.translated-rtl body {
+  font-size: 16px !important;
+}
+
+/* The dropdown arrow sprite is an inline image; never let layout rules size it. */
+.goog-te-gadget img {
+  max-width: none;
+}

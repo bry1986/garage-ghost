@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { Logo } from "@/components/logo";
+import { TranslateButton } from "@/components/translate-button";
 import { APP_NAME } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
@@ -112,6 +113,9 @@ export function Header() {
               })}
             </ul>
           </nav>
+          {/* Translate: always visible (desktop + mobile) so the site is
+              switchable into FR/AR/ES/DE from any page without opening menus. */}
+          <TranslateButton />
           {/* Mobile: menu trigger */}
           <button
             ref={menuButtonRef}
