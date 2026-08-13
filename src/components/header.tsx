@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { href: "/diagnose", label: "Diagnose" },
   { href: "/vin", label: "VIN decoder" },
   { href: "/obd-codes", label: "OBD codes" },
+  { href: "/guides", label: "Guides" },
   { href: "/history", label: "History" },
   { href: "/faq", label: "FAQ" },
 ];

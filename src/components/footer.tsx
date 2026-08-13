@@ -71,6 +71,14 @@ export function Footer() {
               </li>
               <li>
                 <Link
+                  href="/guides"
+                  className="text-sm text-zinc-400 underline-offset-2 transition-colors hover:text-brand hover:underline"
+                >
+                  Warning-light guides
+                </Link>
+              </li>
+              <li>
+                <Link
                   href="/faq"
                   className="text-sm text-zinc-400 underline-offset-2 transition-colors hover:text-brand hover:underline"
                 >

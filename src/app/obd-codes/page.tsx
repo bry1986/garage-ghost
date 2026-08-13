@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, ScanLine, Stethoscope } from "lucide-react";
+import { ArrowRight, CarFront, ScanLine, Stethoscope } from "lucide-react";
 import { Disclosure } from "@/components/ui/disclosure";
 import { estimateDtcCosts, formatCostRange } from "@/lib/costs";
 import { listDtcEntries, type DtcEntry, type DtcUrgency } from "@/lib/dtc";
@@ -170,6 +170,26 @@ export default function ObdCodesPage() {
           </section>
         );
       })}
+
+      {/* ------------------------------------------------ Cross-link to guides */}
+      <section className="card-surface flex flex-col items-start justify-between gap-4 rounded-2xl p-5 sm:flex-row sm:items-center">
+        <div>
+          <h2 className="font-display text-lg font-bold tracking-tight text-foreground">
+            Not sure which light turned on?
+          </h2>
+          <p className="mt-1 max-w-xl text-sm leading-relaxed text-muted">
+            The warning-light guides explain what the brake, check engine, oil, battery and other
+            dashboard lights mean — and what to do before the code even matters.
+          </p>
+        </div>
+        <Link
+          href="/guides"
+          className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-zinc-700 px-4 py-2 text-sm font-semibold text-foreground transition-colors hover:border-brand/60 hover:text-brand"
+        >
+          <CarFront className="h-4 w-4 text-brand" aria-hidden />
+          Warning-light guides
+        </Link>
+      </section>
 
       {/* ------------------------------------------------ FAQ */}
       <section aria-labelledby="obd-faq-heading" className="max-w-3xl">
