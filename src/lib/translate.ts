@@ -178,9 +178,19 @@ function collectItems(root: ParentNode): { texts: TextItem[]; placeholders: Plac
     // text with a stale translation of the old text.
     const storedTranslation = translatedNodes.get(node);
     if (storedTranslation !== undefined && current !== storedTranslation) {
+      // React replaced our translation with new text (e.g. "Run Diagnosis" ->
+      // "Analyzing…") — re-baseline to the fresh text and untranslate.
       originals.set(node, current);
       translatedNodes.delete(node);
-    } else if (originals.has(node) && current !== originals.get(node)) {
+    } else if (
+      storedTranslation === undefined &&
+      originals.has(node) &&
+      current !== originals.get(node)
+    ) {
+      // Node was never translated but its text changed before we got to it.
+      // (Must NOT fire for already-translated nodes: their nodeValue holds the
+      // previous language, so this branch would clobber the English original
+      // and break restore-to-English after switching between two languages.)
       originals.set(node, current);
     }
 
