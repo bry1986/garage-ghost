@@ -12,7 +12,7 @@ import {
   Stethoscope,
   Wrench,
 } from "lucide-react";
-import { COST_DISCLAIMER, estimateDtcCosts, formatCostRange } from "@/lib/costs";
+import { COST_DISCLAIMER, estimateDtcCosts, formatCostRange, topRepairEstimate } from "@/lib/costs";
 import { listDtcCodes, lookupDtc, relatedDtcCodes, type DtcUrgency } from "@/lib/dtc";
 import { APP_NAME, SITE_URL } from "@/lib/constants";
 import { cn } from "@/lib/utils";
@@ -57,7 +57,7 @@ export async function generateMetadata({ params }: ObdCodePageProps): Promise<Me
   if (!entry) return { title: "Not found" };
 
   const costLine = (() => {
-    const top = estimateDtcCosts(entry).estimates[0];
+    const top = topRepairEstimate(entry);
     return top ? formatCostRange(top) : null;
   })();
 

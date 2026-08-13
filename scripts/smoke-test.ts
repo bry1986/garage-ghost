@@ -3,7 +3,8 @@
  * Run: npx --yes tsx scripts/smoke-test.ts
  *
  * Verifies: resilient JSON parsing, prompt construction, demo-mode output,
- * STOP_NOW escalation, storage round-trip, and malformed localStorage safety.
+ * STOP_NOW escalation, storage round-trip, malformed localStorage safety,
+ * DTC cost-estimate determinism, and VIN structure/check-digit validation.
  */
 import assert from "node:assert";
 
@@ -43,8 +44,19 @@ import {
   toReadableError,
   withTimeout,
 } from "../src/lib/diagnosis";
-import { COST_DISCLAIMER, estimateRepairCosts, formatCostRange } from "../src/lib/costs";
+import {
+  COST_DISCLAIMER,
+  estimateRepairCosts,
+  formatCostRange,
+  topRepairEstimate,
+} from "../src/lib/costs";
 import { listDtcCodes, lookupDtc, normalizeDtcCode } from "../src/lib/dtc";
+import {
+  EXAMPLE_VINS,
+  computeCheckDigit,
+  decodeVin,
+  validateVinStructure,
+} from "../src/lib/vin";
 import {
   clearHistory,
   deleteDiagnosis,
@@ -521,6 +533,64 @@ async function main() {
   });
   assert.strictEqual(withPhoto.imageIncluded, false, "demo results never include a photo");
   console.log("ok: demo results never claim photo analysis");
+
+  // 37. Shared top-repair-cost helper (used by lookup card + DTC pages)
+  const p0420 = lookupDtc("P0420");
+  const p0300 = lookupDtc("P0300");
+  assert.ok(p0420 && p0300, "P0420 and P0300 must exist in the reference");
+  const catalystTop = topRepairEstimate(p0420);
+  assert.ok(catalystTop, "P0420 must have a top estimate");
+  assert.ok(
+    catalystTop.label.toLowerCase().includes("catalytic"),
+    `P0420 maps to the catalyst estimate, got "${catalystTop.label}"`
+  );
+  assert.ok(catalystTop.min > 0 && catalystTop.min < catalystTop.max);
+  const misfireTop = topRepairEstimate(p0300);
+  assert.ok(misfireTop, "P0300 must have a top estimate");
+  assert.ok(
+    misfireTop.label.toLowerCase().includes("spark"),
+    `P0300 maps to the ignition estimate, got "${misfireTop.label}"`
+  );
+  // Codes with no matching rule fall back to the generic range — never empty.
+  const idleControl = lookupDtc("P0507");
+  assert.ok(idleControl, "P0507 must exist");
+  assert.ok(
+    topRepairEstimate(idleControl)?.label.toLowerCase().includes("diagnosis"),
+    `unmatched codes use the generic fallback range, got "${topRepairEstimate(idleControl)?.label}"`
+  );
+  assert.ok(
+    topRepairEstimate(idleControl)?.min! > 0,
+    "fallback estimate still carries a positive range"
+  );
+  console.log("ok: topRepairEstimate is deterministic for DTC codes");
+
+  // 38. VIN check-digit math: known-valid VINs pass, tampered VINs fail
+  for (const example of EXAMPLE_VINS) {
+    assert.strictEqual(decodeVin(example.vin).valid, true, `${example.vin} must decode as valid`);
+  }
+  const validVin = EXAMPLE_VINS[0].vin; // 1HGCM82633A004352
+  assert.strictEqual(
+    computeCheckDigit(validVin),
+    validVin[8],
+    "computed check digit equals the stored position-9 character"
+  );
+  const tampered = `${validVin.slice(0, 16)}0`; // last char altered
+  assert.strictEqual(
+    decodeVin(tampered).valid,
+    false,
+    "a tampered VIN must fail the check digit"
+  );
+  assert.strictEqual(
+    decodeVin(validVin.replace(/[A-HJ-NPR-Z0-9]/, "I")).valid,
+    false,
+    "VINs containing I/O/Q must be rejected"
+  );
+  assert.strictEqual(
+    validateVinStructure("ABC").ok,
+    false,
+    "short VINs fail structural validation"
+  );
+  console.log("ok: VIN structure + check digit validation is consistent");
 
   console.log("\nAll smoke tests passed ✅");
 }

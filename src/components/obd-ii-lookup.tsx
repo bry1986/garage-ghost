@@ -4,12 +4,10 @@ import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { ArrowRight, ScanLine, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { estimateDtcCosts, formatCostRange } from "@/lib/costs";
+import { formatCostRange, topRepairEstimate } from "@/lib/costs";
 import { lookupDtc, type DtcEntry } from "@/lib/dtc";
+import { inputClasses } from "@/lib/form-styles";
 import { cn } from "@/lib/utils";
-
-const inputClasses =
-  "w-full rounded-lg border border-zinc-700/80 bg-zinc-900/70 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 shadow-[inset_0_1px_0_rgba(255,255,255,0.02)] transition-[border-color,box-shadow,background-color] duration-150 hover:border-zinc-600 focus:border-brand focus:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-brand/20";
 
 /**
  * OBD-II fault-code lookup — instant, no AI call. Lives on the VIN page so
@@ -39,7 +37,7 @@ export function ObdIiLookup() {
   // FIXD-style ballpark cost for the DTC card (derived during render, not a hook).
   const dtcCostLine = dtcResult
     ? (() => {
-        const top = estimateDtcCosts(dtcResult).estimates[0];
+        const top = topRepairEstimate(dtcResult);
         return top ? `${top.label}: ${formatCostRange(top)}` : null;
       })()
     : null;

@@ -27,10 +27,8 @@ import {
   type NhtsaDecode,
   type VinDecodeResult,
 } from "@/lib/vin";
+import { inputClasses, labelClasses } from "@/lib/form-styles";
 import { cn } from "@/lib/utils";
-
-const inputClasses =
-  "w-full rounded-lg border border-zinc-700/80 bg-zinc-900/70 px-3 py-2 font-mono text-sm text-zinc-100 placeholder-zinc-500 uppercase shadow-[inset_0_1px_0_rgba(255,255,255,0.02)] transition-[border-color,box-shadow,background-color] duration-150 hover:border-zinc-600 focus:border-brand focus:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-brand/20";
 
 /** One labeled segment of the decoded VIN (WMI / VDS / check / VIS). */
 function SegmentCard({
@@ -154,7 +152,7 @@ export function VinDecoder() {
         </h2>
         <form onSubmit={handleSubmit} noValidate className="space-y-3">
           <div>
-            <label htmlFor="vin" className="mb-1.5 block text-sm font-medium text-zinc-300">
+            <label htmlFor="vin" className={labelClasses}>
               Vehicle identification number (VIN)
             </label>
             <input
@@ -171,7 +169,11 @@ export function VinDecoder() {
               placeholder="e.g. 1HGCM82633A004352"
               aria-invalid={Boolean(structuralError)}
               aria-describedby={structuralError ? "vin-error" : "vin-hint"}
-              className={cn(inputClasses, structuralError && "border-red-500/70 focus:border-red-500")}
+              className={cn(
+                inputClasses,
+                "font-mono uppercase",
+                structuralError && "border-red-500/70 focus:border-red-500"
+              )}
             />
             <p id="vin-hint" className="mt-1.5 text-xs text-zinc-500">
               17 characters, found on the dashboard near the windscreen or in the registration

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, CarFront, ScanLine, Stethoscope } from "lucide-react";
 import { Disclosure } from "@/components/ui/disclosure";
-import { estimateDtcCosts, formatCostRange } from "@/lib/costs";
+import { formatCostRange, topRepairEstimate } from "@/lib/costs";
 import { listDtcEntries, type DtcEntry, type DtcUrgency } from "@/lib/dtc";
 import { cn } from "@/lib/utils";
 
@@ -132,7 +132,7 @@ export default function ObdCodesPage() {
             <ul className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {letterEntries.map((entry) => {
                 const topCost = (() => {
-                  const top = estimateDtcCosts(entry).estimates[0];
+                  const top = topRepairEstimate(entry);
                   return top ? formatCostRange(top) : null;
                 })();
                 return (

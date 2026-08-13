@@ -165,7 +165,7 @@ function decodeModelYear(char: string): { year: number; from2010: boolean } {
   if (index === -1) return { year: NaN, from2010: false };
   const year = YEAR_CYCLE_BASE + index;
   // Years ≥ 2010 reuse the same codes; position 7 would disambiguate.
-  return { year: year < 2010 ? year : year, from2010: year >= 2010 };
+  return { year, from2010: year >= 2010 };
 }
 
 /**

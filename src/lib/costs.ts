@@ -325,5 +325,14 @@ export function formatCostRange(estimate: RepairCostEstimate): string {
   return `$${estimate.min.toLocaleString("en-US")}–$${estimate.max.toLocaleString("en-US")}`;
 }
 
+/**
+ * Highest-confidence estimate for a known DTC code, or null when nothing
+ * matched. Shared by the OBD lookup card, the /obd-codes hub and every
+ * /obd-codes/[code] page so all three always show the same top cost.
+ */
+export function topRepairEstimate(entry: DtcEntry): RepairCostEstimate | null {
+  return estimateDtcCosts(entry).estimates[0] ?? null;
+}
+
 export const COST_DISCLAIMER =
   "Rough parts-and-labor ballpark in US dollars for a typical workshop. Real prices vary by vehicle, region and workshop — always get a written quote before approving any work.";
