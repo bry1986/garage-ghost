@@ -60,8 +60,6 @@ const SKIP_SELECTOR = [
   "code",
   "pre",
   "textarea",
-  "select",
-  "option",
   "[data-skip-translate]",
   ".print-report",
   ".font-mono",
@@ -170,6 +168,10 @@ function collectItems(root: ParentNode): { texts: TextItem[]; placeholders: Plac
   while ((node = walker.nextNode() as Text | null)) {
     const parent = node.parentElement;
     if (!parent || isSkipped(parent)) continue;
+    // Translate only placeholder <option>s (empty value, e.g. "Select make…").
+    // Real data options — car makes, model years, fuel types, response
+    // languages — are values, not UI copy, and must stay untouched.
+    if (parent.tagName === "OPTION" && (parent as HTMLOptionElement).value !== "") continue;
     const current = node.nodeValue ?? "";
 
     // React reuses Text nodes and updates them with characterData writes (e.g.
@@ -344,6 +346,17 @@ async function directRequest(sources: string[], lang: TranslateLang): Promise<st
   return parseSegments((await res.json())?.[0], sources);
 }
 
+/** Write a translation into a collected text node or placeholder. */
+function applyTranslation(item: TextItem | PlaceholderItem, translation: string): void {
+  if ("node" in item) {
+    item.node.nodeValue = translation;
+    translatedNodes.set(item.node, translation);
+  } else {
+    item.el.setAttribute(item.attr, translation);
+    translatedPlaceholders.add(item.el);
+  }
+}
+
 /** Translate every collected item (cache-first, then batched network calls). */
 async function translateItems(
   items: Array<TextItem | PlaceholderItem>,
@@ -352,9 +365,19 @@ async function translateItems(
   if (items.length === 0) return;
   const langCache = getCache(lang);
 
+  // Cache hits must still be applied: after a route change (or a language
+  // switch) the DOM holds fresh English, so merely finding the source in the
+  // cache is not enough — the node has to be re-written with its translation.
+  // Skipping cached items here left previously-translated text (nav labels,
+  // safety banner, footer…) stuck in English.
   const pending: Array<TextItem | PlaceholderItem> = [];
   for (const item of items) {
-    if (!langCache.has(item.source)) pending.push(item);
+    const cached = langCache.get(item.source);
+    if (cached !== undefined && cached !== item.source) {
+      applyTranslation(item, cached);
+    } else {
+      pending.push(item);
+    }
   }
 
   for (let i = 0; i < pending.length; i += BATCH_SIZE) {
@@ -367,13 +390,7 @@ async function translateItems(
       const translation = results[index];
       if (translation && translation !== item.source) {
         langCache.set(item.source, translation);
-        if ("node" in item) {
-          item.node.nodeValue = translation;
-          translatedNodes.set(item.node, translation);
-        } else {
-          item.el.setAttribute(item.attr, translation);
-          translatedPlaceholders.add(item.el);
-        }
+        applyTranslation(item, translation);
       }
     });
     persistCache(lang);
@@ -484,8 +501,13 @@ export function initPageTranslation(): void {
  * so session translation state is cleared and the saved language re-applied.
  */
 export function handleRouteChange(): void {
-  translatedNodes.clear();
-  translatedPlaceholders.clear();
+  // The header/footer persist across SPA navigation and may still hold the
+  // previous language. Restore them to English first (this also clears the
+  // translated-node maps) so the page is consistent English before the saved
+  // language is re-applied — otherwise collectItems would re-baseline their
+  // English originals to the old translation, corrupting restore-to-English
+  // and any later re-translation.
+  restoreEnglish();
   currentLang = "en"; // fresh server-rendered DOM is English
   pendingLang = "en";
   const saved = getSavedLang();

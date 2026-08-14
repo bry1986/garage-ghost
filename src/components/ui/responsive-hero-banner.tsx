@@ -103,8 +103,8 @@ export function ResponsiveHeroBanner() {
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_75%_55%_at_50%_-5%,rgb(37_99_235/0.1),transparent_65%)] dark:bg-[radial-gradient(ellipse_75%_55%_at_50%_-5%,rgb(59_130_246/0.12),transparent_65%)]"
       />
 
-      {/* Integrated glass nav */}
-      <header className="relative z-20">
+      {/* Integrated glass nav — dir="ltr" keeps it stable while the body flows RTL */}
+      <header dir="ltr" className="relative z-20">
         <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
           <div className="flex h-16 items-center justify-between gap-3 sm:h-[4.5rem]">
             <Link

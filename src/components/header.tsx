@@ -68,8 +68,11 @@ export function Header() {
 
   const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
 
+  // dir="ltr" keeps site chrome (logo left, nav + translate button right)
+  // stable while the page body flows RTL for Arabic — otherwise the whole
+  // header flips and the translate pill jumps to the left edge.
   return (
-    <header className="sticky top-0 z-40 border-b border-zinc-800 bg-zinc-950/90 backdrop-blur">
+    <header dir="ltr" className="sticky top-0 z-40 border-b border-zinc-800 bg-zinc-950/90 backdrop-blur">
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 sm:px-6">
         <Link
           href="/"
