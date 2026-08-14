@@ -35,6 +35,7 @@ export function TranslateButton({ variant = "header" }: TranslateButtonProps) {
   const [open, setOpen] = useState(false);
   const [lang, setLang] = useState<TranslateLang>(() => getCurrentLang());
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -81,12 +82,16 @@ export function TranslateButton({ variant = "header" }: TranslateButtonProps) {
   }, [open]);
 
   const choose = (code: TranslateLang) => {
-    setOpen(false);
     if (code === lang) return;
+    setError(null);
     setBusy(true);
     setPageLang(code, true)
+      .then(() => setOpen(false))
       .catch(() => {
-        // Network hiccup — leave the page as-is; the menu still reflects reality.
+        // Both the direct call and the proxy failed — tell the user instead of
+        // failing silently (the page simply stays in its current language).
+        setError("Translation failed — check your connection and retry.");
+        setOpen(true);
       })
       .finally(() => setBusy(false));
   };
@@ -156,6 +161,14 @@ export function TranslateButton({ variant = "header" }: TranslateButtonProps) {
               </button>
             );
           })}
+          {error && (
+            <p
+              role="alert"
+              className="border-t border-black/10 px-3 pb-2 pt-2 text-xs text-amber-600 dark:border-white/10 dark:text-amber-400"
+            >
+              {error}
+            </p>
+          )}
         </div>
       )}
     </div>

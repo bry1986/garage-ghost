@@ -217,20 +217,115 @@ function collectItems(root: ParentNode): { texts: TextItem[]; placeholders: Plac
 
 /* ------------------------------- translation ------------------------------ */
 
-async function fetchTranslations(sources: string[], lang: TranslateLang): Promise<string[]> {
-  const params = new URLSearchParams({ client: "gtx", sl: "en", tl: lang, dt: "t" });
-  for (const source of sources) params.append("q", source);
+/** Normalize a source for sending: internal newlines would break 1-line-per-segment alignment. */
+function normalizeSource(source: string): string {
+  return source.replace(/\r?\n/g, " ");
+}
 
-  const res = await fetch(`${GTX_ENDPOINT}?${params.toString()}`);
-  if (!res.ok) throw new Error(`Translate request failed (HTTP ${res.status})`);
-  const data = (await res.json()) as unknown[];
-  const segments = (data?.[0] as unknown[]) ?? [];
+/** Thrown when gtx's segments can't be trusted to line up with the sources. */
+class MisalignedSegmentsError extends Error {}
 
-  return sources.map((_, index) => {
-    const segment = segments[index] as unknown[] | undefined;
+/**
+ * Parse gtx's segment array into per-source translations, one per line of the
+ * newline-joined request. Each returned segment carries a trailing `\n` (all
+ * but the last) that must be stripped before the text is applied. Alignment is
+ * verified two ways — segment count and gtx's source echo (segment[1]) — so a
+ * line Google split internally (or a shifted order) can never put a
+ * translation on the wrong text.
+ */
+function parseSegments(segments: unknown, sources: string[]): string[] {
+  const list = Array.isArray(segments) ? segments : [];
+  if (list.length !== sources.length) throw new MisalignedSegmentsError();
+
+  const out: string[] = [];
+  for (let index = 0; index < sources.length; index += 1) {
+    const segment = Array.isArray(list[index]) ? (list[index] as unknown[]) : undefined;
+    const echoed = segment?.[1];
+    if (typeof echoed === "string" && echoed.replace(/\n$/, "") !== sources[index]) {
+      throw new MisalignedSegmentsError();
+    }
     const translated = segment?.[0];
-    return typeof translated === "string" && translated.length > 0 ? translated : sources[index];
+    const cleaned = typeof translated === "string" ? translated.replace(/\n$/, "") : "";
+    out.push(cleaned.length > 0 ? cleaned : sources[index]);
+  }
+  return out;
+}
+
+/**
+ * One request per source — used when a batch comes back misaligned. Long
+ * lines Google split internally are rejoined; a single problematic text is
+ * kept in English rather than failing the rest of the page. Throws only when
+ * every single request failed (so the UI can still surface a real outage).
+ */
+async function fetchOneByOne(sources: string[], lang: TranslateLang): Promise<string[]> {
+  const out: string[] = [];
+  let succeeded = 0;
+  for (const source of sources) {
+    try {
+      const params = new URLSearchParams({ client: "gtx", sl: "en", tl: lang, dt: "t" });
+      params.set("q", normalizeSource(source));
+      const res = await fetch(`${GTX_ENDPOINT}?${params.toString()}`, {
+        signal: AbortSignal.timeout(10_000),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = (await res.json()) as unknown[];
+      const list = (data?.[0] as unknown[] | undefined) ?? [];
+      const joined = (Array.isArray(list) ? list : [])
+        .map((seg) => (Array.isArray(seg) && typeof seg[0] === "string" ? seg[0] : ""))
+        .join("")
+        .replace(/\n$/, "");
+      out.push(joined.length > 0 ? joined : source);
+      if (joined.length > 0) succeeded += 1;
+    } catch {
+      out.push(source);
+    }
+  }
+  if (succeeded === 0) throw new Error("All translation requests failed");
+  return out;
+}
+
+/** Same request, but routed through our /api/translate proxy (Vercel -> Google). */
+async function fetchViaProxy(sources: string[], lang: TranslateLang): Promise<string[]> {
+  const res = await fetch("/api/translate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ q: sources, tl: lang }),
   });
+  if (!res.ok) throw new Error(`Translate proxy failed (HTTP ${res.status})`);
+  const data = (await res.json()) as { segments?: unknown };
+  if (!Array.isArray(data.segments)) throw new Error("Translate proxy returned no segments");
+  try {
+    return parseSegments(data.segments, sources);
+  } catch (error) {
+    if (error instanceof MisalignedSegmentsError) return fetchOneByOne(sources, lang);
+    throw error;
+  }
+}
+
+async function fetchTranslations(sources: string[], lang: TranslateLang): Promise<string[]> {
+  // Google's gtx endpoint now only honors the FIRST `q` param — repeated
+  // params are silently ignored (the response holds a single segment), which
+  // left the page untranslated. Multiple texts must be newline-joined into a
+  // single `q`; each line comes back as its own segment.
+  try {
+    return await directRequest(sources, lang);
+  } catch (error) {
+    if (error instanceof MisalignedSegmentsError) return fetchOneByOne(sources, lang);
+    // Blocked by an ad-blocker / restricted network / rate limit — the
+    // same-origin proxy cannot be blocked by extension rules, so try that
+    // before giving up.
+    return fetchViaProxy(sources, lang);
+  }
+}
+
+async function directRequest(sources: string[], lang: TranslateLang): Promise<string[]> {
+  const params = new URLSearchParams({ client: "gtx", sl: "en", tl: lang, dt: "t" });
+  params.set("q", sources.map(normalizeSource).join("\n"));
+  const res = await fetch(`${GTX_ENDPOINT}?${params.toString()}`, {
+    signal: AbortSignal.timeout(10_000),
+  });
+  if (!res.ok) throw new Error(`Translate request failed (HTTP ${res.status})`);
+  return parseSegments((await res.json())?.[0], sources);
 }
 
 /** Translate every collected item (cache-first, then batched network calls). */
