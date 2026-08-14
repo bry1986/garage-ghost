@@ -217,38 +217,54 @@ function collectItems(root: ParentNode): { texts: TextItem[]; placeholders: Plac
 
 /* ------------------------------- translation ------------------------------ */
 
-/** Normalize a source for sending: internal newlines would break 1-line-per-segment alignment. */
+/** Normalize a source for sending: internal newlines become spaces (gtx treats a `\n` as a segment boundary). */
 function normalizeSource(source: string): string {
   return source.replace(/\r?\n/g, " ");
+}
+
+/**
+ * Unique marker placed between sources in a batch. gtx echoes it back verbatim
+ * (it never translates it), which gives us an unambiguous boundary — newlines
+ * alone are unreliable because Google also splits long text at sentence
+ * boundaries.
+ */
+const BATCH_SENTINEL = "@@GG_SEP_7f3a2b@@";
+
+/** Join a batch of sources with the sentinel so gtx keeps them separable in one request. */
+function joinBatch(sources: string[]): string {
+  return sources.map(normalizeSource).join(`\n${BATCH_SENTINEL}\n`);
 }
 
 /** Thrown when gtx's segments can't be trusted to line up with the sources. */
 class MisalignedSegmentsError extends Error {}
 
 /**
- * Parse gtx's segment array into per-source translations, one per line of the
- * newline-joined request. Each returned segment carries a trailing `\n` (all
- * but the last) that must be stripped before the text is applied. Alignment is
- * verified two ways — segment count and gtx's source echo (segment[1]) — so a
- * line Google split internally (or a shifted order) can never put a
- * translation on the wrong text.
+ * Parse gtx's segment array into one translation per source. Segments are
+ * grouped by the sentinel echo; within a group Google may still split long
+ * text at sentence boundaries, so those segments are concatenated in order.
+ * Group count is verified against the source count so a split/merge can never
+ * put a translation on the wrong text.
  */
 function parseSegments(segments: unknown, sources: string[]): string[] {
   const list = Array.isArray(segments) ? segments : [];
-  if (list.length !== sources.length) throw new MisalignedSegmentsError();
-
-  const out: string[] = [];
-  for (let index = 0; index < sources.length; index += 1) {
-    const segment = Array.isArray(list[index]) ? (list[index] as unknown[]) : undefined;
-    const echoed = segment?.[1];
-    if (typeof echoed === "string" && echoed.replace(/\n$/, "") !== sources[index]) {
-      throw new MisalignedSegmentsError();
+  const groups: string[][] = [[]];
+  for (const segment of list) {
+    const pair = Array.isArray(segment) ? (segment as unknown[]) : undefined;
+    const echoed = pair?.[1];
+    const translated = pair?.[0];
+    if (typeof echoed === "string" && echoed.trim() === BATCH_SENTINEL) {
+      groups.push([]);
+      continue;
     }
-    const translated = segment?.[0];
-    const cleaned = typeof translated === "string" ? translated.replace(/\n$/, "") : "";
-    out.push(cleaned.length > 0 ? cleaned : sources[index]);
+    groups[groups.length - 1].push(typeof translated === "string" ? translated : "");
   }
-  return out;
+  if (groups.length !== sources.length) throw new MisalignedSegmentsError();
+  return groups.map((group, index) => {
+    // Each segment carries a trailing `\n` (all but a batch's last); strip only
+    // trailing newlines so the translation reads as one string.
+    const joined = group.join("").replace(/\n+$/g, "");
+    return joined.length > 0 ? joined : sources[index];
+  });
 }
 
 /**
@@ -320,7 +336,7 @@ async function fetchTranslations(sources: string[], lang: TranslateLang): Promis
 
 async function directRequest(sources: string[], lang: TranslateLang): Promise<string[]> {
   const params = new URLSearchParams({ client: "gtx", sl: "en", tl: lang, dt: "t" });
-  params.set("q", sources.map(normalizeSource).join("\n"));
+  params.set("q", joinBatch(sources));
   const res = await fetch(`${GTX_ENDPOINT}?${params.toString()}`, {
     signal: AbortSignal.timeout(10_000),
   });

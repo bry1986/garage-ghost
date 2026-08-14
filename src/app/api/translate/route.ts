@@ -69,10 +69,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "text too long" }, { status: 413 });
   }
 
-  // Note: gtx only honors the FIRST `q` param — multiple params are ignored.
-  // Join with newlines instead; each line returns as its own segment.
+  // gtx only honors the FIRST `q` param — repeated params are ignored. Join
+  // with a sentinel instead (echoed back verbatim) so the client can split the
+  // response per source even when Google splits long lines at sentence
+  // boundaries. Must match BATCH_SENTINEL in src/lib/translate.ts.
+  const BATCH_SENTINEL = "@@GG_SEP_7f3a2b@@";
   const params = new URLSearchParams({ client: "gtx", sl: "en", tl, dt: "t" });
-  params.set("q", q.map((item) => item.replace(/\r?\n/g, " ")).join("\n"));
+  params.set("q", q.map((item) => item.replace(/\r?\n/g, " ")).join(`\n${BATCH_SENTINEL}\n`));
 
   try {
     const res = await fetch(`${GTX_ENDPOINT}?${params.toString()}`, {
@@ -83,10 +86,17 @@ export async function POST(request: NextRequest) {
     }
     const data = (await res.json()) as unknown[];
     const segments = (data?.[0] as unknown[] | undefined) ?? [];
+    // Return the raw [translated, echo] pairs exactly as gtx shaped them, so the
+    // client can run the same alignment check (segment count + source echo) it
+    // uses on the direct path. Translating/passing plain strings here would
+    // break parseSegments' `segment[1]` echo lookup.
     return NextResponse.json({
       segments: segments.map((seg) => {
-        const raw = Array.isArray(seg) ? (seg[0] as unknown) : undefined;
-        return typeof raw === "string" ? raw.replace(/\n$/, "") : "";
+        if (!Array.isArray(seg)) return ["", ""];
+        return [
+          typeof seg[0] === "string" ? seg[0] : "",
+          typeof seg[1] === "string" ? seg[1] : "",
+        ];
       }),
     });
   } catch {
